@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+# generated data and outputs (never commit model outputs or fetched data)
+runs/
+data/
+llm_cache/

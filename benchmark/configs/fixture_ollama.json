@@ -1,0 +1,10 @@
+{
+  "name": "fixture-ollama",
+  "backend": "ollama",
+  "model": "qwen2.5:7b",
+  "data_dir": null,
+  "temperature": 0.0,
+  "seeds": [0, 1, 2],
+  "timings": ["early", "late"],
+  "max_steps": 60
+}

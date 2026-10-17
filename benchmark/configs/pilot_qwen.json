@@ -1,0 +1,11 @@
+{
+  "name": "pilot-qwen2.5-7b",
+  "backend": "ollama",
+  "model": "qwen2.5:7b",
+  "data_dir": "benchmark/data/tau_retail",
+  "temperature": 0.0,
+  "seeds": [0, 1, 2],
+  "max_tasks": 20,
+  "timings": ["early", "middle", "late"],
+  "max_steps": 60
+}

@@ -1,0 +1,99 @@
+{
+  "mia_garcia_4516": {
+    "user_id": "mia_garcia_4516",
+    "name": {
+      "first_name": "Mia",
+      "last_name": "Garcia"
+    },
+    "address": {
+      "address1": "537 Main Street",
+      "address2": "",
+      "city": "Denver",
+      "country": "USA",
+      "state": "CO",
+      "zip": "80202"
+    },
+    "email": "mia.garcia2723@example.com",
+    "payment_methods": {
+      "credit_card_7387803": {
+        "source": "credit_card",
+        "brand": "visa",
+        "last_four": "7803",
+        "id": "credit_card_7387803"
+      },
+      "gift_card_3036421": {
+        "source": "gift_card",
+        "balance": 120.0,
+        "id": "gift_card_3036421"
+      }
+    },
+    "orders": [
+      "#W1000001",
+      "#W1000002"
+    ]
+  },
+  "noah_brown_6181": {
+    "user_id": "noah_brown_6181",
+    "name": {
+      "first_name": "Noah",
+      "last_name": "Brown"
+    },
+    "address": {
+      "address1": "986 Lakeview Drive",
+      "address2": "",
+      "city": "Austin",
+      "country": "USA",
+      "state": "TX",
+      "zip": "78701"
+    },
+    "email": "noah.brown7922@example.com",
+    "payment_methods": {
+      "paypal_5727330": {
+        "source": "paypal",
+        "id": "paypal_5727330"
+      },
+      "credit_card_7815826": {
+        "source": "credit_card",
+        "brand": "mastercard",
+        "last_four": "9212",
+        "id": "credit_card_7815826"
+      }
+    },
+    "orders": [
+      "#W1000003",
+      "#W1000004"
+    ]
+  },
+  "ava_lee_2203": {
+    "user_id": "ava_lee_2203",
+    "name": {
+      "first_name": "Ava",
+      "last_name": "Lee"
+    },
+    "address": {
+      "address1": "12 Hillcrest Road",
+      "address2": "",
+      "city": "Seattle",
+      "country": "USA",
+      "state": "WA",
+      "zip": "98101"
+    },
+    "email": "ava.lee5521@example.com",
+    "payment_methods": {
+      "gift_card_8801234": {
+        "source": "gift_card",
+        "balance": 40.0,
+        "id": "gift_card_8801234"
+      },
+      "credit_card_4421987": {
+        "source": "credit_card",
+        "brand": "visa",
+        "last_four": "1987",
+        "id": "credit_card_4421987"
+      }
+    },
+    "orders": [
+      "#W1000005"
+    ]
+  }
+}
