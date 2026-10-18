@@ -22,22 +22,23 @@ def apply_model_selection(config, model_name):
     models = cfg.get('models', {})
     if isinstance(models, dict) and model_name in models:
         cfg['client'] = copy.deepcopy(models[model_name])
-    elif model_name == 'ollama':
-        cfg.setdefault('client', {})
-        cfg['client'] = {'provider': 'ollama', 'model': cfg['client'].get('model', 'qwen2.5-coder:7b'),
-                         'num_ctx': cfg['client'].get('num_ctx', 16384),
-                         'settings': cfg['client'].get('settings', {'temperature': 0})}
-    elif model_name == 'gemini':
-        cfg.setdefault('client', {})
-        cfg['client'] = {'provider': 'gemini', 'model': cfg['client'].get('model', 'gemini-2.5-flash'),
-                         'api_key_env': cfg['client'].get('api_key_env', 'GEMINI_API_KEY')}
-    elif model_name == 'openai':
-        cfg.setdefault('client', {})
-        cfg['client'] = {'provider': 'openai', 'model': cfg['client'].get('model', 'gpt-4o'),
-                         'api_key_env': cfg['client'].get('api_key_env', 'OPENAI_API_KEY')}
+    elif model_name in ('ollama', 'gemini', 'openai'):
+        defaults = {
+            'ollama': {'provider':'ollama', 'model':'qwen2.5-coder:7b',
+                       'num_ctx':16384, 'settings':{'temperature':0}},
+            'gemini': {'provider':'gemini', 'model':'gemini-2.5-flash', 'api_key_env':'GEMINI_API_KEY'},
+            'openai': {'provider':'openai', 'model':'gpt-4o', 'api_key_env':'OPENAI_API_KEY'},
+        }
+        current = cfg.get('client', {})
+        # Preserve all same-provider options; do not carry an incompatible model
+        # or sampling settings across a provider switch.
+        cfg['client'] = (copy.deepcopy(current) if current.get('provider') == model_name
+                         else copy.deepcopy(defaults[model_name]))
+        cfg['client'].setdefault('model', defaults[model_name]['model'])
     else:
         cfg.setdefault('client', {})
         cfg['client']['model'] = model_name
+        cfg['client'].pop('model_env', None)  # An explicit CLI model wins.
     return cfg
 
 

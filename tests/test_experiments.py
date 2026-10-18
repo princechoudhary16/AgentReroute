@@ -50,3 +50,11 @@ class ExperimentTests(unittest.TestCase):
             report=evaluate_run(corpus,out)
             self.assertEqual(report['results'][0]['repetitions'][0]['missing_jobs'],1)
             self.assertEqual(report['results'][0]['aggregate']['step_accuracy']['mean'],2/3)
+
+    def test_secret_keys_cannot_be_persisted_in_experiment_config(self):
+        from agentrx.experiments import validate_experiment
+        for config in ({'client':{'provider':'gemini','api_key':'secret'}},
+                       {'models':{'gemini':{'provider':'gemini','api_key':'secret'}}}):
+            with self.subTest(config=config):
+                with self.assertRaisesRegex(ValueError,'secret|credential'):
+                    validate_experiment(config)

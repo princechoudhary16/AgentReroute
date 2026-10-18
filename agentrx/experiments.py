@@ -14,7 +14,7 @@ from .prompts import prompt_identity
 from .providers import CachedProvider, HTTPProvider
 
 
-CLIENT_KEYS = {'provider','model','base_url','api_key','api_key_env','deployment','api_version','settings',
+CLIENT_KEYS = {'provider','model','base_url','api_key_env','deployment','api_version','settings',
                'timeout','retries','max_input_chars','replay_file','base_url_env','model_env',
                'num_ctx','think','keep_alive'}
 
@@ -64,7 +64,7 @@ def validate_experiment(config):
             raise ValueError('models must be a dictionary of model configurations')
         for m_name, m_client in models.items():
             if not isinstance(m_client, dict) or set(m_client)-CLIENT_KEYS:
-                raise ValueError(f'Unsupported fields in models.{m_name}')
+                raise ValueError(f'Unsupported fields in models.{m_name}; credentials must be environment variables')
     domains = config.get('domains', list(EXPECTED))
     if not isinstance(domains,list) or not domains or len(set(domains))!=len(domains) or set(domains)-set(EXPECTED):
         raise ValueError('Unknown or duplicated domains')
@@ -102,6 +102,9 @@ def run_experiment(corpus_dir, config, output, provider_factory=None):
         raise ValueError('No available cases in selected domains')
     factory = provider_factory or HTTPProvider.from_config
     provider = factory(config['client'])  # Credentials fail before any experiment is started.
+    prepare = getattr(provider, 'prepare_for_run', None)
+    if prepare is not None:
+        prepare()
     identity = {'config':config,'corpus_hash':manifest['corpus_hash'], 'provider':provider.identity,
                 'prompt_hash':prompt_identity(),'implementation_hash':implementation_hash()}
     identity_hash = digest(identity)
@@ -255,6 +258,9 @@ def run_stress(input_path, config, output, provider_factory=None):
     if len(keys)!=len(set(keys)):
         raise ValueError('Duplicate stress trajectory IDs')
     provider=(provider_factory or HTTPProvider.from_config)(config['client'])
+    prepare=getattr(provider,'prepare_for_run',None)
+    if prepare is not None:
+        prepare()
     corpus_hash=digest(trajectories)
     identity=digest({'config':config,'corpus':corpus_hash,'provider':provider.identity,
                      'prompts':prompt_identity(),'implementation':implementation_hash()})

@@ -72,13 +72,13 @@ class HTTPProvider:
             raise ProviderError(f"Set {config['base_url_env']} to your versioned model endpoint")
         default_base = ('https://generativelanguage.googleapis.com/v1beta/openai' if kind == 'gemini'
                         else ('' if kind == 'azure' else 'https://api.openai.com/v1'))
-        base = (config.get('base_url')
-                or os.environ.get(config.get('base_url_env', ''))
+        base = (os.environ.get(config.get('base_url_env', ''))
+                or config.get('base_url')
                 or os.environ.get('AZURE_OPENAI_ENDPOINT' if kind == 'azure'
                                   else ('GEMINI_BASE_URL' if kind == 'gemini' else 'OPENAI_BASE_URL'),
                                   default_base))
         default_model = 'gemini-3.5-flash' if kind == 'gemini' else 'gpt-5'
-        model = config.get('model') or os.environ.get(config.get('model_env', '')) or default_model
+        model = os.environ.get(config.get('model_env', '')) or config.get('model') or default_model
         return cls(model, base, key, provider=kind,
                    deployment=config.get('deployment') or os.environ.get('AZURE_OPENAI_DEPLOYMENT'),
                    api_version=config.get('api_version', os.environ.get('AZURE_OPENAI_API_VERSION', '2024-10-21')),
@@ -156,6 +156,8 @@ class OllamaProvider:
         self.model, self.num_ctx, self.think, self.keep_alive = model, num_ctx, think, keep_alive
         self.timeout, self.retries, self.retry_delay = timeout, retries, retry_delay
         self.url = base_url.rstrip('/') + '/api/chat'
+        self.base_url = base_url.rstrip('/')
+        self._prepared = False
         self.identity = {'provider': 'ollama', 'model': model, 'base_url': base_url, 'num_ctx': num_ctx,
                          'think': think, 'settings': self.settings, 'client': 'python-urllib',
                          'python': platform.python_version()}
@@ -164,12 +166,41 @@ class OllamaProvider:
 
     @classmethod
     def from_config(cls, config):
+        if config.get('base_url_env') and not os.environ.get(config['base_url_env']):
+            raise ProviderError(f"Set {config['base_url_env']} to your Ollama endpoint")
         base = (os.environ.get(config.get('base_url_env', '')) or config.get('base_url')
                 or os.environ.get('OLLAMA_HOST_URL', 'http://127.0.0.1:11434'))
         model = os.environ.get(config.get('model_env', '')) or config.get('model', 'qwen2.5-coder:7b')
         return cls(model, base, num_ctx=config.get('num_ctx', 16384), think=config.get('think'),
                    settings=config.get('settings'), timeout=config.get('timeout', 900),
                    retries=config.get('retries', 1), keep_alive=config.get('keep_alive', '10m'))
+
+    def prepare_for_run(self):
+        """Resolve weights before experiment/cache identities; constructors stay offline."""
+        if self._prepared:
+            return
+        metadata = {}
+        opener = request.build_opener(NoRedirect())
+        for path in ('/api/tags', '/api/version'):
+            try:
+                with opener.open(self.base_url + path, timeout=min(self.timeout, 15)) as response:
+                    content = response.read(20_000_001)
+                if len(content) > 20_000_000:
+                    raise ProviderError('Ollama metadata exceeds size limit')
+                value = json.loads(content)
+                if not isinstance(value, dict):
+                    raise ProviderError('Malformed Ollama metadata')
+                metadata[path] = value
+            except (error.URLError, TimeoutError, OSError, json.JSONDecodeError):
+                raise ProviderError('Could not resolve local Ollama model/version; check `ollama serve`') from None
+        tag = self.model if ':' in self.model.rsplit('/', 1)[-1] else self.model + ':latest'
+        model = next((m for m in metadata['/api/tags'].get('models', [])
+                      if m.get('name') in (self.model, tag) or m.get('model') in (self.model, tag)), None)
+        if not model or not isinstance(model.get('digest'), str) or not model['digest']:
+            raise ProviderError(f'Ollama model {self.model!r} not found; run: ollama pull {self.model}')
+        self.identity.update(model_digest=model['digest'], model_details=model.get('details', {}),
+                             ollama_version=metadata['/api/version'].get('version'))
+        self._prepared = True
 
     def _post(self, body):
         opener = request.build_opener(NoRedirect())
@@ -183,8 +214,13 @@ class OllamaProvider:
                 if len(content) > 20_000_000:
                     raise ProviderError('Model response exceeds size limit')
                 return json.loads(content)
+            except json.JSONDecodeError:
+                raise ProviderError('Malformed Ollama HTTP response: invalid JSON') from None
             except error.HTTPError as exc:
+                detail = exc.read(4096).decode('utf-8', errors='replace').lower()
                 exc.close()
+                if any(term in detail for term in ('exceed_context_size', 'context size', 'context length', 'context window')):
+                    raise ProviderError(f'Ollama context limit exceeded (HTTP {exc.code}); increase num_ctx; no response accepted') from None
                 if exc.code == 404:
                     raise ProviderError(f'Ollama model {self.model!r} not found; run: ollama pull {self.model}') from None
                 if exc.code not in (500, 502, 503, 504) or attempt == self.retries:
@@ -198,6 +234,7 @@ class OllamaProvider:
     def complete(self, stage, payload):
         body = {'model': self.model, 'messages': messages(stage, payload), 'format': 'json',
                 'stream': False, 'keep_alive': self.keep_alive,
+                'truncate': False, 'shift': False,
                 'options': {'num_ctx': self.num_ctx, **self.settings}}
         if self.think is not None:
             body['think'] = self.think
@@ -205,7 +242,15 @@ class OllamaProvider:
         start = time.monotonic()
         raw = self._post(body)
         self.last_raw = raw
+        if not isinstance(raw, dict):
+            raise ProviderError('Malformed Ollama response: expected an object')
+        if raw.get('done') is not True:
+            raise ProviderError('Incomplete Ollama response: done must be true')
         prompt_tokens, output_tokens = raw.get('prompt_eval_count', 0), raw.get('eval_count', 0)
+        for key in ('prompt_eval_count', 'eval_count', 'load_duration', 'prompt_eval_duration', 'eval_duration'):
+            value = raw.get(key, 0)
+            if type(value) is not int or value < 0:
+                raise ProviderError(f'Malformed Ollama response: invalid {key}')
         self.last_telemetry = {
             'model': raw.get('model'), 'seconds': time.monotonic() - start,
             'usage': {'prompt_tokens': prompt_tokens, 'completion_tokens': output_tokens,
@@ -246,6 +291,9 @@ class ReplayProvider:
 
 class CachedProvider:
     def __init__(self, provider, directory, namespace):
+        prepare = getattr(provider, 'prepare_for_run', None)
+        if prepare is not None:
+            prepare()
         self.provider, self.directory, self.namespace = provider, Path(directory), namespace
         self.identity = provider.identity
         self.measurement_kind = provider.measurement_kind

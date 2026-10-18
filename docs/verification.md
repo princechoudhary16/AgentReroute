@@ -75,3 +75,54 @@ branch of `princechoudhary16/AgentReroute`, preserving its initial commit, proje
 description, and original MIT license. Microsoft's reused-material license notice
 is retained separately in `LICENSE-Microsoft-AgentRx.txt`. Generated data, local
 environments, and run outputs remain excluded by `.gitignore`.
+
+## Ollama integration verification — 2026-10-18
+
+Pulled collaborator commit `963180c` from `faultattribution`. All 47 incoming tests
+passed. Regression fixes brought the suite to 57 passing tests:
+
+- Preserve custom endpoint/context/thinking/timeout options when choosing the
+  Ollama preset; do not carry OpenAI model names/options into Ollama.
+- Honor explicit model/endpoint environment overrides and reject missing explicit
+  endpoint variables rather than silently choosing localhost.
+- Send native `truncate:false` and `shift:false`, require completed responses,
+  and validate usage counters. Server-side context errors name `num_ctx`.
+- Resolve and record model digest, quantization metadata, and Ollama version before
+  experiment/cache lookup. Changing weights under the same tag invalidates reuse.
+  Preflight remains a no-network configuration check.
+- Reject plaintext secrets in persisted experiment/model configuration.
+
+Actual local verification used Ollama **0.40.2** and the already installed model
+`hf.co/noctrex/Huihui-Qwen3-VL-8B-Instruct-abliterated-GGUF:Q4_K_M`, digest
+`f227e448f8bd23fb9dfd506422315fc22be723fed48721bcc9a6361a290bfb09`,
+with 16,384 context tokens and temperature 0. No cloud LLM was called.
+
+The configured default `qwen2.5-coder:7b` was not installed. A slow download was
+stopped; its default-model inference path remains unverified on this machine.
+
+Live checks performed:
+
+- Full three-step diagnosis with actual global/dynamic generation and judging;
+  selected step 3 correctly but selected a different category than the fixture.
+- Original retail trajectory **2**, **32 steps**: baseline and AgentRx completed
+  in both one-shot and stepwise modes and produced JSON/CSV/Markdown reports.
+  AgentRx selected the gold critical step **7**; the baseline selected **16**.
+  Both category predictions differed from the critical gold category. This is a
+  single-case engineering pilot, not a benchmark accuracy estimate.
+- Generated assertions were all inapplicable: 64 SKIP outcomes in one-shot and
+  42 SKIP outcomes in stepwise. Thus these runs verify orchestration/artifacts,
+  not useful generated constraint evidence. No generated assertion was secretly
+  rewritten to force a match.
+- A separate controlled count-mismatch test executed both a real Python check
+  and a live Ollama semantic rubric; both returned VIOL. The semantic response
+  correctly identified two available variants versus the claimed three.
+- A real 12,009-token prompt with a 2,048-token context and truncation disabled
+  was rejected by Ollama with HTTP 400 (`exceed_context_size_error`).
+
+Local run artifacts are under `runs/ollama-live-retail-20261018`,
+`runs/ollama-live-stepwise-20261018`, `runs/ollama-live-checkers-20261018`, and
+`runs/ollama-final-digest-e2e-20261018`. They remain excluded from Git.
+
+These controls follow Ollama's [native request schema](https://raw.githubusercontent.com/ollama/ollama/main/api/types.go).
+Keep the selected local model unchanged during a run; weights are resolved at
+run start, not locked against another process updating its tag mid-generation.

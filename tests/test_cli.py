@@ -70,3 +70,21 @@ class CLITests(unittest.TestCase):
             gem_info = json.loads(res_gem_ok.stdout)
             self.assertEqual(gem_info['provider']['provider'],'gemini')
 
+
+    def test_ollama_preset_preserves_custom_endpoint_and_runtime_options(self):
+        from agentrx.cli import apply_model_selection
+        original={'client':{'provider':'ollama','model':'custom:8b','base_url':'http://localhost:22134',
+            'num_ctx':32768,'think':False,'keep_alive':'2m','timeout':42,'model_env':'LOCAL_MODEL',
+            'settings':{'temperature':.2,'num_predict':500}}}
+        self.assertEqual(apply_model_selection(original,'ollama')['client'],original['client'])
+        self.assertEqual(original['client']['model'],'custom:8b')
+
+    def test_switching_provider_does_not_reuse_incompatible_model_and_options(self):
+        from agentrx.cli import apply_model_selection
+        cfg={'client':{'provider':'openai','model':'gpt-5',
+                       'settings':{'max_completion_tokens':12000},'api_key_env':'OPENAI_API_KEY'}}
+        client=apply_model_selection(cfg,'ollama')['client']
+        self.assertEqual(client['model'],'qwen2.5-coder:7b')
+        self.assertNotIn('max_completion_tokens',client['settings'])
+        explicit=apply_model_selection({'client':{'provider':'ollama','model':'old','model_env':'LOCAL_MODEL'}},'new:8b')
+        self.assertNotIn('model_env',explicit['client'])

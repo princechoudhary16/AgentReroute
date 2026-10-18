@@ -33,7 +33,7 @@ RelWork data is still missing. Downloaded data and run outputs are excluded from
 
 ### 1. Local models with Ollama
 
-You can run experiments entirely locally using [Ollama](https://ollama.com/) without any API keys or internet access:
+Run locally with [Ollama](https://ollama.com/). Once the model is installed, inference needs no API key or internet access:
 
 1. Start the Ollama server:
    ```bash
@@ -51,6 +51,15 @@ You can run experiments entirely locally using [Ollama](https://ollama.com/) wit
    ```bash
    python3 -m agentrx run --model ollama --out runs/ollama
    ```
+
+To use an already installed model, keep the Ollama config and override its model name:
+
+```bash
+python3 -m agentrx run --config configs/dev_ollama.json --model YOUR_INSTALLED_MODEL --out runs/local
+```
+
+Live local smoke and single-trace pilots have been verified; diagnostic accuracy
+is not established. See [verification](docs/verification.md#ollama-integration-verification--2026-10-18).
 
 ### 2. Cloud models (Gemini, OpenAI, or custom endpoints)
 
@@ -102,7 +111,7 @@ python3 -m agentrx run --config configs/my_config.json --out runs/custom
 
 Runs save diagnoses, evidence, and JSON/CSV/Markdown accuracy reports. Repeat the
 same command to resume; changed code, data, or model settings require a new output
-directory. The test suite passes 47 unit and integration tests.
+directory. The test suite passes 57 unit and integration tests.
 
 
 ## Documentation

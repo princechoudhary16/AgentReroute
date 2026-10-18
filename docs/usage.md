@@ -238,3 +238,20 @@ claimed byte-identical to the unpublished full experimental prompt/settings
 snapshot. Global constraints are generated per domain/configuration/repetition;
 stepwise dynamic constraints apply at their generation step, while one-shot
 constraints retain their event guards.
+
+## Ollama runtime notes
+
+Use `--config configs/dev_ollama.json --model YOUR_INSTALLED_MODEL` to override the
+model while preserving the native Ollama provider and its settings. A bare
+`--model ollama` selects the default coding-model preset. Optional `model_env`
+and `base_url_env` name environment overrides; missing explicit endpoint
+variables fail instead of silently falling back. Actual runs resolve model
+weights and server version before cache lookup; preflight makes no requests.
+
+Native requests disable input truncation and context shifting. Context rejection
+is an error requiring a larger `num_ctx` and a new run directory. This behavior
+was tested with Ollama 0.40.2; compatibility with older servers is unverified.
+All models in config must use `api_key_env` rather than storing literal keys.
+See [the live verification record](verification.md#ollama-integration-verification--2026-10-18)
+for the tested model and the distinction between pipeline completion and
+diagnostic accuracy.
