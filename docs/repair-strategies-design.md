@@ -182,5 +182,5 @@ Use the benchmark harness with paired runs on the same failed episodes:
   facts without such anchors are left to the verifier.
 * The retail preset encodes the tau-bench retail policy that can be checked from
   a trace. Other domains need their own rules and compensations.
-* `independent_reading` and the LLM contract extractor need an LLM client; the
-  remaining strategies are deterministic.
+* `independent_reading` and the LLM contract extractor need a local Ollama
+  model; the remaining strategies are deterministic.

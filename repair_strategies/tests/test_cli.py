@@ -82,20 +82,22 @@ class CliTest(unittest.TestCase):
                  ('plan', '--trace', str(self.trace), '--hypothesis', '{"hypotheses": []}'),
                  ('plan', '--trace', str(self.dir / 'missing.json'), '--hypothesis', '{}'),
                  ('plan', '--trace', str(self.trace), '--hypothesis', '{"step_index": 1, "category": 3}',
-                  '--llm', 'gemini'),
+                  '--llm', 'qwen2.5:7b', '--num-ctx', '10'),
                  ('audit', '--trace', str(self.trace), '--preset', 'airline')]
         for argv in cases:
             code, _, err = invoke(*argv)
             self.assertEqual(code, 2, argv)
             self.assertTrue(err.startswith('error:'), argv)
 
-    def test_llm_presets(self):
-        args = cli.build_parser().parse_args(['plan', '--trace', 'x', '--hypothesis', '{}', '--llm',
-                                              'ollama:qwen2.5:7b'])
+    def test_llm_is_an_ollama_model(self):
+        parse = cli.build_parser().parse_args
+        args = parse(['plan', '--trace', 'x', '--hypothesis', '{}'])
+        self.assertIsNone(cli.llm_from(args))
+        args = parse(['plan', '--trace', 'x', '--hypothesis', '{}', '--llm', 'qwen2.5:7b',
+                      '--ollama-url', 'http://gpu-box:11434', '--num-ctx', '32768'])
         client = cli.llm_from(args)
-        self.assertEqual((client.url, client.model), ('http://127.0.0.1:11434/v1/chat/completions', 'qwen2.5:7b'))
-        args.llm_base_url = 'http://gpu-box:11434/v1'
-        self.assertEqual(cli.llm_from(args).url, 'http://gpu-box:11434/v1/chat/completions')
+        self.assertEqual((client.url, client.model, client.num_ctx),
+                         ('http://gpu-box:11434/api/chat', 'qwen2.5:7b', 32768))
 
     def test_module_entry_point(self):
         env = dict(os.environ, PYTHONPATH=str(ROOT))

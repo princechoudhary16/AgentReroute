@@ -1,8 +1,7 @@
-"""LLM access used by the few strategies that need a second model reading.
+"""LLM access for the two strategies that need a second model reading.
 
-``OpenAICompatibleClient`` talks to any ``/chat/completions`` endpoint, which
-covers OpenAI, Azure-compatible gateways, vLLM, and Ollama's ``/v1`` API.
-Keys come from environment variables and are never stored.
+The project runs models locally through Ollama; ``OllamaClient`` uses its
+native chat API. No API keys or cloud endpoints are involved.
 """
 from __future__ import annotations
 
@@ -46,53 +45,67 @@ class ScriptedLLM:
         return LLMReply(text, self.tokens_per_call)
 
 
-class OpenAICompatibleClient:
-    def __init__(self, base_url: str, model: str, api_key_env: str | None = None, timeout: float = 60.0,
-                 temperature: float | None = 0.0, max_tokens: int | None = None, json_mode: bool = False):
-        if not base_url.startswith(('http://', 'https://')):
-            raise ValueError('base_url must be an http(s) URL')
-        self.url = base_url.rstrip('/') + '/chat/completions'
-        self.model, self.timeout = model, timeout
-        self.temperature, self.max_tokens, self.json_mode = temperature, max_tokens, json_mode
-        self.api_key = None
-        if api_key_env:
-            self.api_key = os.environ.get(api_key_env)
-            if not self.api_key:
-                raise LLMError(f'Environment variable {api_key_env} is not set')
+DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434'
+
+
+def ollama_url(value: str | None = None) -> str:
+    """Server URL from an argument, ``OLLAMA_HOST`` (as Ollama itself reads it), or the local default."""
+    url = (value or os.environ.get('OLLAMA_HOST') or DEFAULT_OLLAMA_URL).strip().rstrip('/')
+    if '://' not in url:
+        url = 'http://' + url
+    if not url.startswith(('http://', 'https://')):
+        raise ValueError(f'Ollama URL must be http(s): {url!r}')
+    return url
+
+
+class OllamaClient:
+    """Native Ollama chat API (``/api/chat``), non-streaming.
+
+    Requests JSON output (``format: "json"``), disables silent prompt truncation
+    and context shifting, and treats a reply cut at the token limit as an error.
+    """
+
+    def __init__(self, model: str, base_url: str | None = None, num_ctx: int = 16384, temperature: float = 0.0,
+                 timeout: float = 300.0, keep_alive: str = '5m', json_mode: bool = True):
+        if not model:
+            raise ValueError('an Ollama model name is required, e.g. qwen2.5:7b')
+        self.model, self.base_url = model, ollama_url(base_url)
+        self.url = self.base_url + '/api/chat'
+        self.num_ctx, self.temperature, self.timeout = num_ctx, temperature, timeout
+        self.keep_alive, self.json_mode = keep_alive, json_mode
 
     def complete(self, messages: list[dict], *, purpose: str) -> LLMReply:
-        body = {'model': self.model, 'messages': messages}
-        if self.temperature is not None:
-            body['temperature'] = self.temperature
-        if self.max_tokens is not None:
-            body['max_tokens'] = self.max_tokens
+        body = {'model': self.model, 'messages': messages, 'stream': False, 'keep_alive': self.keep_alive,
+                'options': {'num_ctx': self.num_ctx, 'temperature': self.temperature},
+                'truncate': False, 'shift': False}
         if self.json_mode:
-            body['response_format'] = {'type': 'json_object'}
-        headers = {'Content-Type': 'application/json'}
-        if self.api_key:
-            headers['Authorization'] = f'Bearer {self.api_key}'
-        req = request.Request(self.url, json.dumps(body).encode(), headers, method='POST')
+            body['format'] = 'json'
+        req = request.Request(self.url, json.dumps(body).encode(), {'Content-Type': 'application/json'},
+                              method='POST')
         try:
             with request.urlopen(req, timeout=self.timeout) as response:
                 payload = json.loads(response.read().decode('utf-8'))
         except error.HTTPError as exc:
             with exc:
                 detail = exc.read().decode('utf-8', 'replace')[:300]
-            raise LLMError(f'{purpose}: HTTP {exc.code} from {self.url}: {detail}') from None
+            hint = f' (is the model pulled? run: ollama pull {self.model})' if exc.code == 404 else ''
+            raise LLMError(f'{purpose}: Ollama HTTP {exc.code}: {detail}{hint}') from None
         except (error.URLError, TimeoutError, OSError) as exc:
-            raise LLMError(f'{purpose}: cannot reach {self.url}: {exc}') from None
+            raise LLMError(f'{purpose}: cannot reach Ollama at {self.base_url} ({exc}); is "ollama serve" '
+                           'running?') from None
         except json.JSONDecodeError:
-            raise LLMError(f'{purpose}: response is not JSON') from None
-        try:
-            choice = payload['choices'][0]
-            text = choice['message']['content'] or ''
-        except (KeyError, IndexError, TypeError):
-            raise LLMError(f'{purpose}: unexpected response shape') from None
-        if choice.get('finish_reason') == 'length':
-            raise LLMError(f'{purpose}: response truncated at max_tokens')
-        usage = payload.get('usage') or {}
-        tokens = usage.get('total_tokens') or (usage.get('prompt_tokens', 0) + usage.get('completion_tokens', 0))
-        return LLMReply(text, int(tokens or 0))
+            raise LLMError(f'{purpose}: Ollama response is not JSON') from None
+        if payload.get('error'):
+            raise LLMError(f'{purpose}: Ollama error: {payload["error"]}')
+        message = payload.get('message')
+        if not isinstance(message, dict) or not isinstance(message.get('content'), str):
+            raise LLMError(f'{purpose}: unexpected Ollama response shape')
+        if payload.get('done') is False:
+            raise LLMError(f'{purpose}: Ollama response is incomplete')
+        if payload.get('done_reason') == 'length':
+            raise LLMError(f'{purpose}: reply truncated at the token limit; raise num_ctx')
+        tokens = int(payload.get('prompt_eval_count') or 0) + int(payload.get('eval_count') or 0)
+        return LLMReply(message['content'], tokens)
 
 
 def parse_json_object(text: str) -> dict:

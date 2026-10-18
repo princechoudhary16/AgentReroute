@@ -5,7 +5,7 @@ import unittest
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from unittest import mock
 
-from repair_strategies.llm import LLMError, OpenAICompatibleClient, ScriptedLLM, parse_json_object
+from repair_strategies.llm import LLMError, OllamaClient, ScriptedLLM, ollama_url, parse_json_object
 from repair_strategies.policy import intent, plan_state, rules
 from repair_strategies.trace import ToolCall
 
@@ -184,47 +184,64 @@ class _Handler(BaseHTTPRequestHandler):
         pass
 
 
-class LLMClientTest(unittest.TestCase):
+class OllamaClientTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.server = HTTPServer(('127.0.0.1', 0), _Handler)
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
-        cls.url = f'http://127.0.0.1:{cls.server.server_address[1]}/v1'
+        cls.url = f'http://127.0.0.1:{cls.server.server_address[1]}'
 
     @classmethod
     def tearDownClass(cls):
         cls.server.shutdown()
         cls.server.server_close()
 
-    def test_request_and_usage(self):
-        _Handler.status, _Handler.seen = 200, []
-        _Handler.reply = {'choices': [{'message': {'content': '{"a": 1}'}, 'finish_reason': 'stop'}],
-                          'usage': {'prompt_tokens': 7, 'completion_tokens': 3}}
-        with mock.patch.dict(os.environ, {'TEST_KEY': 'k-123'}):
-            client = OpenAICompatibleClient(self.url, 'qwen2.5:7b', api_key_env='TEST_KEY', json_mode=True)
+    def reply(self, status=200, **payload):
+        _Handler.status, _Handler.seen = status, []
+        _Handler.reply = payload
+
+    def test_native_chat_request_and_usage(self):
+        self.reply(message={'role': 'assistant', 'content': '{"a": 1}'}, done=True, done_reason='stop',
+                   prompt_eval_count=7, eval_count=3)
+        client = OllamaClient('qwen2.5:7b', base_url=self.url, num_ctx=8192)
         reply = client.complete([{'role': 'user', 'content': 'hi'}], purpose='test')
         self.assertEqual((reply.text, reply.tokens), ('{"a": 1}', 10))
         path, auth, body = _Handler.seen[0]
-        self.assertEqual((path, auth, body['model']), ('/v1/chat/completions', 'Bearer k-123', 'qwen2.5:7b'))
-        self.assertEqual(body['response_format'], {'type': 'json_object'})
+        self.assertEqual((path, auth), ('/api/chat', None))
+        self.assertEqual((body['model'], body['stream'], body['format']), ('qwen2.5:7b', False, 'json'))
+        self.assertEqual(body['options'], {'num_ctx': 8192, 'temperature': 0.0})
+        self.assertEqual((body['truncate'], body['shift']), (False, False))
 
-    def test_errors(self):
-        client = OpenAICompatibleClient(self.url, 'm')
-        _Handler.status, _Handler.reply = 500, {'error': 'boom'}
-        with self.assertRaisesRegex(LLMError, 'HTTP 500'):
+    def test_errors_explain_what_to_do(self):
+        client = OllamaClient('missing-model', base_url=self.url)
+        self.reply(404, error='model "missing-model" not found')
+        with self.assertRaisesRegex(LLMError, 'ollama pull missing-model'):
             client.complete([], purpose='t')
-        _Handler.status, _Handler.reply = 200, {'choices': [{'message': {'content': 'x'}, 'finish_reason': 'length'}]}
-        with self.assertRaisesRegex(LLMError, 'truncated'):
+        self.reply(message={'content': 'x'}, done=True, done_reason='length')
+        with self.assertRaisesRegex(LLMError, 'raise num_ctx'):
             client.complete([], purpose='t')
-        _Handler.reply = {'unexpected': True}
+        self.reply(error='out of memory')
+        with self.assertRaisesRegex(LLMError, 'out of memory'):
+            client.complete([], purpose='t')
+        self.reply(message={'content': 'x'}, done=False)
+        with self.assertRaisesRegex(LLMError, 'incomplete'):
+            client.complete([], purpose='t')
+        self.reply(unexpected=True)
         with self.assertRaisesRegex(LLMError, 'shape'):
             client.complete([], purpose='t')
-        with self.assertRaisesRegex(LLMError, 'cannot reach'):
-            OpenAICompatibleClient('http://127.0.0.1:9', 'm', timeout=2).complete([], purpose='t')
-        with self.assertRaises(LLMError):
-            OpenAICompatibleClient(self.url, 'm', api_key_env='SURELY_UNSET_VARIABLE_123')
+        with self.assertRaisesRegex(LLMError, 'ollama serve'):
+            OllamaClient('m', base_url='http://127.0.0.1:9', timeout=2).complete([], purpose='t')
+
+    def test_server_url_resolution(self):
+        with mock.patch.dict(os.environ, {'OLLAMA_HOST': 'gpu-box:11434'}):
+            self.assertEqual(ollama_url(), 'http://gpu-box:11434')
+            self.assertEqual(ollama_url('https://lab.example/ollama/'), 'https://lab.example/ollama')
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(ollama_url(), 'http://127.0.0.1:11434')
         with self.assertRaises(ValueError):
-            OpenAICompatibleClient('ftp://x', 'm')
+            ollama_url('ftp://x')
+        with self.assertRaises(ValueError):
+            OllamaClient('')
 
     def test_scripted_and_json_parsing(self):
         llm = ScriptedLLM(lambda messages, purpose: purpose)

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -12,7 +11,7 @@ from .adapters.orchestrator import export_registry
 from .context import AttemptRecord, Hypothesis, TaskSpec
 from .engine import RepairEngine
 from .evidence import claims, cycles
-from .llm import OpenAICompatibleClient
+from .llm import OllamaClient
 from .lowering import BENCHMARK, FULL, ORCHESTRATOR, lower
 from .plan import RepairPlan
 from .policy.rules import RuleGate
@@ -21,8 +20,6 @@ from .taxonomy import normalize
 from .trace import Trace
 
 TARGETS = {'benchmark': BENCHMARK, 'orchestrator': ORCHESTRATOR, 'full': FULL}
-LLM_PRESETS = {'ollama': ('OLLAMA_BASE_URL', 'http://127.0.0.1:11434/v1', None),
-               'openai': ('OPENAI_BASE_URL', 'https://api.openai.com/v1', 'OPENAI_API_KEY')}
 
 
 class UsageError(Exception):
@@ -58,14 +55,12 @@ def task_from(args, trace: Trace) -> TaskSpec:
 
 
 def llm_from(args):
+    """Ollama client for the rungs that need a model, or None to skip them."""
     if not args.llm:
         return None
-    provider, _, model = args.llm.partition(':')
-    if provider not in LLM_PRESETS or not model:
-        raise UsageError(f'--llm must be one of {sorted(LLM_PRESETS)} followed by :MODEL, e.g. ollama:qwen2.5:7b')
-    url_env, default_url, key_env = LLM_PRESETS[provider]
-    return OpenAICompatibleClient(args.llm_base_url or os.environ.get(url_env, default_url), model,
-                                  api_key_env=key_env, json_mode=True)
+    if args.num_ctx < 1024:
+        raise UsageError('--num-ctx must be at least 1024')
+    return OllamaClient(args.llm, base_url=args.ollama_url, num_ctx=args.num_ctx)
 
 
 def _dump(value) -> None:
@@ -166,8 +161,9 @@ def build_parser():
     p.add_argument('--target', choices=sorted(TARGETS), help='also lower the plan for this backend')
     p.add_argument('--explain', action='store_true', help='show every rung of the ladder and why it applies or not')
     p.add_argument('--verbose', action='store_true', help='with --explain, include each rung\'s plan')
-    p.add_argument('--llm', help='LLM for the rungs that need one: ollama:MODEL or openai:MODEL')
-    p.add_argument('--llm-base-url', help='override the LLM endpoint (default from OLLAMA_BASE_URL / OPENAI_BASE_URL)')
+    p.add_argument('--llm', metavar='MODEL', help='Ollama model for the rungs that need one, e.g. qwen2.5:7b')
+    p.add_argument('--ollama-url', help='Ollama server (default: $OLLAMA_HOST or http://127.0.0.1:11434)')
+    p.add_argument('--num-ctx', type=int, default=16384, help='Ollama context window (default: 16384)')
     p.add_argument('--out', help='also write the plan JSON to this file')
     task_options(p)
     p.set_defaults(func=cmd_plan)

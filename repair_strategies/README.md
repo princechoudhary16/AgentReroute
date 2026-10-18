@@ -147,19 +147,26 @@ acceptance failures and degraded operations.
 **Fault attribution**: no import is needed. A `result.json` prediction (or an
 orchestrator `top_k` item) converts with `Hypothesis.from_mapping`.
 
-## LLM use
+## LLM use (Ollama)
 
-Twenty of the 22 strategies are deterministic. `independent_reading` and the
-optional LLM intent extractor use `OpenAICompatibleClient`, which works with
-any `/chat/completions` endpoint, including Ollama's:
+Twenty of the 22 strategies are deterministic and need no model. The other
+two, `independent_reading` and the optional intent-contract extractor, use a
+local model through Ollama's native chat API (`OllamaClient`). No API keys or
+cloud endpoints are involved.
 
 ```bash
+ollama serve
 ollama pull qwen2.5:7b
-python3 -m repair_strategies plan ... --llm ollama:qwen2.5:7b      # OLLAMA_BASE_URL overrides the endpoint
-python3 -m repair_strategies plan ... --llm openai:gpt-4o           # reads OPENAI_API_KEY
+python3 -m repair_strategies plan ... --llm qwen2.5:7b
+python3 -m repair_strategies plan ... --llm qwen2.5:7b --ollama-url http://gpu-box:11434 --num-ctx 32768
 ```
 
-Without `--llm` those rungs are skipped, with the reason shown by `--explain`.
+The server defaults to `$OLLAMA_HOST`, then `http://127.0.0.1:11434`. Requests
+ask for JSON output and disable prompt truncation and context shifting, so an
+overlong prompt or a reply cut at the token limit is an error rather than a
+silently shortened answer. Without `--llm` those two rungs are skipped, with the
+reason shown by `--explain`. In Python, pass `llm=OllamaClient('qwen2.5:7b')`
+to `RepairEngine`.
 
 ## Extending
 
@@ -175,8 +182,8 @@ Without `--llm` those rungs are skipped, with the reason shown by `--explain`.
 
 ## Verification
 
-* 143 unit and integration tests (`python3 -X dev -W error -m unittest ...`),
-  including a local HTTP server for the LLM client and a subprocess run of the CLI.
+* 144 unit and integration tests (`python3 -X dev -W error -m unittest ...`),
+  including a local HTTP server standing in for the Ollama API and a subprocess run of the CLI.
 * A wheel built from `pyproject.toml` installs and runs outside the checkout,
   resources included.
 * Run against the real orchestrator branch (scripted environment and verifier):
