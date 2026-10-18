@@ -48,6 +48,14 @@ class ToolOutcomeMemory:
             self.stats = {k: ToolStats(**v) for k, v in data.get('tools', {}).items()}
             self.observed = set(data.get('observed', ()))
 
+    def copy(self) -> 'ToolOutcomeMemory':
+        """An in-memory copy (no path), so planning can simulate observations without side effects."""
+        clone = ToolOutcomeMemory(None, (self.prior_a, self.prior_b), self.max_retries, self.min_retry_rate,
+                                  self.base_backoff_s)
+        clone.stats = {k: ToolStats(**asdict(v)) for k, v in self.stats.items()}
+        clone.observed = set(self.observed)
+        return clone
+
     def record(self, tool: str, ok: bool, error_text: str = '') -> None:
         stats = self.stats.setdefault(tool, ToolStats())
         if ok:

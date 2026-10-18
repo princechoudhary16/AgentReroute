@@ -77,7 +77,8 @@ class Violation:
     detail: str = ''
 
     def describe(self) -> str:
-        return f'step {self.step_index} {self.tool}: {self.message}' + (f' ({self.detail})' if self.detail else '')
+        detail = f' ({self.detail})' if self.detail else ''
+        return f'step {self.step_index} {self.tool}: [{self.rule_id}] {self.message}{detail}'
 
 
 def compile_rules(specs, task: TaskSpec) -> tuple[Rule, ...]:

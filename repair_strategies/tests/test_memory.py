@@ -59,6 +59,16 @@ class ToolOutcomeTest(unittest.TestCase):
             memory.record('flaky', False, 'Error: 503')
         self.assertEqual(memory.decide('flaky', 'Error: 503').action, tom.ABSTAIN)   # too unreliable to retry
 
+    def test_copy_is_independent(self):
+        memory = tom.ToolOutcomeMemory()
+        memory.record('a', True)
+        memory.observed.add('d/1')
+        clone = memory.copy()
+        clone.record('a', False)
+        clone.observed.add('d/2')
+        self.assertEqual((memory.stats['a'].failures, memory.observed), (0, {'d/1'}))
+        self.assertEqual(clone.stats['a'].successes, 1)
+
     def test_persistence(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / 'tools.json'

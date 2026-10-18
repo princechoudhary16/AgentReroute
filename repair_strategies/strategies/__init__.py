@@ -2,12 +2,24 @@
 from __future__ import annotations
 
 from .base import REGISTRY_KINDS, RepairContext, Skip, Strategy, StrategySpec
+from .escalation import AbstainUndiagnosed, CompensateAndEscalate, TargetedClarification, VerifiedUnmodifiedReplay
+from .execution import (HardCallRepair, LoopForceChange, LoopNudge, LoopReplan, LoopRollback, SwitchOnSchemaDrift,
+                        ToolOutcomeRouting)
 from .grounding import AbstainOrAsk, CompleteOmittedDetails, GroundedReplacement
 from .interpretation import CrossSourceCheck, IndependentReading, RepairHandoff, StructuredReading
+from .planning import ConfirmAmbiguousWrites, IntentContractReplan, PolicyGate, PolicyGateFresh
 
 CATALOGUE = (
     GroundedReplacement, CompleteOmittedDetails, AbstainOrAsk,
     RepairHandoff, StructuredReading, IndependentReading, CrossSourceCheck,
+    IntentContractReplan, ConfirmAmbiguousWrites,
+    PolicyGate, PolicyGateFresh,
+    HardCallRepair, SwitchOnSchemaDrift,
+    LoopNudge, LoopForceChange, LoopReplan, LoopRollback,
+    ToolOutcomeRouting,
+    TargetedClarification,
+    CompensateAndEscalate,
+    VerifiedUnmodifiedReplay, AbstainUndiagnosed,
 )
 
 
