@@ -68,17 +68,21 @@ class ToolOutcomeMemory:
         elif kind == PERSISTENT:
             stats.persistent += 1
 
-    def observe(self, trace: Trace) -> int:
-        """Record every answered call of a trace once (keyed by trajectory id). Returns calls recorded."""
-        key = f'{trace.domain}/{trace.trajectory_id}'
-        if trace.trajectory_id and key in self.observed:
+    def observe(self, trace: Trace, key: str | None = None) -> int:
+        """Record every answered call of a trace once. Returns the number of calls recorded.
+
+        ``key`` identifies the observation (default: domain/trajectory id); replays of the same
+        trajectory pass their own key so they are counted separately.
+        """
+        key = key or (f'{trace.domain}/{trace.trajectory_id}' if trace.trajectory_id else None)
+        if key and key in self.observed:
             return 0
         count = 0
         for x in trace.tool_exchanges():
             if x.result is not None:
                 self.record(x.call.name, not is_error(x.result.content), x.result.content)
                 count += 1
-        if trace.trajectory_id:
+        if key:
             self.observed.add(key)
         return count
 

@@ -56,6 +56,10 @@ class LessonMemory:
             lesson.agents = tuple(sorted(set(lesson.agents) | set(agents)))
         return lesson
 
+    def record_success(self, key: str) -> None:
+        if key in self.lessons:
+            self.lessons[key].verified += 1
+
     def record_failure(self, key: str) -> None:
         if key in self.lessons:
             self.lessons[key].failed += 1
