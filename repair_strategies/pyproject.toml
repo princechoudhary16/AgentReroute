@@ -14,7 +14,7 @@ repair-strategies = "repair_strategies.cli:main"
 
 [tool.setuptools]
 package-dir = {"repair_strategies" = "."}
-packages = ["repair_strategies", "repair_strategies.evidence"]
+packages = ["repair_strategies", "repair_strategies.evidence", "repair_strategies.policy"]
 
 [tool.setuptools.package-data]
 repair_strategies = ["resources/*.json"]
