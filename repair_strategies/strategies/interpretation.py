@@ -14,7 +14,7 @@ from ..evidence.tool_output import JSON, aggregates, key_tokens, parse_output, t
 from ..llm import LLMError, parse_json_object
 from ..plan import GuardCalls, InjectMessage, ReplaceEvent, RequeryTool
 from ..taxonomy import HANDOFF, MISINTERPRETATION
-from .base import RepairContext, Skip, Strategy, StrategySpec, check, compact, record, rule_specs
+from .base import RepairContext, Skip, Strategy, StrategySpec, check, compact, grounded, record, rule_specs
 
 _MAX_FIELDS = 25
 
@@ -89,7 +89,7 @@ class RepairHandoff(Strategy):
         if receiver_rules:
             operations.append(GuardCalls(rules=receiver_rules))
         acceptance = [check('rules_pass', rule_ids=[r['id'] for r in receiver_rules])] if receiver_rules else []
-        acceptance.append(check('claims_grounded'))
+        acceptance.append(grounded(ctx, event.step_index))
         return self.build(ctx, rollback, operations, acceptance,
                           'Pass every identifier the receiving agent needs in the handoff context.', evidence)
 
@@ -170,7 +170,7 @@ class StructuredReading(Strategy):
         operations = [InjectMessage('tool', body, name=exchange.call.name)]
         if guarded:
             operations.append(GuardCalls(rules=rule_specs(ctx.task, kinds=('argument_grounded',), tools=guarded)))
-        return self.build(ctx, step, operations, (check('claims_grounded'),),
+        return self.build(ctx, step, operations, (grounded(ctx, step),),
                           f'Use the parsed fields and computed totals of {exchange.call.name} instead of re-reading '
                           'its raw output.', corrections or [f'consumed output of {exchange.call.name}'],
                           confidence_factor=1.0 if corrections else 0.7)
@@ -213,7 +213,7 @@ class IndependentReading(Strategy):
         body = record(f'an independent reading of {exchange.call.name}', confirmed)
         evidence = [f'confirmed: {c}' for c in confirmed] + [f'discarded (not in output): {r}' for r in rejected]
         return self.build(ctx, step, [InjectMessage('tool', body, name=exchange.call.name)],
-                          (check('claims_grounded'),),
+                          (grounded(ctx, step),),
                           f'Compare your reading of {exchange.call.name} with an independent one before acting.',
                           evidence)
 
@@ -239,6 +239,6 @@ class CrossSourceCheck(Strategy):
                 operations.append(RequeryTool(alt, arguments, 'independent source'))
         operations.append(InjectMessage('system', f'The earlier {exchange.call.name} result may be stale. Fresh '
                                                   'results follow; use them and point out any difference.'))
-        return self.build(ctx, step, operations, (check('claims_grounded'),),
+        return self.build(ctx, step, operations, (grounded(ctx, step),),
                           f'Re-query {exchange.call.name} before relying on a value that looks inconsistent.',
                           [f'relied on {exchange.call.name} at step {exchange.result.step_index}'])

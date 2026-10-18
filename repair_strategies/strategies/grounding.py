@@ -12,7 +12,7 @@ from ..evidence import claims
 from ..evidence.tool_output import JSON, key_tokens, parse_output, to_decimal, words
 from ..plan import AskUser, GuardCalls, InjectMessage, RequeryTool
 from ..taxonomy import INVENTION, OMISSION
-from .base import RepairContext, Skip, Strategy, StrategySpec, check, record, rule_specs
+from .base import RepairContext, Skip, Strategy, StrategySpec, check, grounded, record, rule_specs
 
 USER_FIELDS = frozenset({'email', 'first_name', 'last_name', 'zip', 'address1', 'address2', 'city', 'state',
                          'country', 'phone'})
@@ -83,7 +83,7 @@ class GroundedReplacement(Strategy):
             operations.append(GuardCalls(rules=rule_specs(ctx.task, kinds=('argument_grounded',), tools=guarded_tools)))
         rationale = ('Replace claims that no tool output supports with the verified values, and re-query the source '
                      'before stating identifiers or amounts.')
-        return self.build(ctx, ctx.trace.rollback_point(step), operations, (check('claims_grounded'),), rationale,
+        return self.build(ctx, ctx.trace.rollback_point(step), operations, (grounded(ctx, step),), rationale,
                           evidence)
 
 
@@ -108,7 +108,8 @@ class CompleteOmittedDetails(Strategy):
             if plain.lower() not in reply:
                 shown = f'${value:.2f}' if isinstance(value, Decimal) and key_tokens(path.split('.')[-1]) & _MONEY_KEYS \
                     else plain
-                missing.append(shown)
+                if shown not in missing:
+                    missing.append(shown)
                 lines.append(f'{keyword}: {path} = {shown}')
         if not missing:
             return Skip('every requested fact already appears in the final answer')
@@ -117,7 +118,7 @@ class CompleteOmittedDetails(Strategy):
                                     name='verified_record')]
         rationale = 'Before the final answer, check that every fact the user asked for is stated, using the verified values.'
         return self.build(ctx, final.step_index, operations,
-                          (check('values_present', values=missing), check('claims_grounded')), rationale, lines)
+                          (check('values_present', values=missing), grounded(ctx, final.step_index)), rationale, lines)
 
     @staticmethod
     def _requested(ctx):
@@ -184,7 +185,7 @@ class AbstainOrAsk(Strategy):
             message = ('A reviewer found an unsupported statement here: ' + ctx.hypothesis.rationale.strip() +
                        '\nState only facts present in user messages or tool outputs. If a fact is not available, '
                        'say so or look it up with an available tool.')
-            return self.build(ctx, start, [InjectMessage('system', message)], (check('claims_grounded'),),
+            return self.build(ctx, start, [InjectMessage('system', message)], (grounded(ctx, start),),
                               'Say that information is unavailable instead of stating unsupported facts.',
                               confidence_factor=0.6)
         step, faulty = found
@@ -200,7 +201,7 @@ class AbstainOrAsk(Strategy):
                                                   'state or use these values. '
                                         + ('Ask the user for them.' if ask else
                                            'Tell the user this information is not available.')))
-        acceptance = [check('claims_grounded')]
+        acceptance = [grounded(ctx, step)]
         if ask:
             acceptance.append(check('asked_user', fields=list(operations[0].fields)))
         return self.build(ctx, ctx.trace.rollback_point(step), operations, acceptance,

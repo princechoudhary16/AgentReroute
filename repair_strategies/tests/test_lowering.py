@@ -26,10 +26,12 @@ class LoweringTest(unittest.TestCase):
                  BanCalls(('get_order_details:{}',)), SwitchTool('a', 'b'), ReplaceEvent(3, 2, '{}', 'handoff'),
                  Resample(fresh_context=True))
         low = lowering.lower(p, lowering.BENCHMARK)
-        self.assertEqual((low.kind, low.rollback_step, low.resample), (lowering.GUIDANCE, 5, False))
+        self.assertEqual((low.kind, low.rollback_step, low.resample), (lowering.GUIDANCE, 3, False))
+        self.assertIn('rollback moved from 5 to 3', ' '.join(low.degraded))
+        self.assertEqual(lowering.lower(p, lowering.FULL).rollback_step, 5)
         for snippet in ('[Tool record: get_order_details]', 'Ask for confirmation before cancelling.',
                         'Goal: return the bottle', 'Do not repeat this call', 'Use b instead of a',
-                        'Call get_order_details with {"order_id": "#W1"} again', 'Treat step 3 as corrected'):
+                        'Call get_order_details with {"order_id": "#W1"} again', 'Redo step 3 with this correction'):
             self.assertIn(snippet, low.text)
         self.assertEqual(len(low.degraded), 9)
         self.assertTrue(any(d.startswith('resample: backend cannot combine') for d in low.degraded))

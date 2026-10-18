@@ -136,6 +136,16 @@ def check(kind: str, **params) -> AcceptanceCheck:
     return AcceptanceCheck(kind, params)
 
 
+def grounded(ctx: RepairContext, *targeted: int) -> AcceptanceCheck:
+    """``claims_grounded`` tolerating unsupported values the original run had outside ``targeted`` steps."""
+    targeted_steps = {s for s in targeted if s is not None}
+    inside, outside = set(), set()
+    for step in sorted({e.step_index for e in ctx.trace.events if e.is_agent}):
+        values = {c.claim.value for c in ctx.provenance(step).faulty}
+        (inside if step in targeted_steps else outside).update(values)
+    return check('claims_grounded', tolerate=sorted(outside - inside))
+
+
 def compact(value, limit: int = 400) -> str:
     text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, default=str)
     return text if len(text) <= limit else text[:limit] + ' ...'

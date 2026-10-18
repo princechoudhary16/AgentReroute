@@ -11,9 +11,9 @@ from dataclasses import dataclass
 
 from .context import TaskSpec
 from .evidence import claims, cycles, schema
-from .evidence.tool_output import is_error
+from .evidence.tool_output import is_error, to_decimal
 from .plan import CHECK_KINDS, AcceptanceCheck, RepairPlan
-from .policy.intent import IntentContract
+from .policy.intent import IntentContract, scoped_entities
 from .policy.plan_state import Obligation, track
 from .policy.rules import RuleGate
 from .trace import Trace
@@ -61,22 +61,30 @@ def _new_calls(rollout: Trace, start: int):
 
 
 def _claims_grounded(params, rollout, task, start):
+    """No unsupported claim after the rollback point, except values the original run already had
+    outside the repaired steps (``tolerate``): a repair must not regress, and is not held to a stricter
+    standard than the agent's behaviour elsewhere."""
+    tolerated = {str(v).lower() for v in params.get('tolerate', ())}
     reports = claims.provenance_from(rollout, start, task.fact_keywords)
-    faulty = [c.describe() for r in reports for c in r.faulty]
+    faulty = [c.describe() for r in reports for c in r.faulty if c.claim.value not in tolerated]
     return not faulty, '; '.join(faulty[:3])
 
 
-def _normalize_amount(text: str) -> str:
-    return re.sub(r'[,$\s]', '', text.lower())
+def _present(value, text: str, numbers: set) -> bool:
+    number = to_decimal(value)
+    if number is not None:
+        return number in numbers
+    return re.sub(r'\s+', ' ', str(value).lower()) in text
 
 
 def _values_present(params, rollout, task, start):
     texts = [e.text for e in rollout.from_step(start) if e.is_agent and e.text]
     final = rollout.final_reply()
-    scope = [final.text] if params.get('final_only', True) and final is not None else texts
-    haystack = _normalize_amount(' '.join(scope))
-    missing = [v for v in params.get('values', []) if _normalize_amount(str(v)) not in haystack]
-    return not missing, f'missing from the reply: {", ".join(map(str, missing))}' if missing else ''
+    scope = ' '.join([final.text] if params.get('final_only', True) and final is not None else texts)
+    numbers = {to_decimal(m.group(0)) for m in re.finditer(r'\d[\d,]*(?:\.\d+)?', scope)}
+    text = re.sub(r'\s+', ' ', scope.lower())
+    missing = [v for v in dict.fromkeys(map(str, params.get('values', []))) if not _present(v, text, numbers)]
+    return not missing, f'missing from the reply: {", ".join(missing)}' if missing else ''
 
 
 def _no_repeat(params, rollout, task, start):
@@ -114,7 +122,7 @@ def _obligations_done(params, rollout, task, start):
 def _contract_respected(params, rollout, task, start):
     contract = IntentContract.from_dict(params.get('contract') or {})
     issues = [f'step {x.step_index}: {issue}' for x in _new_calls(rollout, start)
-              for issue in contract.validate(x.call, task)]
+              for issue in contract.validate(x.call, task, scoped_entities(rollout, x.step_index))]
     return not issues, '; '.join(issues[:3])
 
 

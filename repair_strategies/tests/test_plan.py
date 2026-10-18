@@ -79,11 +79,13 @@ class AcceptanceTest(unittest.TestCase):
         rollout = b.trace()
         self.assertTrue(check('claims_grounded', rollout, start).passed)
         self.assertTrue(check('values_present', rollout, start, values=['$45.04']).passed)
+        self.assertTrue(check('values_present', rollout, start, values=['45.040', '$45.04', '$45.04']).passed)
         result = check('values_present', rollout, start, values=['$45.04', '#W1000005'])
         self.assertFalse(result.passed)
         self.assertIn('#W1000005', result.detail)
         b.reply('planner', 'Sorry, it is $54.04.')
         self.assertFalse(check('claims_grounded', b.trace(), start).passed)
+        self.assertTrue(check('claims_grounded', b.trace(), start, tolerate=['54.04']).passed)
 
     def test_repeats_validity_and_errors(self):
         b = authenticated(RunBuilder())
@@ -110,7 +112,12 @@ class AcceptanceTest(unittest.TestCase):
         b.result('cancel_pending_order', '{"status": "cancelled"}')
         self.assertTrue(check('obligations_done', b.trace(), start, obligations=[obligation]).passed)
         contract = {'goal': 'cancel', 'entities': ['#w1000009']}
-        self.assertFalse(check('contract_respected', b.trace(), start, contract=contract).passed)
+        # The user named #W1000005 in the run, so it is in scope even though the contract predates it.
+        self.assertTrue(check('contract_respected', b.trace(), start, contract=contract).passed)
+        b.call('order_agent', 'cancel_pending_order', order_id='#W7777777', reason='no longer needed')
+        result = check('contract_respected', b.trace(), start, contract=contract)
+        self.assertFalse(result.passed)
+        self.assertIn('#W7777777', result.detail)
         self.assertTrue(check('tool_succeeded', b.trace(), start, tool='cancel_pending_order').passed)
         self.assertFalse(check('tool_not_called', b.trace(), start, tool='cancel_pending_order').passed)
 

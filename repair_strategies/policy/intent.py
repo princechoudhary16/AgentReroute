@@ -28,8 +28,12 @@ class IntentContract:
     source: str = 'rules'
     notes: tuple[str, ...] = field(default=(), compare=False)
 
-    def validate(self, call: ToolCall, task: TaskSpec) -> list[str]:
-        """Reasons a call breaks the contract (empty when it is consistent with it)."""
+    def validate(self, call: ToolCall, task: TaskSpec, extra_entities=frozenset()) -> list[str]:
+        """Reasons a call breaks the contract (empty when it is consistent with it).
+
+        ``extra_entities`` are identifiers that became in scope later (found by lookups about
+        in-scope entities during the replay, see ``scoped_entities``).
+        """
         issues = []
         if call.name in self.forbidden_tools:
             issues.append(f'{call.name} is forbidden by the user\'s request')
@@ -38,8 +42,9 @@ class IntentContract:
             if required_tools and call.name not in required_tools:
                 issues.append(f'{call.name} is not one of the requested actions ({", ".join(sorted(required_tools))})')
             if self.entities:
+                allowed = self.entities | frozenset(extra_entities)
                 for claim in argument_claims(call, 0):
-                    if claim.kind in (ID, EMAIL) and claim.value not in self.entities:
+                    if claim.kind in (ID, EMAIL) and claim.value not in allowed:
                         issues.append(f'{claim.argument}={claim.raw} is outside the user\'s request')
         return issues
 

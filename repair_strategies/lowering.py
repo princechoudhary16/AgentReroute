@@ -66,6 +66,7 @@ def lower(plan: RepairPlan, caps: Capabilities) -> Lowered:
     retries = []                               # instructions only needed if the retry is not native
     native, degraded = [], []
     want_resample = want_retry = False
+    rollback = plan.rollback_step
     seed = 1
     terminal_action = None
 
@@ -84,8 +85,15 @@ def lower(plan: RepairPlan, caps: Capabilities) -> Lowered:
             if caps.replace_events:
                 native.append(name)
             else:
-                degraded.append(f'{name}: step {op.step_index} correction given as text')
-                actions.append(f'Treat step {op.step_index} as corrected ({op.reason or "patched"}): {op.content}')
+                # The event cannot be patched in place, so it is regenerated with the correction instead.
+                if rollback is not None and op.step_index < rollback:
+                    degraded.append(f'{name}: step {op.step_index} regenerated with the correction '
+                                    f'(rollback moved from {rollback} to {op.step_index})')
+                    rollback = op.step_index
+                else:
+                    degraded.append(f'{name}: step {op.step_index} correction given as text')
+                actions.append(f'Redo step {op.step_index} with this correction ({op.reason or "patched"}): '
+                               f'{op.content}')
         elif isinstance(op, RequeryTool):
             if caps.requery:
                 native.append(name)
@@ -170,7 +178,7 @@ def lower(plan: RepairPlan, caps: Capabilities) -> Lowered:
         native.append(kind)
     else:
         kind = NONE
-    return Lowered(plan.plan_id, plan.strategy_id, kind, plan.rollback_step, text, seed, resample, None,
+    return Lowered(plan.plan_id, plan.strategy_id, kind, rollback, text, seed, resample, None,
                    tuple(native), tuple(degraded))
 
 

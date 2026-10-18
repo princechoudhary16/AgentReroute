@@ -8,7 +8,7 @@ from ..evidence.tool_output import indicates_drift, is_error
 from ..memory.tool_outcomes import ABSTAIN, RETRY, ToolOutcomeMemory
 from ..plan import Abstain, BanCalls, GuardCalls, InjectMessage, Resample, Retry, SwitchTool
 from ..taxonomy import CYCLE, INVALID_INVOCATION, SYSTEM_FAILURE
-from .base import RepairContext, Skip, Strategy, StrategySpec, check, compact, failed_exchange, record
+from .base import RepairContext, Skip, Strategy, StrategySpec, check, compact, failed_exchange, grounded, record
 
 
 def _target_call(ctx: RepairContext):
@@ -250,6 +250,6 @@ class ToolOutcomeRouting(Strategy):
         operations = [Retry(exchange.call.name, dict(exchange.call.arguments)), InjectMessage('tool', body,
                                                                                           name=exchange.call.name)]
         return self.build(ctx, ctx.trace.rollback_point(exchange.step_index), operations,
-                          (check('claims_grounded'),),
+                          (grounded(ctx, step),),
                           f'Re-query {exchange.call.name} when its output may be silently wrong.',
                           [f'silent failure suspected in {exchange.call.name}'], confidence_factor=0.7)
