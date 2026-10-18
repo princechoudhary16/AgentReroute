@@ -35,7 +35,7 @@ def _verifying_call(ctx: RepairContext, check_: claims.ClaimCheck, step: int):
     """A read call that can verify an ungrounded claim: one about the same entities, else the latest read."""
     event_text = ' '.join(e.text + ' ' + str([c.arguments for c in e.tool_calls]) for e in ctx.trace.at(step))
     reads = [x for x in ctx.exchanges if x.step_index < step and not ctx.task.is_write(x.call.name)
-             and x.result is not None and parse_output(x.result.content).ok]
+             and not x.orphan and x.result is not None and parse_output(x.result.content).ok]
     entity_words = set(words(event_text))
     for x in reversed(reads):
         values = {str(v).lower() for v in x.call.arguments.values() if isinstance(v, (str, int))}

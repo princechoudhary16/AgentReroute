@@ -176,6 +176,13 @@ class CycleTest(unittest.TestCase):
         self.assertEqual((loop.kind, loop.steps, loop.first_repeat), (cycles.CALL, (6, 8, 10), 8))
         self.assertIn('3 times', loop.describe())
 
+    def test_orphan_results_are_not_loops(self):
+        b = RunBuilder()
+        b.user('status?')
+        for _ in range(3):
+            b.result('get_order_details', 'Error: still processing')
+        self.assertEqual(cycles.detect(b.trace()), ())
+
     def test_changing_results_are_not_a_loop(self):
         b = authenticated(RunBuilder())
         for i in range(3):

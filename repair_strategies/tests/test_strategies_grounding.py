@@ -94,6 +94,17 @@ class InterpretationTest(unittest.TestCase):
         self.assertIn('2 entries of variants have available=true', message.content)
         self.assertIn('Corrections', message.content)
 
+    def test_orphan_tool_results_can_be_read_but_not_requeried(self):
+        b = RunBuilder()
+        b.user('How many T-shirt options are available?')
+        b.result('get_product_details', VARIANTS)                       # logged without its call
+        step = b.reply('assistant', 'There are 3 available T-shirt options.')
+        [orphan] = b.trace().tool_exchanges()
+        self.assertTrue(orphan.orphan)
+        plan = run('structured_reading', b, step, 'MisinterpretationOfToolOutput')
+        self.assertIn('2 entries of variants have available=true', op(plan, InjectMessage).content)
+        self.assertIsInstance(run('cross_source_check', b, step, 'MisinterpretationOfToolOutput'), Skip)
+
     def test_independent_reading_keeps_only_confirmed_values(self):
         b = RunBuilder()
         b.user('How many T-shirt options are available?')

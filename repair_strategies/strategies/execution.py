@@ -241,7 +241,7 @@ class ToolOutcomeRouting(Strategy):
     def _silent(self, ctx: RepairContext):
         """No explicit error: treat as a silent failure and re-query the output the agent relied on."""
         step = ctx.agent_step()
-        exchange = ctx.consumed_exchange(step) if step is not None else None
+        exchange = ctx.consumed_exchange(step, requery=True) if step is not None else None
         if exchange is None or ctx.task.is_write(exchange.call.name):
             return Skip('no failed or re-queryable tool call before the attributed step')
         body = record(f'a check of {exchange.call.name}', [

@@ -46,6 +46,8 @@ def detect(trace: Trace, write_tools=frozenset(), min_repeats: int = 3) -> tuple
         calls.clear()
 
     for x in trace.tool_exchanges():
+        if x.orphan:
+            continue                          # no call was logged, so nothing was repeated by the agent
         if x.call.name in write_tools and x.result is not None and not is_error(x.result.content):
             close_calls()
             continue

@@ -114,6 +114,12 @@ class AcceptanceTest(unittest.TestCase):
         self.assertTrue(check('tool_succeeded', b.trace(), start, tool='cancel_pending_order').passed)
         self.assertFalse(check('tool_not_called', b.trace(), start, tool='cancel_pending_order').passed)
 
+    def test_orphan_results_are_not_validated_as_calls(self):
+        b = RunBuilder()
+        b.user('hi')
+        start = b.result('get_order_details', '{}')
+        self.assertTrue(check('calls_valid', b.trace(), start).passed)
+
     def test_asked_user(self):
         b = RunBuilder()
         b.user('change my address')

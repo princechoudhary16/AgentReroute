@@ -89,6 +89,8 @@ class LadderTest(unittest.TestCase):
                                                    Hypothesis(8, 'MisinterpretationOfToolOutput')), Skip)
         with self.assertRaises(KeyError):
             self.engine.plan_for('nope', loop_run(), self.cycle)
+        failed = [AttemptRecord('loop_replan', 'Cycle', 6, 'failed')]
+        self.assertIsInstance(self.engine.plan_for('loop_replan', loop_run(), self.cycle, failed), Skip)
 
     def test_duplicate_strategy_ids_are_rejected(self):
         with self.assertRaises(ValueError):

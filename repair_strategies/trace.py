@@ -57,11 +57,16 @@ class Event:
 
 @dataclass(frozen=True)
 class ToolExchange:
-    """One tool call and the result event that answered it (``None`` if none did)."""
+    """One tool call and the result event that answered it (``None`` if none did).
+
+    An *orphan* is a tool result whose call was not logged; its call carries only the
+    tool name, so it can be read but not re-executed.
+    """
     step_index: int
     actor: str
     call: ToolCall
     result: Event | None
+    orphan: bool = False
 
 
 class TraceError(ValueError):
@@ -124,6 +129,8 @@ class Trace:
         for event in self.events:
             if event.kind == TOOL:
                 if not pending:
+                    pairs.append(ToolExchange(event.step_index, '', ToolCall(event.tool_name or 'unknown_tool'),
+                                              event, orphan=True))
                     continue
                 match = next((i for i, (_, c) in enumerate(pending)
                               if c.id and c.id == event.tool_call_id), None)

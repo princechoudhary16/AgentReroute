@@ -109,13 +109,16 @@ class CompensateAndEscalate(Strategy):
 
     @staticmethod
     def _inverse(ctx: RepairContext, exchange):
+        if exchange.orphan:
+            return None, 'the call arguments were not logged'
         spec = ctx.task.compensations.get(exchange.call.name)
         if not spec:
             return None, 'no inverse action exists'
         restore = spec.get('restore') or {}
         source = None
         for x in reversed(ctx.exchanges):
-            if x.step_index >= exchange.step_index or x.call.name != restore.get('tool') or x.result is None:
+            if x.step_index >= exchange.step_index or x.orphan or x.call.name != restore.get('tool') \
+                    or x.result is None:
                 continue
             match = restore.get('match') or {}
             if all(x.call.arguments.get(a) == exchange.call.arguments.get(b) for a, b in match.items()):

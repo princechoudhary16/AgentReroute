@@ -57,7 +57,7 @@ def run_check(check: AcceptanceCheck, rollout: Trace, task: TaskSpec, start: int
 
 
 def _new_calls(rollout: Trace, start: int):
-    return [x for x in rollout.tool_exchanges() if x.step_index >= start]
+    return [x for x in rollout.tool_exchanges() if x.step_index >= start and not x.orphan]
 
 
 def _claims_grounded(params, rollout, task, start):

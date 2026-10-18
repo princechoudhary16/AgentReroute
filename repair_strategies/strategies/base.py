@@ -102,11 +102,16 @@ class RepairContext:
                 out.append(event.step_index)
         return out
 
-    def consumed_exchange(self, step: int) -> ToolExchange | None:
-        """The latest answered call before ``step``, preferring the same actor."""
+    def consumed_exchange(self, step: int, requery: bool = False) -> ToolExchange | None:
+        """The latest answered call before ``step``, preferring the same actor.
+
+        ``requery=True`` excludes orphan results, which cannot be re-executed.
+        """
         event = self.trace.primary(step)
         actor = event.actor if event is not None else None
         answered = [x for x in self.exchanges if x.result is not None and x.result.step_index < step]
+        if requery:
+            answered = [x for x in answered if not x.orphan]
         same = [x for x in answered if x.actor == actor]
         return (same or answered or [None])[-1]
 
@@ -158,7 +163,7 @@ def rule_specs(task: TaskSpec, kinds=None, tools=None) -> tuple[dict, ...]:
 
 def failed_exchange(exchanges, step: int | None) -> ToolExchange | None:
     """The call that failed at ``step`` (call or result step), else the latest failure before it."""
-    errors = [x for x in exchanges if x.result is not None and is_error(x.result.content)]
+    errors = [x for x in exchanges if not x.orphan and x.result is not None and is_error(x.result.content)]
     if step is not None:
         for x in errors:
             if step in (x.step_index, x.result.step_index):

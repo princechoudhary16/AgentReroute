@@ -228,7 +228,7 @@ class CrossSourceCheck(Strategy):
 
     def plan(self, ctx: RepairContext):
         step = ctx.agent_step()
-        exchange = ctx.consumed_exchange(step) if step is not None else None
+        exchange = ctx.consumed_exchange(step, requery=True) if step is not None else None
         if exchange is None or ctx.task.is_write(exchange.call.name):
             return Skip('no read-only tool output to re-query')
         operations = [RequeryTool(exchange.call.name, dict(exchange.call.arguments), 'refresh possibly stale data')]

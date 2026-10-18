@@ -188,6 +188,12 @@ class EscalationTest(unittest.TestCase):
         self.assertEqual(escalate.reason, 'refund to crypto')
         self.assertIn('Cannot be reverted: cancel_pending_order', escalate.summary)
 
+    def test_orphan_writes_are_listed_as_irreversible(self):
+        b = authenticated(RunBuilder())
+        b.result('modify_user_address', '{"status": "ok"}')
+        plan = run('compensate_and_escalate', b, b.last, 'GuardrailsTriggered')
+        self.assertEqual(op(plan, Compensate).irreversible[0]['reason'], 'the call arguments were not logged')
+
     def test_escalate_without_writes(self):
         b = authenticated(RunBuilder())
         plan = run('compensate_and_escalate', b, 2, 'IntentNotSupported')

@@ -96,6 +96,8 @@ class RepairEngine:
         strategy = self.strategy(strategy_id)
         if not strategy.spec.matches(hypothesis.fault):
             return Skip(f'{strategy_id} does not target {hypothesis.category}')
+        if any(r.strategy_id == strategy_id and r.outcome in (FAILED, REJECTED) for r in history):
+            return Skip(f'{strategy_id} already failed on this run')
         if strategy.spec.requires_llm and self.llm is None:
             return Skip('needs an LLM client')
         result = strategy.plan(self.context(trace, hypothesis, history))
