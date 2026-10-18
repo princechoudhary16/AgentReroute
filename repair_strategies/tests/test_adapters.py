@@ -150,14 +150,24 @@ class BenchmarkPolicyTest(unittest.TestCase):
     def test_budget_and_unaccepted_delivery(self):
         rollouts = [(loop_builder().ir(), 'max_steps')] * 4
         env = FakeEnv(loop_builder().ir(), [{'step_index': 8, 'mode': 'cycles'}], rollouts, attempts=2)
-        policy = self.policy()
+        decision = self.policy().recover(env)                  # default: deliver the last replay
+        self.assertEqual((decision['delivered'], decision['status'], len(env.directives)), ('r2', 'intervened', 2))
+        env = FakeEnv(loop_builder().ir(), [{'step_index': 8, 'mode': 'cycles'}], rollouts, attempts=2)
+        policy = self.policy(deliver_unaccepted=False)         # opt-in: escalate instead
         decision = policy.recover(env)
-        self.assertEqual((decision['delivered'], decision['status'], len(env.directives)), (None, 'escalated', 2))
+        self.assertEqual((decision['delivered'], decision['status']), (None, 'escalated'))
         fallback = policy.log['ep-1'].attempts[-1]
         self.assertEqual(fallback['strategy'], 'rollback_compensate_escalate')
         self.assertIn('Tried: loop_nudge (failed), loop_force_change (failed)', fallback['summary'])
-        env = FakeEnv(loop_builder().ir(), [{'step_index': 8, 'mode': 'cycles'}], rollouts, attempts=2)
-        self.assertEqual(self.policy(deliver_unaccepted=True).recover(env)['delivered'], 'r2')
+
+    def test_fallback_when_nothing_could_be_replayed(self):
+        b = RunBuilder('ep-1')
+        b.user('hello')
+        b.reply('planner', 'Hi, how can I help?')
+        env = FakeEnv(b.ir(), [{'step_index': 2, 'category': 'UnderspecifiedUserIntent'}], [])
+        decision = self.policy().recover(env)
+        self.assertEqual((decision['delivered'], decision['status'], env.directives), (None, 'escalated', []))
+        self.assertTrue(decision['notes'].startswith('rollback_compensate_escalate'))
 
     def test_second_hypothesis_is_tried_before_falling_back(self):
         hypotheses = [{'step_index': 2, 'category': 'IntentNotSupported'}, {'step_index': 8, 'mode': 'cycles'}]

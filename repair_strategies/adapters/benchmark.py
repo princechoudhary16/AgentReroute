@@ -3,11 +3,11 @@
 ``RepairStrategyPolicy`` implements the harness's ``recover(env)`` protocol:
 for each attribution hypothesis it asks the engine for the next rung, lowers
 the plan to the benchmark's ``Directive``, replays, and accepts a rollout only
-if the plan's acceptance checks pass and the run ended normally. If nothing is
-accepted, it does not deliver an unverified rollout (unless
-``deliver_unaccepted`` is set): the fallback rolls back the side effects made
-from the fault onward and escalates. Rewards stay in the harness's ledger; this
-policy never sees them.
+if the plan's acceptance checks pass and the run ended normally. If replays ran
+but none was accepted, the last one is delivered (``deliver_unaccepted=False``
+escalates instead). If no replay could run at all, the fallback rolls back the
+side effects made from the fault onward and escalates. Rewards stay in the
+harness's ledger; this policy never sees them.
 """
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ class RepairStrategyPolicy:
     name = 'repair_strategies'
 
     def __init__(self, directive_cls=None, template: TaskSpec | None = None, max_hypotheses: int = 2,
-                 accept_terminations=('user_stop',), deliver_unaccepted: bool = False, engine_factory=None):
+                 accept_terminations=('user_stop',), deliver_unaccepted: bool = True, engine_factory=None):
         self._directive_cls = directive_cls
         self.template = template
         self.max_hypotheses = max_hypotheses

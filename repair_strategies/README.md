@@ -101,8 +101,9 @@ when the budget runs out, the engine issues one last plan for any category:
 
 The fallback sits outside the ladders, is issued once per run, and is not
 exported to the orchestrator registry (its EV policy should never choose it as a
-repair). The benchmark adapter therefore does not deliver an unverified replay
-by default; `deliver_unaccepted=True` restores that for comparisons.
+repair). In the benchmark adapter, a run where replays happened but none passed
+acceptance still delivers the last replay; the fallback applies when no replay
+could run. `deliver_unaccepted=False` makes it escalate in both cases.
 
 Benchmark modes map onto these categories; the mode is kept as a subtype
 (`context_propagation` → handoff, `missing_details` → omission, `drift`).
@@ -215,16 +216,15 @@ to `RepairEngine`.
 | Policy | Oracle attribution | Heuristic attribution | Harm on controls |
 |---|---|---|---|
 | `fixed_rules` (earlier proposal) | 0.65 | 0.30 | 0.00 |
-| `repair_strategies`, delivering unverified replays | 0.65 | 0.48 | 0.00 |
-| `repair_strategies`, fallback (default) | 0.57 | 0.39 | 0.00 |
+| `repair_strategies` (default) | 0.65 | 0.48 | 0.00 |
+| `repair_strategies`, `deliver_unaccepted=False` | 0.57 | 0.39 | 0.00 |
 
 These numbers verify the pipeline, not model behaviour: the scripted agents
 recover from any directive applied at or before the faulty turn, and the cycle
 and tool-failure faults in the fixture are persistent for every policy. The gap
 between the last two rows comes from replays the acceptance checks rejected
-although the fixture scored them correct; in those cases the scripted agents use
-identifiers or amounts that appear in no user message or tool output, which a
-real agent could not know, so escalating them is the intended behaviour. Real
+although the fixture scored them correct; in most of them the scripted agents use
+identifiers or amounts that appear in no user message or tool output. Real
 results need model-backed episodes. The policy used about 1.7× the tokens of
 `fixed_rules`, mostly by climbing the cycle ladder on unrecoverable episodes;
 how much of that budget to spend is the orchestrator's decision.
