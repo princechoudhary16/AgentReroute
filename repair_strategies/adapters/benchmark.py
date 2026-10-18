@@ -47,13 +47,17 @@ class RepairStrategyPolicy:
     name = 'repair_strategies'
 
     def __init__(self, directive_cls=None, template: TaskSpec | None = None, max_hypotheses: int = 2,
-                 accept_terminations=('user_stop',), deliver_unaccepted: bool = True, engine_factory=None):
+                 accept_terminations=('user_stop',), deliver_unaccepted: bool = True, engine_factory=None,
+                 learn: bool = False):
+        """``learn=True`` reports each attempt to the engine (tool memory; lessons from accepted replays).
+        Acceptance then stands in for verification, so pass shared memories via ``engine_factory``."""
         self._directive_cls = directive_cls
         self.template = template
         self.max_hypotheses = max_hypotheses
         self.accept_terminations = tuple(accept_terminations)
         self.deliver_unaccepted = deliver_unaccepted
         self.engine_factory = engine_factory or (lambda task: RepairEngine(task))
+        self.learn = learn
         self.log: dict[str, EpisodeLog] = {}
 
     @property
@@ -104,12 +108,14 @@ class RepairStrategyPolicy:
                                                text=lowered.text, seed_offset=lowered.seed_offset)
                 rollout = env.replay(directive)
                 rollout_trace = Trace.from_ir(rollout.trace)
-                report = acceptance.evaluate(plan, rollout_trace, task)
+                report = acceptance.evaluate(plan, rollout_trace, task, start=lowered.rollback_step)
                 accepted = report.passed and rollout.termination in self.accept_terminations
                 log.attempts.append({'strategy': plan.strategy_id, 'rollback_step': plan.rollback_step,
                                      'rollout': rollout.rollout_id, 'accepted': accepted,
                                      'termination': rollout.termination, 'degraded': list(lowered.degraded),
                                      'failures': [f.detail for f in report.failures]})
+                if self.learn:
+                    engine.record_outcome(plan, accepted, rollout_trace)
                 if accepted:
                     return {'delivered': rollout.rollout_id, 'status': 'intervened',
                             'notes': f'{plan.strategy_id} accepted at step {plan.rollback_step}'}

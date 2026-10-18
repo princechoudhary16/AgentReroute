@@ -20,8 +20,8 @@ import re
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from ..trace import AGENT, TOOL, USER, Event, ToolCall, Trace
-from .tool_output import JSON, Aggregate, aggregates, key_tokens, parse_output, singular, subset_sums, to_decimal, words
+from ..trace import AGENT, SYSTEM, TOOL, USER, Event, ToolCall, Trace
+from .tool_output import JSON, Aggregate, aggregates, flatten, key_tokens, parse_output, singular, subset_sums, to_decimal, words
 
 ID, EMAIL, MONEY, NUMBER = 'id', 'email', 'money', 'number'
 GROUNDED, CONTRADICTED, UNGROUNDED, UNVERIFIABLE = 'grounded', 'contradicted', 'ungrounded', 'unverifiable'
@@ -59,7 +59,7 @@ class Claim:
 @dataclass(frozen=True)
 class SourceRef:
     step_index: int
-    kind: str                           # user | tool | handoff | instruction
+    kind: str                           # user | tool | handoff | system | instruction
     tool: str | None = None
     detail: str = ''                    # field path or aggregate description
 
@@ -165,29 +165,52 @@ class _Source:
     text: str
     data: object = None
     aggregates: tuple[Aggregate, ...] = ()
-    numbers: list = field(default_factory=list)       # (Decimal, key, path)
+    numbers: list = field(default_factory=list)       # (Decimal, key, path, key tokens)
+    objects: list = field(default_factory=list)       # (path, name words, [(key, key tokens, Decimal)])
+    groups: list = field(default_factory=list)        # numeric values sharing a parent path, for sums
+    _sums: dict = field(default_factory=dict)         # min_size -> set of subset sums (lazy)
+
+    def sums(self, min_size: int) -> set:
+        if min_size not in self._sums:
+            self._sums[min_size] = set().union(*(subset_sums(g, min_size=min_size) for g in self.groups)) \
+                if self.groups else set()
+        return self._sums[min_size]
 
 
 class EvidenceIndex:
-    """Everything an agent could legitimately rely on before a given step."""
+    """Everything an agent could legitimately rely on before a given step.
+
+    ``of(trace)`` parses every source once; ``upto(step)`` is a cheap view of the
+    sources before ``step``, so checking many steps of a long trace stays linear
+    in parsing work.
+    """
 
     def __init__(self, sources: list[_Source]):
         self.sources = sources
 
     @classmethod
-    def before(cls, trace: Trace, step_index: int) -> 'EvidenceIndex':
+    def of(cls, trace: Trace) -> 'EvidenceIndex':
         sources = []
         if trace.instruction:
-            sources.append(_Source(SourceRef(0, 'instruction'), trace.instruction))
-        for event in trace.before(step_index):
+            sources.append(cls._structured(SourceRef(0, 'instruction'), trace.instruction))
+        for event in trace.events:
             if event.kind == USER:
-                sources.append(_Source(SourceRef(event.step_index, 'user'), event.content))
+                sources.append(cls._structured(SourceRef(event.step_index, 'user'), event.content))
+            elif event.kind == SYSTEM and not event.injected:
+                sources.append(cls._structured(SourceRef(event.step_index, 'system'), event.content))
             elif event.kind == TOOL:
                 sources.append(cls._structured(SourceRef(event.step_index, 'tool', event.tool_name), event.content))
             elif event.kind == AGENT and event.handoff:
                 context = event.handoff.get('context') or {}
                 sources.append(cls._structured(SourceRef(event.step_index, 'handoff'), context))
         return cls(sources)
+
+    @classmethod
+    def before(cls, trace: Trace, step_index: int) -> 'EvidenceIndex':
+        return cls.of(trace).upto(step_index)
+
+    def upto(self, step_index: int) -> 'EvidenceIndex':
+        return EvidenceIndex([s for s in self.sources if s.ref.step_index < step_index])
 
     @staticmethod
     def _structured(ref: SourceRef, content) -> _Source:
@@ -197,17 +220,27 @@ class EvidenceIndex:
         text = content if isinstance(content, str) else _dump(content)
         source = _Source(ref, text, data)
         if data is not None:
-            parsed = parse_output(_dump(data))
-            for leaf in parsed.leaves():
+            groups: dict[tuple, list[Decimal]] = {}
+            for leaf in flatten(data):
                 number = to_decimal(leaf.value)
                 if number is not None:
-                    source.numbers.append((number, leaf.key, leaf.dotted))
+                    source.numbers.append((number, leaf.key, leaf.dotted, key_tokens(leaf.key)))
+                    # Same field across list entries (items.*.price); never mixes fields such as ids.
+                    parent = tuple(p for p in leaf.path if not isinstance(p, int))
+                    groups.setdefault(parent, []).append(number)
+            source.groups = [g for g in groups.values() if len(g) > 1]
             source.aggregates = aggregates(data)
+            for path, obj in _objects(data):
+                fields = [(k, key_tokens(k), to_decimal(v)) for k, v in obj.items()]
+                fields = [(k, t, n) for k, t, n in fields if n is not None]
+                if fields:
+                    names = frozenset(w for v in obj.values() if isinstance(v, str) for w in words(v))
+                    source.objects.append((path, names, fields))
         else:
             for m in re.finditer(r'-?\d[\d,]*(?:\.\d+)?', text):
                 number = to_decimal(m.group(0))
                 if number is not None:
-                    source.numbers.append((number, '', ''))
+                    source.numbers.append((number, '', '', frozenset()))
         return source
 
     # ------------------------------------------------------------------ lookups
@@ -218,49 +251,44 @@ class EvidenceIndex:
     def find_number(self, number: Decimal) -> list[SourceRef]:
         refs = []
         for s in self.sources:
-            if any(n == number for n, _, _ in s.numbers) or any(a.value == number for a in s.aggregates):
+            if any(n == number for n, *_ in s.numbers) or any(a.value == number for a in s.aggregates):
                 refs.append(s.ref)
         return refs
 
     def find_sum(self, number: Decimal, min_size: int = 1) -> list[SourceRef]:
-        refs = []
-        for s in self.sources:
-            groups: dict[tuple, list[Decimal]] = {}
-            for n, key, path in s.numbers:
-                parent = tuple(p for p in path.split('.') if not p.isdigit())
-                groups.setdefault(parent, []).append(n)
-            if any(number in subset_sums(values, min_size=min_size) for values in groups.values() if len(values) > 1):
-                refs.append(s.ref)
-        return refs
+        """Sources where ``number`` is the sum of ``min_size``..3 values sharing a parent field."""
+        return [s.ref for s in self.sources if number in s.sums(min_size)]
 
     def anchored(self, qualifiers, keys) -> list[tuple[Decimal, SourceRef]]:
         """Numbers inside an object named by the claim ("the water bottle ... $45.04")."""
         wanted, found = set(qualifiers), []
         for s in self.sources:
-            for path, obj in _objects(s.data):
-                names = {w for v in obj.values() if isinstance(v, str) for w in words(v)}
+            for path, names, fields in s.objects:
                 if not names & wanted:
                     continue
-                for key, value in obj.items():
-                    number = to_decimal(value)
-                    if number is not None and key_tokens(key) & keys:
+                for key, tokens, number in fields:
+                    if tokens & keys:
                         detail = '.'.join(str(p) for p in path + (key,))
                         found.append((number, SourceRef(s.ref.step_index, s.ref.kind, s.ref.tool, detail)))
         return found
 
-    def keyed(self, qualifiers: tuple[str, ...]) -> list[tuple[Decimal, SourceRef]]:
-        """Numbers and aggregates whose field matches a qualifier word."""
+    def keyed(self, qualifiers: tuple[str, ...]) -> list[tuple[Decimal, SourceRef, str]]:
+        """Values whose field matches a qualifier word, as (value, ref, kind).
+
+        ``kind`` is ``field`` (a numeric field), ``count_true`` (entries with a true flag) or ``size``
+        (entries in a collection). Identifier fields (``*_id``) are never compared as quantities.
+        """
         wanted = set(qualifiers)
         found = []
         for s in self.sources:
-            for n, key, path in s.numbers:
-                if key and key_tokens(key) & wanted:
-                    found.append((n, SourceRef(s.ref.step_index, s.ref.kind, s.ref.tool, path)))
+            for n, key, path, tokens in s.numbers:
+                if tokens & wanted and 'id' not in tokens:
+                    found.append((n, SourceRef(s.ref.step_index, s.ref.kind, s.ref.tool, path), 'field'))
             for a in s.aggregates:
                 if a.kind == 'count_true' and key_tokens(a.key) & wanted:
-                    found.append((a.value, SourceRef(s.ref.step_index, s.ref.kind, s.ref.tool, a.describe())))
+                    found.append((a.value, SourceRef(s.ref.step_index, s.ref.kind, s.ref.tool, a.describe()), a.kind))
                 elif a.kind == 'size' and a.path and key_tokens(a.path.split('.')[-1]) & wanted:
-                    found.append((a.value, SourceRef(s.ref.step_index, s.ref.kind, s.ref.tool, a.describe())))
+                    found.append((a.value, SourceRef(s.ref.step_index, s.ref.kind, s.ref.tool, a.describe()), a.kind))
         return found
 
 
@@ -314,11 +342,11 @@ def _check(claim: Claim, index: EvidenceIndex, synonyms=None) -> ClaimCheck:
     if not comparable and qualifiers:
         keyed = index.keyed(qualifiers)
         if claim.kind == MONEY:
-            keyed = [(n, r) for n, r in keyed if not r.detail or key_tokens(r.detail.split('.')[-1]) & _MONEY_KEYS
-                     or 'sum of' in r.detail]
+            keyed = [(n, r, k) for n, r, k in keyed
+                     if k == 'field' and key_tokens(r.detail.split('.')[-1]) & _MONEY_KEYS]
         # A count qualified by a boolean flag ("3 available options") must match that flag's count.
-        flags = [(n, r) for n, r in keyed if 'true' in r.detail]
-        comparable = flags or keyed
+        flags = [(n, r) for n, r, k in keyed if k == 'count_true']
+        comparable = flags or [(n, r) for n, r, _ in keyed]
     if comparable:
         matches = [r for n, r in comparable if n == number]
         if matches:
@@ -360,12 +388,13 @@ class ProvenanceReport:
 
 
 def provenance(trace: Trace, step_index: int, include_arguments: bool = True, synonyms=None,
-               lenient: bool = False) -> ProvenanceReport:
+               lenient: bool = False, index: EvidenceIndex | None = None) -> ProvenanceReport:
     """Check every claim made by agent events at ``step_index`` against earlier evidence.
 
     ``synonyms`` maps a word to field names that hold its value (``TaskSpec.fact_keywords``).
+    ``index`` is a prebuilt ``EvidenceIndex.of(trace)`` to reuse across steps.
     """
-    index = EvidenceIndex.before(trace, step_index)
+    index = (index or EvidenceIndex.of(trace)).upto(step_index)
     checks = []
     for event in trace.at(step_index):
         if not event.is_agent:
@@ -380,4 +409,5 @@ def provenance(trace: Trace, step_index: int, include_arguments: bool = True, sy
 def provenance_from(trace: Trace, first_step: int, synonyms=None, lenient: bool = False) -> tuple[ProvenanceReport, ...]:
     """Provenance of every agent step from ``first_step`` on (used to check a repaired rollout)."""
     steps = sorted({e.step_index for e in trace.from_step(first_step) if e.is_agent})
-    return tuple(provenance(trace, s, synonyms=synonyms, lenient=lenient) for s in steps)
+    index = EvidenceIndex.of(trace)
+    return tuple(provenance(trace, s, synonyms=synonyms, lenient=lenient, index=index) for s in steps)

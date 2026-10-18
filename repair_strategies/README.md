@@ -203,10 +203,12 @@ to `RepairEngine`.
 
 ## Verification
 
-* 151 unit and integration tests (`python3 -X dev -W error -m unittest ...`),
+* 163 unit and integration tests (`python3 -X dev -W error -m unittest ...`),
   including a local HTTP server standing in for the Ollama API and a subprocess run of the CLI.
 * A wheel built from `pyproject.toml` installs and runs outside the checkout,
   resources included.
+* Planning a repair on a 300-step trace with 6 KB tool outputs takes about one
+  second (evidence is parsed once per trace and shared across steps).
 * Run against the real orchestrator branch (scripted environment and verifier):
   the exported registry loads, `EVPolicy` selects from it, and a misread count
   in fault attribution's smoke trace is recovered on the second rung.
@@ -217,15 +219,14 @@ to `RepairEngine`.
 |---|---|---|---|
 | `fixed_rules` (earlier proposal) | 0.65 | 0.30 | 0.00 |
 | `repair_strategies` (default) | 0.65 | 0.48 | 0.00 |
-| `repair_strategies`, `deliver_unaccepted=False` | 0.57 | 0.39 | 0.00 |
+| `repair_strategies`, `deliver_unaccepted=False` | 0.65 | 0.48 | 0.00 |
 
 These numbers verify the pipeline, not model behaviour: the scripted agents
 recover from any directive applied at or before the faulty turn, and the cycle
-and tool-failure faults in the fixture are persistent for every policy. The gap
-between the last two rows comes from replays the acceptance checks rejected
-although the fixture scored them correct; in most of them the scripted agents use
-identifiers or amounts that appear in no user message or tool output. Real
-results need model-backed episodes. The policy used about 1.7× the tokens of
+and tool-failure faults in the fixture are persistent for every policy. With
+the strict setting every delivered replay passed its acceptance checks, and the
+recovery rate is unchanged. Real
+results need model-backed episodes. The policy used about 1.4–1.7× the tokens of
 `fixed_rules`, mostly by climbing the cycle ladder on unrecoverable episodes;
 how much of that budget to spend is the orchestrator's decision.
 

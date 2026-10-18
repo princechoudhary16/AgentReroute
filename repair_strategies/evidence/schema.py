@@ -86,7 +86,12 @@ def validate(value, schema: dict, path: str = '$', strict_properties: bool = Fal
 
 
 def validate_call(call: ToolCall, task: TaskSpec, allowed: tuple[str, ...] | None = None) -> list[Issue]:
-    """Issues with one call. ``allowed`` restricts the tools the calling agent may use."""
+    """Issues with one call. ``allowed`` restricts the tools the calling agent may use.
+
+    A task spec that declares no tools cannot judge calls, so nothing is reported.
+    """
+    if not task.tools:
+        return []
     names = allowed if allowed else tuple(task.tools)
     spec = task.tool(call.name)
     if spec is None or call.name not in names:

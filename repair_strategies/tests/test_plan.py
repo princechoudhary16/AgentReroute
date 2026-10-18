@@ -136,6 +136,13 @@ class AcceptanceTest(unittest.TestCase):
         self.assertTrue(check('asked_user', b.trace(), start, fields=['zip']).passed)
         self.assertFalse(check('asked_user', b.trace(), start, fields=['city']).passed)
 
+    def test_asked_user_matches_the_field_not_its_name(self):
+        b = RunBuilder()
+        b.user('cancel my order')
+        start = b.reply('planner', 'Sure. Which order would you like to cancel?')
+        self.assertTrue(check('asked_user', b.trace(), start, fields=['order_id']).passed)
+        self.assertFalse(check('asked_user', b.trace(), start, fields=['payment_method_id']).passed)
+
     def test_evaluate_whole_plan(self):
         b = authenticated(RunBuilder())
         start = b.reply('planner', 'Your order #W1000005 is on its way.')
@@ -144,6 +151,10 @@ class AcceptanceTest(unittest.TestCase):
         report = acceptance.evaluate(p, b.trace(), retail())
         self.assertTrue(report.passed)
         self.assertEqual(len(report.to_dict()['results']), 2)
+        b.reply('planner', 'Your order #W7654321 is late.')                       # unsupported, at step 6
+        late = plan(rollback_step=b.last, acceptance=(AcceptanceCheck('claims_grounded'),))
+        self.assertFalse(acceptance.evaluate(late, b.trace(), retail()).passed)
+        self.assertTrue(acceptance.evaluate(late, b.trace(), retail(), start=b.last + 1).passed)
         terminal = plan(rollback_step=None, operations=(Escalate('x'),))
         self.assertTrue(acceptance.evaluate(terminal, b.trace(), retail()).passed)
 

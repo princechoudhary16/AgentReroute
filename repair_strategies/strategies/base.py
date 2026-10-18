@@ -90,8 +90,12 @@ class RepairContext:
             return None
         return self.trace.rollback_point(self.step)
 
+    @cached_property
+    def evidence(self) -> claims.EvidenceIndex:
+        return claims.EvidenceIndex.of(self.trace)
+
     def provenance(self, step: int) -> claims.ProvenanceReport:
-        return claims.provenance(self.trace, step, synonyms=self.task.fact_keywords)
+        return claims.provenance(self.trace, step, synonyms=self.task.fact_keywords, index=self.evidence)
 
     def turn_steps(self, step: int) -> list[int]:
         """Agent steps from ``step`` up to (not including) the next user turn."""

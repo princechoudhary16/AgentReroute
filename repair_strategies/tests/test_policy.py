@@ -72,6 +72,20 @@ class RuleGateTest(unittest.TestCase):
         b.user('yes')
         self.assertIn('confirm_before_write', self.ids(b.trace(), ToolCall('return_delivered_order_items', RETURN)))
 
+    def test_confirming_a_lookup_does_not_confirm_a_write(self):
+        b = authenticated(RunBuilder())
+        b.reply('planner', 'Shall I look up order #W1000005?')
+        b.user('yes')
+        cancel = ToolCall('cancel_pending_order', {'order_id': '#W1000005', 'reason': 'no longer needed'})
+        self.assertIn('confirm_before_write', self.ids(b.trace(), cancel))
+        b.reply('planner', 'Shall I cancel order #W1000005 because you no longer need it?')
+        b.user('yes please')
+        self.assertNotIn('confirm_before_write', self.ids(b.trace(), cancel))
+        address = ToolCall('modify_pending_order_address', {'order_id': '#W1000005', 'address1': '5 Pine St'})
+        b.reply('planner', 'Shall I modify order #W1000005?')
+        b.user('yes')
+        self.assertIn('confirm_before_write', self.ids(b.trace(), address))     # "modify" without "address"
+
     def test_enum_once_and_grounding(self):
         trace = confirmed_return().trace()
         cancel = ToolCall('cancel_pending_order', {'order_id': '#W1000005', 'reason': 'changed mind'})

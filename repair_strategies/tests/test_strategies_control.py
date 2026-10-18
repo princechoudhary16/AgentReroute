@@ -72,6 +72,16 @@ class ExecutionTest(unittest.TestCase):
         self.assertIn('required format', message.content)
         self.assertTrue(op(plan, GuardCalls).validate_schema)
 
+    def test_repairs_the_invalid_call_among_several(self):
+        b = authenticated(RunBuilder())
+        b.steps.append({'index': b.last + 1, 'substeps': [{'sub_index': 1, 'role': 'returns_agent', 'content': '',
+                        'tool_calls': [{'id': 'a', 'name': 'get_order_details', 'arguments': {'order_id': '#W1000005'}},
+                                       {'id': 'b', 'name': 'return_delivered_order_items',
+                                        'arguments': {'order_id': '#W1000005', 'item_id': ['2000000001'],
+                                                      'payment_method_id': 'credit_card_4421'}}]}]})
+        plan = run('hard_call_repair', b, b.last, 'InvalidInvocation')
+        self.assertIn('return_delivered_order_items(', op(plan, InjectMessage).content)
+
     def test_valid_successful_call_is_not_repaired(self):
         b = authenticated(RunBuilder())
         self.assertIsInstance(run('hard_call_repair', b, 2, 'InvalidInvocation'), Skip)

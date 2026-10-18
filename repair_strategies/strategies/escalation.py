@@ -1,7 +1,6 @@
 """Faults the agent cannot repair by itself: missing user input, out-of-scope requests, no diagnosis."""
 from __future__ import annotations
 
-from ..evidence import claims
 from ..evidence.tool_output import words
 from ..plan import AskUser, Compensate, Escalate, GuardCalls, InjectMessage, Resample
 from ..taxonomy import GUARDRAILS, INCONCLUSIVE, INTENT_NOT_SUPPORTED, UNDERSPECIFIED_INTENT
@@ -25,7 +24,7 @@ class TargetedClarification(Strategy):
             return Skip('cannot tell which action the user intended')
         tool, arguments, at = found
         spec = ctx.task.tool(tool)
-        index = claims.EvidenceIndex.before(ctx.trace, at)
+        index = ctx.evidence.upto(at)
         defaults = dict(ctx.task.safe_defaults.get(tool, {}))
         said = set(words(' '.join(e.content for e in ctx.trace.before(at) if e.kind == 'user')))
         missing, defaulted = [], {}

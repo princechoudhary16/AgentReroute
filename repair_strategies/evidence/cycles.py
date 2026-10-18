@@ -66,7 +66,8 @@ def detect(trace: Trace, write_tools=frozenset(), min_repeats: int = 3) -> tuple
 
     runs: list[tuple[str, str, list[int]]] = []          # consecutive identical messages per actor
     current: dict[str, tuple[str, str, list[int]]] = {}
-    writes = {x.step_index for x in trace.tool_exchanges() if x.call.name in write_tools}
+    writes = {x.step_index for x in trace.tool_exchanges() if x.call.name in write_tools and not x.orphan
+              and x.result is not None and not is_error(x.result.content)}
     for event in trace.events:
         if not event.is_agent:
             continue

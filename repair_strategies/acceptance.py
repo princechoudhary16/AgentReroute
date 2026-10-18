@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 from .context import TaskSpec
 from .evidence import claims, cycles, schema
-from .evidence.tool_output import is_error, to_decimal
+from .evidence.tool_output import is_error, key_tokens, to_decimal, words
 from .plan import CHECK_KINDS, AcceptanceCheck, RepairPlan
 from .policy.intent import IntentContract, scoped_entities
 from .policy.plan_state import Obligation, track
@@ -43,11 +43,14 @@ class AcceptanceReport:
                 'results': [{'kind': r.kind, 'passed': r.passed, 'detail': r.detail} for r in self.results]}
 
 
-def evaluate(plan: RepairPlan, rollout: Trace, task: TaskSpec) -> AcceptanceReport:
-    """Run every acceptance check of ``plan`` on ``rollout`` (the replayed run)."""
+def evaluate(plan: RepairPlan, rollout: Trace, task: TaskSpec, start: int | None = None) -> AcceptanceReport:
+    """Run every acceptance check of ``plan`` on ``rollout`` (the replayed run).
+
+    ``start`` is where the replay actually began, when lowering moved it (default: the plan's rollback step).
+    """
     if plan.terminal:
         return AcceptanceReport(())
-    start = plan.rollback_step
+    start = start if start is not None else plan.rollback_step
     return AcceptanceReport(tuple(run_check(check, rollout, task, start) for check in plan.acceptance))
 
 
@@ -124,18 +127,22 @@ def _obligations_done(params, rollout, task, start):
 
 def _contract_respected(params, rollout, task, start):
     contract = IntentContract.from_dict(params.get('contract') or {})
+    # Entities reachable anywhere in the rollout are in scope; using an identifier before looking it up
+    # is caught by claims_grounded and the argument_grounded rule, not here.
+    scope = scoped_entities(rollout, rollout.last_index + 1)
     issues = [f'step {x.step_index}: {issue}' for x in _new_calls(rollout, start)
-              for issue in contract.validate(x.call, task, scoped_entities(rollout, x.step_index))]
+              for issue in contract.validate(x.call, task, scope)]
     return not issues, '; '.join(issues[:3])
 
 
 def _asked_user(params, rollout, task, start):
     fields = [f.lower() for f in params.get('fields', ())]
+    wanted = [key_tokens(f) - {'id'} or key_tokens(f) for f in fields]
     for event in rollout.from_step(start):
         if not event.is_agent or not event.text or event.tool_calls or event.handoff:
             continue
-        text = event.text.lower()
-        if '?' in text and (not fields or any(f.replace('_', ' ') in text or f in text for f in fields)):
+        said = set(words(event.text))
+        if '?' in event.text and (not fields or any(tokens & said for tokens in wanted)):
             return True, ''
     return False, f'the agent did not ask for {", ".join(fields) or "clarification"}'
 

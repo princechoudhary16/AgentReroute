@@ -71,6 +71,15 @@ class InterpretationTest(unittest.TestCase):
         self.assertEqual(context['payment_method_id'], 'credit_card_4421')
         self.assertEqual(op(plan, GuardCalls).rules[0]['id'], 'ids_from_evidence')
 
+    def test_without_a_confirmed_action_only_common_ids_are_required(self):
+        b = authenticated(RunBuilder())
+        handoff = b.handoff('planner', 'returns_agent', 'Help with order #W1000005.', {'order_id': '#W1000005'})
+        b.reply('returns_agent', 'Which item?')
+        plan = run('repair_handoff', b, handoff, 'context_propagation')
+        notes = ' '.join(plan.evidence)
+        self.assertIn('item_ids', notes)
+        self.assertNotIn('new_item_ids', notes)                  # an exchange field is not presumed
+
     def test_complete_handoff_is_skipped(self):
         b, handoff, _ = self.handoff_run(dict(RETURN))
         self.assertIsInstance(run('repair_handoff', b, handoff, 'context_propagation'), Skip)

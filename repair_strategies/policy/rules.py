@@ -137,11 +137,14 @@ class RuleGate:
     def for_task(cls, task: TaskSpec, extra=()) -> 'RuleGate':
         return cls(compile_rules(tuple(task.rules) + tuple(extra), task))
 
-    def check(self, trace: Trace, step_index: int, call: ToolCall) -> list[Violation]:
+    def check(self, trace: Trace, step_index: int, call: ToolCall,
+              evidence: EvidenceIndex | None = None) -> list[Violation]:
+        """Violations of a proposed call. ``evidence`` is a prebuilt ``EvidenceIndex.of(trace)``."""
         violations = []
+        context = _Context(trace, step_index, evidence)
         for rule in self.rules:
             if rule.applies_to(call.name):
-                detail = _CHECKS[rule.kind](rule, trace, step_index, call)
+                detail = _CHECKS[rule.kind](rule, context, call)
                 if detail is not None:
                     violations.append(Violation(rule.id, rule.kind, step_index, call.name, rule.message, detail))
         return violations
@@ -149,10 +152,11 @@ class RuleGate:
     def audit(self, trace: Trace, from_step: int = 1) -> list[Violation]:
         """Every call made from ``from_step`` on, each checked against its own prefix."""
         found = []
+        evidence = EvidenceIndex.of(trace)
         for event in trace.events:
             if event.step_index >= from_step and event.is_agent:
                 for call in event.tool_calls:
-                    found.extend(self.check(trace, event.step_index, call))
+                    found.extend(self.check(trace, event.step_index, call, evidence))
         return found
 
     def rules_for(self, tools) -> tuple[Rule, ...]:
@@ -161,30 +165,55 @@ class RuleGate:
 
 
 # ---------------------------------------------------------------------- rule checks
+class _Context:
+    def __init__(self, trace: Trace, step: int, evidence: EvidenceIndex | None):
+        self.trace, self.step, self._evidence = trace, step, evidence
+
+    @property
+    def evidence(self) -> EvidenceIndex:
+        if self._evidence is None:
+            self._evidence = EvidenceIndex.of(self.trace)
+        return self._evidence.upto(self.step)
+
+
 def _successful(trace: Trace, before: int, names) -> list:
     return [x for x in trace.tool_exchanges()
             if x.step_index < before and x.call.name in names and x.result is not None
             and not is_error(x.result.content)]
 
 
-def _prior(rule, trace, step, call):
-    if _successful(trace, step, set(rule.params['any_of'])):
+def _prior(rule, ctx, call):
+    if _successful(ctx.trace, ctx.step, set(rule.params['any_of'])):
         return None
     return f'no successful call to {" or ".join(rule.params["any_of"])} before this step'
 
 
-def _mentions(text: str, call: ToolCall) -> bool:
+# Words in tool names that name the object rather than the action ("cancel_pending_order" -> "cancel").
+_OBJECT_WORDS = frozenset({'pending', 'delivered', 'order', 'item', 'items', 'user', 'details', 'get', 'to', 'by',
+                           'id', 'find', 'list', 'all'})
+
+
+def _action_words(tool: str) -> list[str]:
+    return [w for w in tool.lower().split('_') if w not in _OBJECT_WORDS and len(w) > 2]
+
+
+def _proposes(text: str, call: ToolCall) -> bool:
+    """Whether an agent message proposes this action: it names the tool or the action and its target."""
     lowered = (text or '').lower()
     if call.name.lower() in lowered or call.name.replace('_', ' ').lower() in lowered:
         return True
+    actions = _action_words(call.name)
+    if not actions or not all(a[:5] in lowered for a in actions):
+        return False                      # "cancel" also matches "cancellation"; "modify ... address" needs both
     values = []
     for value in call.arguments.values():
         values.extend(value if isinstance(value, list) else [value])
-    return any(isinstance(v, str) and len(v) >= 4 and v.lower() in lowered for v in values)
+    targets = [str(v).lower() for v in values if isinstance(v, (str, int)) and len(str(v)) >= 4]
+    return not targets or any(t in lowered for t in targets)
 
 
-def _confirm(rule, trace, step, call):
-    prior = trace.before(step)
+def _confirm(rule, ctx, call):
+    prior = ctx.trace.before(ctx.step)
     for i in range(len(prior) - 1, -1, -1):
         event = prior[i]
         if event.kind != USER or not is_affirmative(event.content):
@@ -193,12 +222,12 @@ def _confirm(rule, trace, step, call):
         for earlier in reversed(prior[:i]):
             if earlier.kind == USER:
                 break
-            if earlier.is_agent and earlier.text and _mentions(earlier.text, call):
+            if earlier.is_agent and earlier.text and _proposes(earlier.text, call):
                 return None
     return 'no explicit user confirmation of this action'
 
 
-def _enum(rule, trace, step, call):
+def _enum(rule, ctx, call):
     argument = rule.params['argument']
     if argument not in call.arguments:
         return None                              # a missing argument is a schema issue, not this rule's
@@ -211,15 +240,15 @@ def _key(call: ToolCall, keys) -> str:
     return json.dumps([call.arguments.get(k) for k in keys], sort_keys=True, default=str)
 
 
-def _once(rule, trace, step, call):
+def _once(rule, ctx, call):
     keys = rule.params['key']
-    if any(_key(x.call, keys) == _key(call, keys) for x in _successful(trace, step, rule.tools)):
+    if any(_key(x.call, keys) == _key(call, keys) for x in _successful(ctx.trace, ctx.step, rule.tools)):
         return f'{call.name} already succeeded for {dict(zip(keys, (call.arguments.get(k) for k in keys)))}'
     return None
 
 
-def _grounded(rule, trace, step, call):
-    index = EvidenceIndex.before(trace, step)
+def _grounded(rule, ctx, call):
+    index = ctx.evidence
     missing = []
     for name in rule.params['arguments']:
         value = call.arguments.get(name)
@@ -229,7 +258,7 @@ def _grounded(rule, trace, step, call):
     return f'not found in evidence: {", ".join(missing)}' if missing else None
 
 
-def _forbidden(rule, trace, step, call):
+def _forbidden(rule, ctx, call):
     return 'this tool is not allowed here'
 
 

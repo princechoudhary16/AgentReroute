@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 
-from ..evidence import claims
 from ..evidence.tool_output import JSON, aggregates, key_tokens, parse_output, to_decimal
 from ..llm import LLMError, parse_json_object
 from ..plan import GuardCalls, InjectMessage, ReplaceEvent, RequeryTool
@@ -52,7 +51,7 @@ class RepairHandoff(Strategy):
         needed = self._needed(ctx, handoff['to'])
         if not needed:
             return Skip(f'cannot tell which fields {handoff["to"]} needs')
-        index = claims.EvidenceIndex.before(ctx.trace, event.step_index)
+        index = ctx.evidence.upto(event.step_index)
         recovered, missing, evidence = {}, [], []
         for name in needed:
             current = context.get(name)
@@ -109,17 +108,17 @@ class RepairHandoff(Strategy):
 
     @staticmethod
     def _needed(ctx: RepairContext, receiver: str) -> list[str]:
+        """Fields the receiver needs: the confirmed action's required arguments, or else the identifiers
+        that every data-changing tool of the receiver requires (so no particular action is presumed)."""
         tools = ctx.task.tools_of(receiver)
-        intended = [o for o in ctx.obligations if o.tool in tools]
-        names: list[str] = []
-        specs = [ctx.task.tool(o.tool) for o in intended] or \
-                [ctx.task.tool(t) for t in tools if ctx.task.is_write(t)]
-        for spec in specs:
-            for name in spec.required if spec else ():
-                is_identifier = name.endswith(('_id', '_ids'))
-                if (intended or is_identifier) and name not in names:
-                    names.append(name)
-        return names
+        intended = [ctx.task.tool(o.tool) for o in ctx.obligations if o.tool in tools]
+        if intended:
+            return list(dict.fromkeys(name for spec in intended if spec for name in spec.required))
+        writes = [ctx.task.tool(t) for t in tools if ctx.task.is_write(t)]
+        if not writes:
+            return []
+        common = [n for n in writes[0].required if n.endswith(('_id', '_ids'))]
+        return [n for n in common if all(n in spec.required for spec in writes[1:])]
 
     @staticmethod
     def _grounded(index, value) -> bool:
@@ -201,7 +200,7 @@ class IndependentReading(Strategy):
         except LLMError as exc:
             return Skip(f'second reading failed: {exc}')
         values = data.get('values') if isinstance(data.get('values'), dict) else {}
-        index = claims.EvidenceIndex.before(ctx.trace, exchange.result.step_index + 1)
+        index = ctx.evidence.upto(exchange.result.step_index + 1)
         confirmed, rejected = [], []
         for name, value in values.items():
             number = to_decimal(value)

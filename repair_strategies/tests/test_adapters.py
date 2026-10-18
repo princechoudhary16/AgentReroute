@@ -175,6 +175,16 @@ class BenchmarkPolicyTest(unittest.TestCase):
         decision = self.policy().recover(env)
         self.assertEqual((decision['delivered'], decision['status']), ('r1', 'intervened'))
 
+    def test_learning_reports_attempts_to_shared_memory(self):
+        from repair_strategies.memory.tool_outcomes import ToolOutcomeMemory
+        memory = ToolOutcomeMemory()
+        env = FakeEnv(loop_builder().ir(), [{'step_index': 8, 'mode': 'cycles'}],
+                      [(loop_builder().ir(), 'max_steps'), (recovered_builder().ir(), 'user_stop')])
+        policy = self.policy(learn=True, engine_factory=lambda task: RepairEngine(task, tool_memory=memory))
+        policy.recover(env)
+        self.assertEqual(len(memory.observed), 2)                # both replays observed once
+        self.assertEqual(self.policy().learn, False)
+
     def test_no_or_invalid_hypotheses(self):
         env = FakeEnv(loop_builder().ir(), [{'step_index': 8, 'mode': 'telepathy'}], [])
         policy = self.policy()

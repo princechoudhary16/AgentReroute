@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field, replace
+from functools import cached_property
 from pathlib import Path
 
 from .taxonomy import normalize_agent
@@ -90,10 +91,17 @@ class Trace:
         return self.events[-1].step_index if self.events else 0
 
     def has_step(self, index: int) -> bool:
-        return any(e.step_index == index for e in self.events)
+        return index in self._by_step
+
+    @cached_property
+    def _by_step(self) -> dict[int, tuple[Event, ...]]:
+        grouped: dict[int, list[Event]] = {}
+        for e in self.events:
+            grouped.setdefault(e.step_index, []).append(e)
+        return {k: tuple(v) for k, v in grouped.items()}
 
     def at(self, index: int) -> tuple[Event, ...]:
-        return tuple(e for e in self.events if e.step_index == index)
+        return self._by_step.get(index, ())
 
     def before(self, index: int) -> tuple[Event, ...]:
         return tuple(e for e in self.events if e.step_index < index)
@@ -118,6 +126,10 @@ class Trace:
 
     def tool_exchanges(self) -> tuple[ToolExchange, ...]:
         """Pair every call with its result: by call id when present, otherwise in order."""
+        return self._exchanges
+
+    @cached_property
+    def _exchanges(self) -> tuple[ToolExchange, ...]:
         pending: list[tuple[Event, ToolCall]] = []
         pairs: list[ToolExchange] = []
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
+from functools import lru_cache
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
@@ -132,6 +133,7 @@ def to_decimal(value) -> Decimal | None:
     return None
 
 
+@lru_cache(maxsize=65536)
 def singular(word: str) -> str:
     """Crude English singular: 'ids' -> 'id', 'entries' -> 'entry'; 'status' and 'address' stay."""
     if len(word) > 4 and word.endswith('ies'):
@@ -142,12 +144,18 @@ def singular(word: str) -> str:
 
 
 def words(text: str) -> list[str]:
-    return [singular(w) for w in re.findall(r'[a-z]+', str(text).lower())]
+    return list(_words(str(text)))
 
 
+@lru_cache(maxsize=65536)
+def _words(text: str) -> tuple[str, ...]:
+    return tuple(singular(w) for w in re.findall(r'[a-z]+', text.lower()))
+
+
+@lru_cache(maxsize=65536)
 def key_tokens(key: str) -> frozenset[str]:
     """'payment_method_ids' -> {'payment', 'method', 'id'}."""
-    return frozenset(words(key.replace('_', ' ')))
+    return frozenset(_words(key.replace('_', ' ')))
 
 
 @dataclass(frozen=True)

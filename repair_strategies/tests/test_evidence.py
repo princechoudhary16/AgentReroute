@@ -78,6 +78,14 @@ class ProvenanceTest(unittest.TestCase):
         self.assertEqual(check.status, cl.CONTRADICTED)
         self.assertEqual(check.expected, ('items.0.price = $45.04',))
 
+    def test_sums_only_combine_the_same_field(self):
+        b = authenticated(RunBuilder())
+        b.tool('returns_agent', 'get_order_details', ORDER, order_id='#W1000005')
+        trace = b.trace()
+        index = cl.EvidenceIndex.of(trace).upto(trace.last_index + 1)
+        self.assertTrue(index.find_sum(Decimal('165.54'), min_size=2))                     # 45.04 + 120.5
+        self.assertFalse(index.find_sum(Decimal('2000000046.04'), min_size=2))              # id + price
+
     def test_amount_without_any_matching_field_is_ungrounded(self):
         b = authenticated(RunBuilder())
         step = b.reply('planner', 'Shipping is $7.25.')
@@ -93,6 +101,28 @@ class ProvenanceTest(unittest.TestCase):
         self.assertTrue(cl.provenance(trace, step, synonyms=synonyms, lenient=True).clean)
         wrong = b.reply('returns_agent', 'Actually it is $54.04.')
         self.assertFalse(cl.provenance(b.trace(), wrong, synonyms=synonyms, lenient=True).clean)
+
+    def test_amounts_the_user_gave_are_evidence(self):
+        b = RunBuilder()
+        b.user('My budget is $50.00 and I want 2 units.')
+        step = b.reply('planner', 'Got it: 2 units within your $50.00 budget.')
+        self.assertTrue(cl.provenance(b.trace(), step).clean)
+
+    def test_identifier_fields_are_not_quantities(self):
+        b = authenticated(RunBuilder())
+        b.tool('returns_agent', 'get_order_details', ORDER, order_id='#W1000005')
+        step = b.reply('returns_agent', 'Your order has 3 items.')
+        [check] = cl.provenance(b.trace(), step).faulty
+        self.assertEqual(check.status, cl.CONTRADICTED)
+        self.assertEqual(check.expected, ('items has 2 entries = 2',))           # no item_id values
+
+    def test_policy_and_system_messages_are_evidence(self):
+        b = RunBuilder()
+        b.steps.append({'index': 1, 'substeps': [{'sub_index': 1, 'role': 'system',
+                                                   'content': 'Exchanges cost a $5.00 fee.'}]})
+        b.user('Can I exchange this?')
+        step = b.reply('planner', 'Yes, for a fee of $5.00.')
+        self.assertTrue(cl.provenance(b.trace(), step).clean)
 
     def test_invented_identifiers_and_arguments(self):
         b = authenticated(RunBuilder())
@@ -165,6 +195,10 @@ class SchemaTest(unittest.TestCase):
         self.assertEqual(self.codes(call, allowed=('get_order_details',))[0][0], schema.UNKNOWN_TOOL)
         self.assertEqual(self.codes(ToolCall('get_order_details', {'__raw__': '{'})), [(schema.MALFORMED, None)])
 
+    def test_task_without_tools_reports_nothing(self):
+        from repair_strategies.context import TaskSpec
+        self.assertEqual(schema.validate_call(ToolCall('web_search', {'q': 'x'}), TaskSpec()), [])
+
     def test_enum_and_examples(self):
         issues = schema.validate('no longer neded', {'type': 'string', 'enum': ['no longer needed', 'ordered by mistake']})
         self.assertEqual(issues[0].suggestion, 'no longer needed')
@@ -206,6 +240,16 @@ class CycleTest(unittest.TestCase):
         b.tool('order_agent', 'get_order_details', 'Error: still processing, retry', order_id='#W1000005')
         loops = cycles.detect(b.trace(), write_tools=retail().write_tools)
         self.assertEqual([loop.steps for loop in loops], [(6, 8, 10)])
+
+    def test_failed_writes_do_not_reset_message_loops(self):
+        b = RunBuilder()
+        b.user('help')
+        for _ in range(3):
+            b.reply('order_agent', 'I need more information.')
+            b.tool('order_agent', 'cancel_pending_order', 'Error: order is not pending', order_id='#W1',
+                   reason='no longer needed')
+        kinds = {loop.kind for loop in cycles.detect(b.trace(), write_tools=retail().write_tools)}
+        self.assertIn(cycles.MESSAGE, kinds)
 
     def test_handoff_and_message_loops(self):
         b = RunBuilder()

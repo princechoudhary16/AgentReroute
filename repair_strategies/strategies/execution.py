@@ -12,13 +12,19 @@ from .base import RepairContext, Skip, Strategy, StrategySpec, check, compact, f
 
 
 def _target_call(ctx: RepairContext):
-    """The invalid call: the one at the attributed step, else the latest failed or invalid call before it."""
+    """The invalid call: at the attributed step the first call that is invalid or failed (else its first
+    call), otherwise the latest failed call before it."""
     step = ctx.agent_step()
     if step is None:
         return None
-    for event in ctx.trace.at(step):
-        for call in event.tool_calls:
+    calls = [(e, c) for e in ctx.trace.at(step) if e.is_agent for c in e.tool_calls]
+    for event, call in calls:
+        result = _result_of(ctx, event.step_index, call)
+        if schema.validate_call(call, ctx.task, ctx.task.tools_of(event.actor) or None) or \
+                (result is not None and is_error(result.content)):
             return event, call
+    if calls:
+        return calls[0]
     failed = failed_exchange(ctx.exchanges, ctx.step)
     if failed is not None:
         return ctx.trace.primary(failed.step_index), failed.call
