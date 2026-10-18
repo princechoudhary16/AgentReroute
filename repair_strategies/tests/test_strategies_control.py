@@ -2,7 +2,7 @@ import unittest
 
 from repair_strategies.context import AttemptRecord, Hypothesis
 from repair_strategies.memory.tool_outcomes import ToolOutcomeMemory
-from repair_strategies.plan import (Abstain, AskUser, BanCalls, Compensate, Escalate, GuardCalls, InjectMessage,
+from repair_strategies.plan import (AskUser, BanCalls, Compensate, Escalate, GuardCalls, InjectMessage,
                                     Resample, Retry, SwitchTool)
 from repair_strategies.strategies import Skip
 from repair_strategies.strategies.base import RepairContext
@@ -131,9 +131,9 @@ class ExecutionTest(unittest.TestCase):
         b = RunBuilder()
         b.user('hi')
         step = b.tool('order_agent', 'get_order_details', 'Error: endpoint deprecated', order_id='#W1')[0]
-        plan = run('tool_outcome_routing', b, step, 'SystemFailure')
-        self.assertTrue(plan.terminal)
-        self.assertIsInstance(plan.operations[0], Abstain)
+        result = run('tool_outcome_routing', b, step, 'SystemFailure')
+        self.assertIsInstance(result, Skip)                    # handed to the fallback
+        self.assertIn('no equivalent tool', result.reason)
 
     def test_tool_outcome_routing_uses_memory_without_mutating_it(self):
         memory = ToolOutcomeMemory()
@@ -199,13 +199,12 @@ class EscalationTest(unittest.TestCase):
         plan = run('compensate_and_escalate', b, 2, 'IntentNotSupported')
         self.assertEqual([o.op for o in plan.operations], ['escalate'])
 
-    def test_inconclusive_gets_one_replay_then_abstains(self):
+    def test_inconclusive_gets_one_replay(self):
         b = authenticated(RunBuilder())
         plan = run('verified_unmodified_replay', b, None, 'Inconclusive')
         self.assertEqual((plan.rollback_step, plan.acceptance), (2, ()))
         used = [AttemptRecord('verified_unmodified_replay', 'Inconclusive', 2, 'failed')]
         self.assertIsInstance(run('verified_unmodified_replay', b, None, 'Inconclusive', history=used), Skip)
-        self.assertTrue(run('abstain_undiagnosed', b, None, 'Inconclusive').terminal)
 
 
 class CatalogueTest(unittest.TestCase):

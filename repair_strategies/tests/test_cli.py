@@ -37,8 +37,10 @@ class CliTest(unittest.TestCase):
 
     def test_catalog_and_registry(self):
         code, out, _ = invoke('catalog', '--category', 'cycles')
-        self.assertEqual([r['id'] for r in json.loads(out)],
+        rows = json.loads(out)
+        self.assertEqual([r['id'] for r in rows if not r['fallback']],
                          ['loop_nudge', 'loop_force_change', 'loop_replan', 'loop_rollback'])
+        self.assertEqual([r['id'] for r in rows if r['fallback']], ['rollback_compensate_escalate'])
         target = self.dir / 'registry.json'
         code, out, _ = invoke('registry', '--out', str(target))
         self.assertEqual(code, 0)
@@ -64,10 +66,21 @@ class CliTest(unittest.TestCase):
         hypothesis = json.dumps({'hypotheses': [{'step_index': self.step, 'mode': 'missing_details'}]})
         code, out, _ = invoke('plan', '--trace', str(self.trace), '--hypothesis', hypothesis, '--explain')
         ladder = json.loads(out)['ladder']
-        self.assertEqual([r['strategy_id'] for r in ladder], ['complete_omitted_details', 'abstain_or_ask'])
-        history = json.dumps([{'strategy_id': s, 'category': 'InventionOfNewInformation', 'rollback_step': 1,
-                               'outcome': 'failed'} for s in ('complete_omitted_details', 'abstain_or_ask')])
-        code, out, _ = invoke('plan', '--trace', str(self.trace), '--hypothesis', hypothesis, '--history', history)
+        self.assertEqual([(r['strategy_id'], r['status']) for r in ladder],
+                         [('complete_omitted_details', 'planned'), ('abstain_or_ask', 'planned'),
+                          ('rollback_compensate_escalate', 'fallback')])
+        tried = ('complete_omitted_details', 'abstain_or_ask')
+        history = [{'strategy_id': s, 'category': 'InventionOfNewInformation', 'rollback_step': 1,
+                    'outcome': 'failed'} for s in tried]
+        code, out, _ = invoke('plan', '--trace', str(self.trace), '--hypothesis', hypothesis,
+                              '--history', json.dumps(history))
+        plan = json.loads(out)
+        self.assertEqual((code, plan['strategy_id'], plan['rollback_step']), (0, 'rollback_compensate_escalate', None))
+        self.assertIn('Tried: complete_omitted_details (failed), abstain_or_ask (failed)',
+                      plan['operations'][-1]['summary'])
+        history.append(dict(history[0], strategy_id='rollback_compensate_escalate'))
+        code, out, _ = invoke('plan', '--trace', str(self.trace), '--hypothesis', hypothesis,
+                              '--history', json.dumps(history))
         self.assertEqual((code, json.loads(out)['plan']), (3, None))
 
     def test_audit(self):

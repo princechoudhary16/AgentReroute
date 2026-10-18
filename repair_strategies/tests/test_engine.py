@@ -47,7 +47,8 @@ class LadderTest(unittest.TestCase):
                 break
             order.append(plan.strategy_id)
             history.append(AttemptRecord(plan.strategy_id, plan.category, plan.rollback_step, 'failed'))
-        self.assertEqual(order, ['loop_nudge', 'loop_force_change', 'loop_replan', 'loop_rollback'])
+        self.assertEqual(order, ['loop_nudge', 'loop_force_change', 'loop_replan', 'loop_rollback',
+                                 'rollback_compensate_escalate'])
 
     def test_verified_fault_needs_no_more_plans(self):
         done = [AttemptRecord('loop_nudge', 'Cycle', 8, 'verified')]

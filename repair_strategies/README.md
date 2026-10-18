@@ -82,7 +82,27 @@ ones failed on the same run.
 | System failure | 1 | `tool_outcome_routing`: retry, switch or abstain from per-tool outcome memory |
 | Underspecified user intent | 1 | `targeted_clarification`: ask only for missing fields, apply safe defaults |
 | Guardrails / intent not supported | 1 | `compensate_and_escalate`: undo writes that have an inverse, then escalate |
-| Inconclusive | 1–2 | `verified_unmodified_replay`, then `abstain_undiagnosed` |
+| Inconclusive | 1 | `verified_unmodified_replay`: one bounded resample, accepted only through verification |
+| **Any fault (fallback)** | last | `rollback_compensate_escalate`: see below |
+
+### Fallback: rollback, compensate, escalate
+
+When every applicable strategy for a fault has failed, when none applies, or
+when the budget runs out, the engine issues one last plan for any category:
+
+1. **Roll back side effects, not the run.** Writes made from the fault onward
+   are compensated with their inverse actions from the task spec (e.g. restore
+   the address read before the change). Writes before the fault are the user's
+   completed work and are kept.
+2. **List what cannot be undone** (no inverse, previous value never read,
+   arguments not logged).
+3. **Escalate** with the fault, every strategy tried and how it ended, and what
+   was reverted.
+
+The fallback sits outside the ladders, is issued once per run, and is not
+exported to the orchestrator registry (its EV policy should never choose it as a
+repair). The benchmark adapter therefore does not deliver an unverified replay
+by default; `deliver_unaccepted=True` restores that for comparisons.
 
 Benchmark modes map onto these categories; the mode is kept as a subtype
 (`context_propagation` → handoff, `missing_details` → omission, `drift`).
@@ -182,7 +202,7 @@ to `RepairEngine`.
 
 ## Verification
 
-* 144 unit and integration tests (`python3 -X dev -W error -m unittest ...`),
+* 151 unit and integration tests (`python3 -X dev -W error -m unittest ...`),
   including a local HTTP server standing in for the Ollama API and a subprocess run of the CLI.
 * A wheel built from `pyproject.toml` installs and runs outside the checkout,
   resources included.
@@ -195,11 +215,16 @@ to `RepairEngine`.
 | Policy | Oracle attribution | Heuristic attribution | Harm on controls |
 |---|---|---|---|
 | `fixed_rules` (earlier proposal) | 0.65 | 0.30 | 0.00 |
-| `repair_strategies` | 0.65 | 0.48 | 0.00 |
+| `repair_strategies`, delivering unverified replays | 0.65 | 0.48 | 0.00 |
+| `repair_strategies`, fallback (default) | 0.57 | 0.39 | 0.00 |
 
 These numbers verify the pipeline, not model behaviour: the scripted agents
 recover from any directive applied at or before the faulty turn, and the cycle
-and tool-failure faults in the fixture are persistent for every policy. Real
+and tool-failure faults in the fixture are persistent for every policy. The gap
+between the last two rows comes from replays the acceptance checks rejected
+although the fixture scored them correct; in those cases the scripted agents use
+identifiers or amounts that appear in no user message or tool output, which a
+real agent could not know, so escalating them is the intended behaviour. Real
 results need model-backed episodes. The policy used about 1.7× the tokens of
 `fixed_rules`, mostly by climbing the cycle ladder on unrecoverable episodes;
 how much of that budget to spend is the orchestrator's decision.

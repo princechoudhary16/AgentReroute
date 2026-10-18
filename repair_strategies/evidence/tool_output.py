@@ -198,8 +198,8 @@ def aggregates(data) -> tuple[Aggregate, ...]:
     return tuple(out)
 
 
-def subset_sums(values: list[Decimal], max_size: int = 3, max_items: int = 12) -> set[Decimal]:
-    """Sums of up to ``max_size`` values (bounded, for refunds of a few items)."""
+def subset_sums(values: list[Decimal], max_size: int = 3, max_items: int = 12, min_size: int = 1) -> set[Decimal]:
+    """Sums of ``min_size`` to ``max_size`` values (bounded, for refunds of a few items)."""
     values = values[:max_items]
     sums: set[Decimal] = set()
     frontier = {(): Decimal(0)}
@@ -210,6 +210,7 @@ def subset_sums(values: list[Decimal], max_size: int = 3, max_items: int = 12) -
             for i in range(start, len(values)):
                 key = chosen + (i,)
                 nxt[key] = total + values[i]
-                sums.add(nxt[key])
+                if len(key) >= min_size:
+                    sums.add(nxt[key])
         frontier = nxt
     return sums

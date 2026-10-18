@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from .base import REGISTRY_KINDS, RepairContext, Skip, Strategy, StrategySpec
-from .escalation import AbstainUndiagnosed, CompensateAndEscalate, TargetedClarification, VerifiedUnmodifiedReplay
+from .escalation import CompensateAndEscalate, TargetedClarification, VerifiedUnmodifiedReplay
 from .execution import (HardCallRepair, LoopForceChange, LoopNudge, LoopReplan, LoopRollback, SwitchOnSchemaDrift,
                         ToolOutcomeRouting)
+from .fallback import RollbackCompensateEscalate
 from .grounding import AbstainOrAsk, CompleteOmittedDetails, GroundedReplacement
 from .interpretation import CrossSourceCheck, IndependentReading, RepairHandoff, StructuredReading
 from .planning import ConfirmAmbiguousWrites, IntentContractReplan, PolicyGate, PolicyGateFresh
@@ -19,7 +20,8 @@ CATALOGUE = (
     ToolOutcomeRouting,
     TargetedClarification,
     CompensateAndEscalate,
-    VerifiedUnmodifiedReplay, AbstainUndiagnosed,
+    VerifiedUnmodifiedReplay,
+    RollbackCompensateEscalate,
 )
 
 
@@ -29,6 +31,8 @@ def default_strategies() -> tuple[Strategy, ...]:
     duplicates = {i for i in ids if ids.count(i) > 1}
     if duplicates:
         raise RuntimeError(f'duplicate strategy ids: {sorted(duplicates)}')
+    if sum(s.spec.fallback for s in strategies) > 1:
+        raise RuntimeError('at most one fallback strategy')
     return strategies
 
 

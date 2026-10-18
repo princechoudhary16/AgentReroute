@@ -13,7 +13,7 @@ from .strategies import Skip, Strategy, default_strategies
 from .strategies.base import RepairContext, operations_tools
 from .trace import Trace
 
-PLANNED, SKIPPED, TRIED, ERROR = 'planned', 'skipped', 'tried', 'error'
+PLANNED, SKIPPED, TRIED, ERROR, FALLBACK = 'planned', 'skipped', 'tried', 'error', 'fallback'
 
 
 @dataclass(frozen=True)
@@ -21,7 +21,7 @@ class Candidate:
     """How one rung of the ladder fared for a given run."""
     strategy_id: str
     rung: int
-    status: str                       # planned | skipped | tried | error
+    status: str                       # planned | skipped | tried | error | fallback
     reason: str = ''
     plan: RepairPlan | None = None
 
@@ -41,10 +41,14 @@ class RepairEngine:
             raise ValueError('strategy ids must be unique')
         self.tool_memory, self.lessons, self.llm = tool_memory, lessons, llm
         self.max_lessons = max_lessons
+        fallbacks = [s for s in self.strategies if s.spec.fallback]
+        if len(fallbacks) > 1:
+            raise ValueError('at most one fallback strategy')
+        self.fallback_strategy = fallbacks[0] if fallbacks else None
 
     # ------------------------------------------------------------------ selection
     def ladder(self, hypothesis: Hypothesis) -> list[Strategy]:
-        found = [s for s in self.strategies if s.spec.matches(hypothesis.fault)]
+        found = [s for s in self.strategies if not s.spec.fallback and s.spec.matches(hypothesis.fault)]
         return sorted(found, key=lambda s: (s.spec.rung, s.spec.id))
 
     def strategy(self, strategy_id: str) -> Strategy:
@@ -78,18 +82,42 @@ class RepairEngine:
                 yield Candidate(spec.id, spec.rung, PLANNED, result.rationale, self._with_lessons(result, trace))
 
     def evaluate(self, trace: Trace, hypothesis: Hypothesis, history=()) -> list[Candidate]:
-        """Every rung of the ladder with its outcome (for inspection and logging)."""
-        return list(self._walk(trace, hypothesis, tuple(history)))
+        """Every rung of the ladder with its outcome, then the fallback (for inspection and logging)."""
+        history = tuple(history)
+        candidates = list(self._walk(trace, hypothesis, history))
+        if self.fallback_strategy is not None:
+            spec = self.fallback_strategy.spec
+            used = any(r.strategy_id == spec.id for r in history)
+            reason = 'already used' if used else ('used if every rung above fails' if any(
+                c.status == PLANNED for c in candidates) else 'next: no rung applies or all have failed')
+            candidates.append(Candidate(spec.id, 0, TRIED if used else FALLBACK, reason))
+        return candidates
 
     def propose(self, trace: Trace, hypothesis: Hypothesis, history=()) -> RepairPlan | None:
-        """The next plan to try, or None when the ladder is exhausted or the fault is already repaired."""
+        """The next plan to try.
+
+        Walks the fault's ladder; when it is exhausted (or nothing applies) the fallback plan is returned
+        once: roll back the side effects made from the fault onward and escalate. Returns None after that,
+        or when the fault was already repaired.
+        """
         history = tuple(history)
         if any(r.outcome == VERIFIED and r.category == hypothesis.category for r in history):
             return None
         for candidate in self._walk(trace, hypothesis, history):
             if candidate.status == PLANNED:
                 return candidate.plan
-        return None
+        return self.fallback(trace, hypothesis, history)
+
+    def fallback(self, trace: Trace, hypothesis: Hypothesis, history=()) -> RepairPlan | None:
+        """The last-resort plan, unless there is none or it was already issued for this run."""
+        strategy = self.fallback_strategy
+        if strategy is None or any(r.strategy_id == strategy.spec.id for r in history):
+            return None
+        return strategy.plan(self.context(trace, hypothesis, history))
+
+    def is_fallback(self, plan: RepairPlan | None) -> bool:
+        return plan is not None and self.fallback_strategy is not None and \
+            plan.strategy_id == self.fallback_strategy.spec.id
 
     def plan_for(self, strategy_id: str, trace: Trace, hypothesis: Hypothesis, history=()) -> RepairPlan | Skip:
         """A plan from one named strategy (used when the orchestrator already chose the strategy)."""

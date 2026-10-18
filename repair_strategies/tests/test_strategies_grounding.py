@@ -31,7 +31,7 @@ class GroundingTest(unittest.TestCase):
     def test_omitted_details_are_supplied(self):
         b, step = order_run('Your return has been submitted.')
         plan = run('complete_omitted_details', b, step, 'missing_details')
-        self.assertEqual(plan.acceptance[0].params['values'], ['$45.04'])
+        self.assertEqual(plan.acceptance[0].params['groups'], [['$45.04']])
         self.assertIn('refund: items.0.price = $45.04', op(plan, InjectMessage).content)
         b, step = order_run('Your return is submitted; the refund is $45.04.')
         self.assertIsInstance(run('complete_omitted_details', b, step, 'missing_details'), Skip)

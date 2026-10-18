@@ -222,14 +222,14 @@ class EvidenceIndex:
                 refs.append(s.ref)
         return refs
 
-    def find_sum(self, number: Decimal) -> list[SourceRef]:
+    def find_sum(self, number: Decimal, min_size: int = 1) -> list[SourceRef]:
         refs = []
         for s in self.sources:
             groups: dict[tuple, list[Decimal]] = {}
             for n, key, path in s.numbers:
                 parent = tuple(p for p in path.split('.') if not p.isdigit())
                 groups.setdefault(parent, []).append(n)
-            if any(number in subset_sums(values) for values in groups.values() if len(values) > 1):
+            if any(number in subset_sums(values, min_size=min_size) for values in groups.values() if len(values) > 1):
                 refs.append(s.ref)
         return refs
 
@@ -290,7 +290,18 @@ def _dump(value) -> str:
 
 
 # ---------------------------------------------------------------------- checking
-def check_claim(claim: Claim, index: EvidenceIndex, synonyms=None) -> ClaimCheck:
+def check_claim(claim: Claim, index: EvidenceIndex, synonyms=None, lenient: bool = False) -> ClaimCheck:
+    """Check one claim. ``lenient`` accepts a value found anywhere in the evidence even when the field
+    it was compared with disagrees; diagnosis is strict, acceptance of a repaired run is lenient."""
+    result = _check(claim, index, synonyms)
+    if lenient and result.status == CONTRADICTED:
+        refs = index.find_number(claim.number) or (index.find_sum(claim.number) if claim.kind == MONEY else [])
+        if refs:
+            return ClaimCheck(claim, GROUNDED, tuple(refs))
+    return result
+
+
+def _check(claim: Claim, index: EvidenceIndex, synonyms=None) -> ClaimCheck:
     if claim.kind in (ID, EMAIL):
         refs = index.find_text(claim.raw)
         return ClaimCheck(claim, GROUNDED if refs else UNGROUNDED, tuple(refs))
@@ -312,7 +323,8 @@ def check_claim(claim: Claim, index: EvidenceIndex, synonyms=None) -> ClaimCheck
         matches = [r for n, r in comparable if n == number]
         if matches:
             return ClaimCheck(claim, GROUNDED, tuple(matches))
-        summed = index.find_sum(number) if claim.kind == MONEY else []
+        # A total of several values is not a contradiction; a single other value is.
+        summed = index.find_sum(number, min_size=2) if claim.kind == MONEY else []
         if summed:
             return ClaimCheck(claim, GROUNDED, tuple(summed))
         expected = tuple(dict.fromkeys(f'{r.detail or "value"} = {_fmt(n, claim.kind)}' for n, r in comparable))[:5]
@@ -347,7 +359,8 @@ class ProvenanceReport:
         return not self.faulty
 
 
-def provenance(trace: Trace, step_index: int, include_arguments: bool = True, synonyms=None) -> ProvenanceReport:
+def provenance(trace: Trace, step_index: int, include_arguments: bool = True, synonyms=None,
+               lenient: bool = False) -> ProvenanceReport:
     """Check every claim made by agent events at ``step_index`` against earlier evidence.
 
     ``synonyms`` maps a word to field names that hold its value (``TaskSpec.fact_keywords``).
@@ -360,11 +373,11 @@ def provenance(trace: Trace, step_index: int, include_arguments: bool = True, sy
         for claim in event_claims(event):
             if claim.argument and not include_arguments:
                 continue
-            checks.append(check_claim(claim, index, synonyms))
+            checks.append(check_claim(claim, index, synonyms, lenient))
     return ProvenanceReport(step_index, tuple(checks))
 
 
-def provenance_from(trace: Trace, first_step: int, synonyms=None) -> tuple[ProvenanceReport, ...]:
+def provenance_from(trace: Trace, first_step: int, synonyms=None, lenient: bool = False) -> tuple[ProvenanceReport, ...]:
     """Provenance of every agent step from ``first_step`` on (used to check a repaired rollout)."""
     steps = sorted({e.step_index for e in trace.from_step(first_step) if e.is_agent})
-    return tuple(provenance(trace, s, synonyms=synonyms) for s in steps)
+    return tuple(provenance(trace, s, synonyms=synonyms, lenient=lenient) for s in steps)

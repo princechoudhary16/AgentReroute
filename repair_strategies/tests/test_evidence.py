@@ -84,6 +84,16 @@ class ProvenanceTest(unittest.TestCase):
         [check] = cl.provenance(b.trace(), step).faulty
         self.assertEqual(check.status, cl.UNGROUNDED)
 
+    def test_lenient_check_accepts_values_found_elsewhere(self):
+        b = authenticated(RunBuilder())
+        b.tool('returns_agent', 'get_order_details', ORDER, order_id='#W1000005')
+        step = b.reply('returns_agent', 'The refund for the water bottle is $120.50.')    # the lamp's price
+        trace, synonyms = b.trace(), retail().fact_keywords
+        self.assertEqual(cl.provenance(trace, step, synonyms=synonyms).faulty[0].status, cl.CONTRADICTED)
+        self.assertTrue(cl.provenance(trace, step, synonyms=synonyms, lenient=True).clean)
+        wrong = b.reply('returns_agent', 'Actually it is $54.04.')
+        self.assertFalse(cl.provenance(b.trace(), wrong, synonyms=synonyms, lenient=True).clean)
+
     def test_invented_identifiers_and_arguments(self):
         b = authenticated(RunBuilder())
         bad_reply = b.reply('planner', 'I found your order #W9999999.')

@@ -3,8 +3,11 @@
 ``RepairStrategyPolicy`` implements the harness's ``recover(env)`` protocol:
 for each attribution hypothesis it asks the engine for the next rung, lowers
 the plan to the benchmark's ``Directive``, replays, and accepts a rollout only
-if the plan's acceptance checks pass and the run ended normally. Rewards stay
-in the harness's ledger; this policy never sees them.
+if the plan's acceptance checks pass and the run ended normally. If nothing is
+accepted, it does not deliver an unverified rollout (unless
+``deliver_unaccepted`` is set): the fallback rolls back the side effects made
+from the fault onward and escalates. Rewards stay in the harness's ledger; this
+policy never sees them.
 """
 from __future__ import annotations
 
@@ -13,7 +16,7 @@ from dataclasses import dataclass, field
 from .. import acceptance
 from ..context import FAILED, AttemptRecord, Hypothesis, SpecError, TaskSpec, ToolSpec
 from ..engine import RepairEngine
-from ..lowering import BENCHMARK, TERMINAL, lower
+from ..lowering import BENCHMARK, lower
 from ..taxonomy import UnknownCategory
 from ..trace import Trace
 
@@ -44,7 +47,7 @@ class RepairStrategyPolicy:
     name = 'repair_strategies'
 
     def __init__(self, directive_cls=None, template: TaskSpec | None = None, max_hypotheses: int = 2,
-                 accept_terminations=('user_stop',), deliver_unaccepted: bool = True, engine_factory=None):
+                 accept_terminations=('user_stop',), deliver_unaccepted: bool = False, engine_factory=None):
         self._directive_cls = directive_cls
         self.template = template
         self.max_hypotheses = max_hypotheses
@@ -85,18 +88,18 @@ class RepairStrategyPolicy:
         task = task_from_view(env.task_view, self.template)
         engine = self.engine_factory(task)
         trace = Trace.from_ir(env.trace)
-        last, terminal = None, None
+        last, terminal, tried = None, None, []
         for hypothesis in hypotheses:
             history: list[AttemptRecord] = []
             while self._affordable(env):
                 plan = engine.propose(trace, hypothesis, history)
                 if plan is None:
                     break
-                lowered = lower(plan, BENCHMARK)
-                if lowered.kind == TERMINAL:
-                    terminal = terminal or lowered.terminal_action
-                    log.attempts.append({'strategy': plan.strategy_id, 'terminal': lowered.terminal_action})
+                if plan.terminal:
+                    # Held back: another hypothesis may still repair the run.
+                    terminal = terminal or plan
                     break
+                lowered = lower(plan, BENCHMARK)
                 directive = self.directive_cls(rollback_step=lowered.rollback_step, kind=lowered.kind,
                                                text=lowered.text, seed_offset=lowered.seed_offset)
                 rollout = env.replay(directive)
@@ -110,12 +113,20 @@ class RepairStrategyPolicy:
                 if accepted:
                     return {'delivered': rollout.rollout_id, 'status': 'intervened',
                             'notes': f'{plan.strategy_id} accepted at step {plan.rollback_step}'}
-                history.append(AttemptRecord(plan.strategy_id, plan.category, plan.rollback_step, FAILED))
+                record = AttemptRecord(plan.strategy_id, plan.category, plan.rollback_step, FAILED)
+                history.append(record)
+                tried.append(record)
                 last = rollout
         if last is not None and self.deliver_unaccepted:
             return {'delivered': last.rollout_id, 'status': 'intervened', 'notes': 'no rollout passed acceptance'}
-        if terminal is not None:
-            return {'delivered': None, 'status': 'escalated' if terminal == 'escalate' else 'abstained',
-                    'notes': f'{terminal}: no repair applies'}
-        return {'delivered': None, 'status': 'abstained' if last is None else 'intervened',
-                'notes': 'ladder exhausted or budget spent'}
+        # Worst case: nothing was accepted (ladders exhausted or budget spent). Fall back to rolling back
+        # the side effects made from the fault onward and escalating, with every attempt on record.
+        final = terminal if terminal is not None and not engine.is_fallback(terminal) else \
+            engine.fallback(trace, hypotheses[0], tried)
+        if final is None:
+            return {'delivered': None, 'status': 'abstained', 'notes': 'no repair applies and no fallback is set'}
+        lowered = lower(final, BENCHMARK)
+        log.attempts.append({'strategy': final.strategy_id, 'terminal': lowered.terminal_action,
+                             'summary': lowered.text, 'degraded': list(lowered.degraded)})
+        status = 'escalated' if lowered.terminal_action == 'escalate' else 'abstained'
+        return {'delivered': None, 'status': status, 'notes': f'{final.strategy_id}: {final.operations[-1].reason}'}

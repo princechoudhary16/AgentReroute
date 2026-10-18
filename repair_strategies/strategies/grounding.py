@@ -102,7 +102,7 @@ class CompleteOmittedDetails(Strategy):
         if not requested:
             return Skip('the user did not ask for a fact this domain can look up')
         reply = final.text.lower().replace(',', '').replace('$', '')
-        missing, lines = [], []
+        missing, lines, groups = [], [], {}
         for keyword, value, path in self._values(ctx, requested, final.step_index):
             plain = format(value, 'f') if isinstance(value, Decimal) else str(value)
             if plain.lower() not in reply:
@@ -110,6 +110,7 @@ class CompleteOmittedDetails(Strategy):
                     else plain
                 if shown not in missing:
                     missing.append(shown)
+                    groups.setdefault(keyword, []).append(shown)
                 lines.append(f'{keyword}: {path} = {shown}')
         if not missing:
             return Skip('every requested fact already appears in the final answer')
@@ -118,7 +119,8 @@ class CompleteOmittedDetails(Strategy):
                                     name='verified_record')]
         rationale = 'Before the final answer, check that every fact the user asked for is stated, using the verified values.'
         return self.build(ctx, final.step_index, operations,
-                          (check('values_present', values=missing), grounded(ctx, final.step_index)), rationale, lines)
+                          (check('values_present', groups=list(groups.values())), grounded(ctx, final.step_index)),
+                          rationale, lines)
 
     @staticmethod
     def _requested(ctx):

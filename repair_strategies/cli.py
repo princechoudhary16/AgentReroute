@@ -77,7 +77,7 @@ def cmd_catalog(args):
             continue
         rows.append({'id': spec.id, 'rung': spec.rung, 'categories': list(spec.categories),
                      'subtypes': list(spec.subtypes) if spec.subtypes is not None else None, 'kind': spec.kind,
-                     'prior_success': spec.prior_success, 'requires_llm': spec.requires_llm,
+                     'prior_success': spec.prior_success, 'requires_llm': spec.requires_llm, 'fallback': spec.fallback,
                      'description': spec.description})
     _dump(sorted(rows, key=lambda r: (r['categories'][0], r['rung'], r['id'])))
 

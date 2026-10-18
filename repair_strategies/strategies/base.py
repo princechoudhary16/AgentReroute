@@ -34,6 +34,7 @@ class StrategySpec:
     subtypes: tuple[str | None, ...] | None = None   # None: any subtype
     reversible: bool = True
     requires_llm: bool = False
+    fallback: bool = False                 # last resort for every category, outside the ladders
 
     def __post_init__(self):
         if self.kind not in REGISTRY_KINDS:

@@ -45,6 +45,7 @@ class RegistryTest(unittest.TestCase):
             self.assertNotIn(INCONCLUSIVE, entry['targets'])
             self.assertTrue(0 <= entry['prior_success'] <= 1)
             self.assertIn('{rationale}', entry['template'])
+            self.assertNotEqual(entry['id'], 'rollback_compensate_escalate')
             covered |= set(entry['targets'])
         self.assertEqual(covered, set(CATEGORIES) - {INCONCLUSIVE})
 
@@ -149,10 +150,20 @@ class BenchmarkPolicyTest(unittest.TestCase):
     def test_budget_and_unaccepted_delivery(self):
         rollouts = [(loop_builder().ir(), 'max_steps')] * 4
         env = FakeEnv(loop_builder().ir(), [{'step_index': 8, 'mode': 'cycles'}], rollouts, attempts=2)
-        self.assertEqual(self.policy().recover(env)['delivered'], 'r2')
-        self.assertEqual(len(env.directives), 2)
-        env = FakeEnv(loop_builder().ir(), [{'step_index': 8, 'mode': 'cycles'}], rollouts, attempts=1)
-        self.assertEqual(self.policy(deliver_unaccepted=False).recover(env)['delivered'], None)
+        policy = self.policy()
+        decision = policy.recover(env)
+        self.assertEqual((decision['delivered'], decision['status'], len(env.directives)), (None, 'escalated', 2))
+        fallback = policy.log['ep-1'].attempts[-1]
+        self.assertEqual(fallback['strategy'], 'rollback_compensate_escalate')
+        self.assertIn('Tried: loop_nudge (failed), loop_force_change (failed)', fallback['summary'])
+        env = FakeEnv(loop_builder().ir(), [{'step_index': 8, 'mode': 'cycles'}], rollouts, attempts=2)
+        self.assertEqual(self.policy(deliver_unaccepted=True).recover(env)['delivered'], 'r2')
+
+    def test_second_hypothesis_is_tried_before_falling_back(self):
+        hypotheses = [{'step_index': 2, 'category': 'IntentNotSupported'}, {'step_index': 8, 'mode': 'cycles'}]
+        env = FakeEnv(loop_builder().ir(), hypotheses, [(recovered_builder().ir(), 'user_stop')])
+        decision = self.policy().recover(env)
+        self.assertEqual((decision['delivered'], decision['status']), ('r1', 'intervened'))
 
     def test_no_or_invalid_hypotheses(self):
         env = FakeEnv(loop_builder().ir(), [{'step_index': 8, 'mode': 'telepathy'}], [])
@@ -164,6 +175,7 @@ class BenchmarkPolicyTest(unittest.TestCase):
         env = FakeEnv(loop_builder().ir(), [{'step_index': 2, 'category': 'IntentNotSupported'}], [])
         decision = self.policy().recover(env)
         self.assertEqual((decision['status'], env.directives), ('escalated', []))
+        self.assertTrue(decision['notes'].startswith('compensate_and_escalate'))
 
     def test_task_from_view(self):
         view = FakeEnv(loop_builder().ir(), [], []).task_view

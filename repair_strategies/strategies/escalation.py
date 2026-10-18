@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 from ..evidence import claims
-from ..evidence.tool_output import get_path, is_error, parse_output, words
-from ..plan import Abstain, AskUser, Compensate, Escalate, GuardCalls, InjectMessage, Resample
+from ..evidence.tool_output import words
+from ..plan import AskUser, Compensate, Escalate, GuardCalls, InjectMessage, Resample
 from ..taxonomy import GUARDRAILS, INCONCLUSIVE, INTENT_NOT_SUPPORTED, UNDERSPECIFIED_INTENT
 from .base import RepairContext, Skip, Strategy, StrategySpec, check, compact
-
-_ESCALATION_TOOLS = frozenset({'transfer_to_human_agents'})
+from .fallback import ESCALATION_TOOLS as _ESCALATION_TOOLS, compensation, state_summary
 
 
 class TargetedClarification(Strategy):
@@ -84,69 +83,20 @@ class CompensateAndEscalate(Strategy):
         id='compensate_and_escalate', name='Undo what can be undone, then escalate',
         categories=(GUARDRAILS, INTENT_NOT_SUPPORTED), rung=1, kind='clarify', tokens=200, prior_success=0.9,
         reversible=False,
-        description='Builds compensating calls for executed writes that have an inverse, lists those that cannot '
-                    'be undone, and escalates with a summary of what was completed.')
+        description='The request is outside policy or capability: compensates every executed write that has an '
+                    'inverse, lists those that cannot be undone, and escalates with a summary.')
 
     def plan(self, ctx: RepairContext):
-        writes = [x for x in ctx.exchanges if ctx.task.is_write(x.call.name) and x.call.name not in _ESCALATION_TOOLS
-                  and x.result is not None and not is_error(x.result.content)]
-        calls, irreversible = [], []
-        for x in writes:
-            inverse, reason = self._inverse(ctx, x)
-            if inverse is not None:
-                calls.append(inverse)
-            else:
-                irreversible.append({'tool': x.call.name, 'step_index': x.step_index, 'reason': reason})
+        writes, calls, irreversible = compensation(ctx)
         reason = (ctx.hypothesis.rationale.strip() or f'{ctx.hypothesis.category}: the request cannot be completed '
                                                        'within policy')
-        summary = self._summary(writes, calls, irreversible)
+        summary = state_summary(writes, calls, irreversible)
         operations = []
         if calls or irreversible:
             operations.append(Compensate(tuple(calls), tuple(irreversible)))
         operations.append(Escalate(reason, summary))
         return self.build(ctx, None, operations, (), 'Leave a consistent state before escalating an unsupported '
                                                      'request.', [summary])
-
-    @staticmethod
-    def _inverse(ctx: RepairContext, exchange):
-        if exchange.orphan:
-            return None, 'the call arguments were not logged'
-        spec = ctx.task.compensations.get(exchange.call.name)
-        if not spec:
-            return None, 'no inverse action exists'
-        restore = spec.get('restore') or {}
-        source = None
-        for x in reversed(ctx.exchanges):
-            if x.step_index >= exchange.step_index or x.orphan or x.call.name != restore.get('tool') \
-                    or x.result is None:
-                continue
-            match = restore.get('match') or {}
-            if all(x.call.arguments.get(a) == exchange.call.arguments.get(b) for a, b in match.items()):
-                parsed = parse_output(x.result.content)
-                if parsed.ok and parsed.data is not None:
-                    source = parsed.data
-                    break
-        if source is None:
-            return None, f'the value before the change was never read ({restore.get("tool")})'
-        arguments = {k: exchange.call.arguments[k] for k in spec.get('keep', ()) if k in exchange.call.arguments}
-        for name, path in (restore.get('fields') or {}).items():
-            value = get_path(source, path)
-            if value is None:
-                return None, f'previous value of {name} is unknown'
-            arguments[name] = value
-        return {'tool': spec['inverse'], 'arguments': arguments, 'undoes_step': exchange.step_index}, ''
-
-    @staticmethod
-    def _summary(writes, calls, irreversible) -> str:
-        if not writes:
-            return 'No data was changed before escalation.'
-        parts = [f'Completed before escalation: {", ".join(f"{x.call.name} (step {x.step_index})" for x in writes)}.']
-        if calls:
-            parts.append('Reverted: ' + ', '.join(f'{c["tool"]} undoing step {c["undoes_step"]}' for c in calls) + '.')
-        if irreversible:
-            parts.append('Cannot be reverted: ' + ', '.join(f'{i["tool"]} at step {i["step_index"]} ({i["reason"]})'
-                                                           for i in irreversible) + '.')
-        return ' '.join(parts)
 
 
 class VerifiedUnmodifiedReplay(Strategy):
@@ -166,13 +116,3 @@ class VerifiedUnmodifiedReplay(Strategy):
                           'Without a diagnosis, try one resample and rely on independent verification.',
                           [compact(ctx.hypothesis.rationale or 'attribution was inconclusive', 200)])
 
-
-class AbstainUndiagnosed(Strategy):
-    spec = StrategySpec(
-        id='abstain_undiagnosed', name='Abstain after the bounded replay', categories=(INCONCLUSIVE,), rung=2,
-        kind='retry', tokens=0, prior_success=0.0,
-        description='After the single replay failed verification, stops instead of spending more budget blind.')
-
-    def plan(self, ctx: RepairContext):
-        return self.build(ctx, None, [Abstain('attribution was inconclusive and the bounded replay did not verify')],
-                          (), 'Stop when there is neither a diagnosis nor a verified replay.')

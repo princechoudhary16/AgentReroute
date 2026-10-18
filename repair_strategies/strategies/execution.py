@@ -6,7 +6,7 @@ import json
 from ..evidence import cycles, schema
 from ..evidence.tool_output import indicates_drift, is_error
 from ..memory.tool_outcomes import ABSTAIN, RETRY, ToolOutcomeMemory
-from ..plan import Abstain, BanCalls, GuardCalls, InjectMessage, Resample, Retry, SwitchTool
+from ..plan import BanCalls, GuardCalls, InjectMessage, Resample, Retry, SwitchTool
 from ..taxonomy import CYCLE, INVALID_INVOCATION, SYSTEM_FAILURE
 from .base import RepairContext, Skip, Strategy, StrategySpec, check, compact, failed_exchange, grounded, record
 
@@ -222,7 +222,8 @@ class ToolOutcomeRouting(Strategy):
         evidence = [f'{failed.call.name} at step {failed.step_index}: {compact(failed.result.content, 160)}',
                     decision.reason]
         if decision.action == ABSTAIN:
-            return self.build(ctx, None, [Abstain(decision.reason)], (), decision.reason, evidence)
+            # No retry or equivalent tool is worth trying: leave it to the fallback (compensate, escalate).
+            return Skip(decision.reason)
         if decision.action == RETRY:
             operations = [Retry(failed.call.name, dict(failed.call.arguments), decision.backoff_s),
                           InjectMessage('tool', f'The previous {failed.call.name} call failed with a transient error '
@@ -235,7 +236,8 @@ class ToolOutcomeRouting(Strategy):
                           InjectMessage('tool', f'{failed.call.name} is failing ({decision.reason}). Use '
                                                 f'{decision.tool} with arguments {example}.', name=failed.call.name)]
             target = decision.tool
-        return self.build(ctx, failed.step_index, operations, (check('tool_succeeded', tool=target),),
+        acceptance = (check('no_error_results', tools=sorted({failed.call.name, target})),)
+        return self.build(ctx, failed.step_index, operations, acceptance,
                           f'On a tool failure, {decision.action} based on how reliable the tool has been.', evidence)
 
     def _silent(self, ctx: RepairContext):

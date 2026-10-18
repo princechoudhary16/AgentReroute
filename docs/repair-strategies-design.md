@@ -123,6 +123,7 @@ applicable rungs for the same fault have failed.
 | Underspecified user intent | 1 | `targeted_clarification` | Asks only for required fields that no evidence supplies; fills low-risk fields with declared safe defaults |
 | Guardrails / intent not supported | 1 | `compensate_and_escalate` | Compensates executed writes that have an inverse, lists the irreversible ones, then escalates with a partial-completion summary |
 | Inconclusive | 1 | `verified_unmodified_replay` | One bounded resample, accepted only through the verifier |
+| Any fault (fallback) | last | `rollback_compensate_escalate` | When the ladder is exhausted, nothing applies or the budget is spent: compensate the writes made from the fault onward, list what cannot be undone, escalate with the full repair history |
 
 Verified lessons (memory) are attached to any plan whose fault and tools match
 a lesson that previously led to a verified recovery.
@@ -130,7 +131,10 @@ a lesson that previously led to a verified recovery.
 ## 5. Acceptance
 
 Each plan carries deterministic post-conditions evaluated on the replayed part
-of the rollout: claims grounded, no repeated signature, calls schema-valid,
+of the rollout. Diagnosis is strict (a value compared with the wrong field is a
+contradiction); acceptance is lenient (only a claim nothing supports is
+rejected), and values the original run already had outside the repaired steps
+are tolerated. Post-conditions: claims grounded, no repeated signature, calls schema-valid,
 rules satisfied, obligations completed, contract respected, the user was asked
 for the right fields. These are cheap pre-checks. They **do not replace** the
 orchestrator's fresh-context verifier, which still decides whether a repair

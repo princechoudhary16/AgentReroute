@@ -80,6 +80,8 @@ class AcceptanceTest(unittest.TestCase):
         self.assertTrue(check('claims_grounded', rollout, start).passed)
         self.assertTrue(check('values_present', rollout, start, values=['$45.04']).passed)
         self.assertTrue(check('values_present', rollout, start, values=['45.040', '$45.04', '$45.04']).passed)
+        self.assertTrue(check('values_present', rollout, start, groups=[['$99.00', '$45.04']]).passed)
+        self.assertFalse(check('values_present', rollout, start, groups=[['$99.00', '$12.00']]).passed)
         result = check('values_present', rollout, start, values=['$45.04', '#W1000005'])
         self.assertFalse(result.passed)
         self.assertIn('#W1000005', result.detail)

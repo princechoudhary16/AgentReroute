@@ -65,7 +65,7 @@ def _claims_grounded(params, rollout, task, start):
     outside the repaired steps (``tolerate``): a repair must not regress, and is not held to a stricter
     standard than the agent's behaviour elsewhere."""
     tolerated = {str(v).lower() for v in params.get('tolerate', ())}
-    reports = claims.provenance_from(rollout, start, task.fact_keywords)
+    reports = claims.provenance_from(rollout, start, task.fact_keywords, lenient=True)
     faulty = [c.describe() for r in reports for c in r.faulty if c.claim.value not in tolerated]
     return not faulty, '; '.join(faulty[:3])
 
@@ -84,6 +84,9 @@ def _values_present(params, rollout, task, start):
     numbers = {to_decimal(m.group(0)) for m in re.finditer(r'\d[\d,]*(?:\.\d+)?', scope)}
     text = re.sub(r'\s+', ' ', scope.lower())
     missing = [v for v in dict.fromkeys(map(str, params.get('values', []))) if not _present(v, text, numbers)]
+    # A group is satisfied by any one of its values (e.g. any candidate amount for "refund").
+    missing += [' or '.join(map(str, group)) for group in params.get('groups', [])
+                if group and not any(_present(str(v), text, numbers) for v in group)]
     return not missing, f'missing from the reply: {", ".join(missing)}' if missing else ''
 
 

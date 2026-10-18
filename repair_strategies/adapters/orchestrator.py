@@ -27,10 +27,16 @@ _KINDS = {GUIDANCE: 'inject_guidance', RETRY: 'retry', RESAMPLE: 'retry', NONE: 
 
 
 def export_registry(strategies=None) -> dict:
-    """Registry JSON for the orchestrator. Inconclusive is not a repair target there, so it is left out."""
+    """Registry JSON for the orchestrator.
+
+    Inconclusive is not a repair target there, and the fallback is applied by the engine when a
+    ladder is exhausted, so neither is exported.
+    """
     entries = []
     for strategy in strategies or default_strategies():
         spec = strategy.spec
+        if spec.fallback:
+            continue                  # the last resort is applied by the engine, never chosen by EV
         targets = [c for c in spec.categories if c != INCONCLUSIVE]
         if not targets:
             continue
