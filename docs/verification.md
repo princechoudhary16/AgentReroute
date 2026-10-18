@@ -126,3 +126,65 @@ Local run artifacts are under `runs/ollama-live-retail-20261018`,
 These controls follow Ollama's [native request schema](https://raw.githubusercontent.com/ollama/ollama/main/api/types.go).
 Keep the selected local model unchanged during a run; weights are resolved at
 run start, not locked against another process updating its tag mid-generation.
+
+## Tool prevention verification — 2026-10-18
+
+Added a separate `tool_prevention` package with a persistent SQLite retail backend,
+explicit policy compiler, protected registry/dispatcher, scoped approval tokens,
+conditional writes, durable operation results, trusted reconciliation, finite host
+completion obligations, and redacted audit/AgentRx trace export. See
+[setup and trust boundary](prevention.md).
+
+Verification:
+
+- **89 tests pass**, including the existing 57 diagnosis/provider tests and 32
+  prevention tests, with Python warnings treated as errors.
+- CLI request → preview → trusted approval → execution → audit/trace works across
+  separate processes using persistent databases.
+- Concurrent gateway instances cannot consume one grant twice. Restart preserves
+  results. A committed write followed by a timeout remains uncertain until backend
+  evidence confirms success; a late timeout cannot undo confirmed success.
+- Journals reject another backend instance. Approval changes, expiration,
+  revocation, ownership/status/product/payment errors, stale versions and explicit
+  omissions are tested. All seven mutation tools have valid controls.
+- Composed item change → cancellation/payment replacement reverses the recorded
+  payment allocations, including mixed card/gift-card funding.
+- Built a wheel, installed into an isolated environment, and ran both diagnosis
+  and prevention smoke commands from outside the source checkout. Both packaged
+  resource sets load successfully.
+
+Controlled local evaluation uses 22 scenarios per condition, including five valid
+controls. The selected run produced:
+
+| Condition | Unsafe writes | Duplicate writes | Valid business outcomes | False rejections |
+| --- | ---: | ---: | ---: | ---: |
+| Unprotected reference | 18 | 4 | 5/5 | 0 |
+| Schema-only reference | 17 | 4 | 5/5 | 0 |
+| Full prevention | 0 | 0 | 5/5 | 0 |
+
+The full condition also blocked completion with an unfinished explicit obligation.
+“Valid outcome” checks actual order state and a single refund to the original
+payment method, separately from dispatch success. Conditions share simulated
+settlement semantics; baseline policy/approval checks are deliberately absent.
+Concurrent baseline write counts can vary with scheduling. These are engineering
+controls against an intentionally unchecked local writer, **not** an evaluation of
+original tau-bench backend vulnerabilities, paper benchmark recovery, or universal
+agent reliability.
+
+Historical screening covers all **73** available labeled-corpus traces without
+using their labels: 29 retail, of which 24 contain supported mutation calls, and
+44 Magentic traces without structured calls. One retail prefix has an incompatible
+mutation argument schema; its suffix is not evaluated. Approval and authoritative
+state evidence remain unknown. No prevented-failure or recovered-task claim follows
+from this screening.
+
+Artifacts: `runs/prevention-evaluation-20261018/evaluation.json`,
+`runs/prevention-smoke-20261018/{report,audit,trace}.json`,
+`runs/prevention-screen-20261018.json`, and
+`runs/prevention-package-verification/`. Generated artifacts remain excluded from Git.
+
+Independent review identified and verified fixes for backend journal identity,
+late-timeout state races, payment composition, and evaluation postconditions. The
+remaining integration limit is explicit: the collaborator's orchestrator branch
+has no implemented live tau backend to connect. The supplied proposed-action
+adapter and executable local reference do not substitute for that live task study.

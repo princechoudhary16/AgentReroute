@@ -111,8 +111,21 @@ python3 -m agentrx run --config configs/my_config.json --out runs/custom
 
 Runs save diagnoses, evidence, and JSON/CSV/Markdown accuracy reports. Repeat the
 same command to resume; changed code, data, or model settings require a new output
-directory. The test suite passes 57 unit and integration tests.
+directory. The test suite covers diagnosis, providers, and tool prevention.
 
+
+## Prevent tool errors
+
+The prevention layer rewires retail tools with approval, ownership, state, and
+idempotency checks. It includes an executable local backend and a dispatcher hook
+for the project’s future live orchestrator backend.
+
+```bash
+python3 -m tool_prevention smoke
+python3 -m tool_prevention evaluate
+```
+
+See [prevention setup, guarantees, and limits](docs/prevention.md).
 
 ## Documentation
 
