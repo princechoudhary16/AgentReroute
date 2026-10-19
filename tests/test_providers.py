@@ -183,3 +183,9 @@ class OllamaProviderTests(unittest.TestCase):
         self.assertIs(body['truncate'],False)
         self.assertIs(body['shift'],False)
         self.assertEqual(body['format'],'json')
+
+    def test_native_chat_can_constrain_the_json_response_shape(self):
+        p=OllamaProvider('model',self.url,num_ctx=8192)
+        schema={'type':'object','properties':{'rules':{'type':'array'}},'required':['rules']}
+        p.complete_messages([{'role':'user','content':'Return rules'}],response_schema=schema)
+        self.assertEqual(OllamaHandler.records[0]['body']['format'],schema)

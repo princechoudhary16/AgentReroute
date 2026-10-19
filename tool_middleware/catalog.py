@@ -99,7 +99,8 @@ def supported(schema):
         if key in schema and (type(schema[key]) is not int or schema[key] < 0):
             raise PlanError('Invalid schema bound')
     for key in ('minimum', 'maximum'):
-        if key in schema and (type(schema[key]) not in (int, float) or not math.isfinite(schema[key])):
+        if key in schema and (type(schema[key]) not in (int, float)
+                              or type(schema[key]) is float and not math.isfinite(schema[key])):
             raise PlanError('Invalid numeric schema bound')
     if 'enum' in schema and (not isinstance(schema['enum'], list) or not schema['enum']):
         raise PlanError('Invalid schema enum')
@@ -141,7 +142,8 @@ def validate(value, schema):
         if len(value) < schema.get('minLength', 0) or len(value) > schema.get('maxLength', float('inf')):
             raise ValueError('String outside bounds')
     elif kind in ('integer', 'number'):
-        if not math.isfinite(value) or value < schema.get('minimum', -float('inf')) or value > schema.get('maximum', float('inf')):
+        if ((type(value) is float and not math.isfinite(value))
+                or value < schema.get('minimum', -float('inf')) or value > schema.get('maximum', float('inf'))):
             raise ValueError('Number outside bounds')
 
 
@@ -209,11 +211,11 @@ def compile_plan(tools, plan, validators):
                     raise PlanError('Literal does not match validator schema') from None
             else:
                 raise PlanError('Bindings may only copy a target field or provide a literal')
-        shared = set(target.input_schema.get('required', [])) & set(prerequisite.input_schema.get('required', []))
+        shared = set(target.input_schema.get('properties', {})) & set(properties)
         for name in shared:
             pointer = '/' + name.replace('~', '~0').replace('/', '~1')
             if bindings.get(name) != {'from': pointer}:
-                raise PlanError('Shared required scope/identity fields must retain exact bindings')
+                raise PlanError('Shared scope/identity fields, including optional fields, must retain exact bindings')
         if not isinstance(rule['success'], list) or not rule['success']:
             raise PlanError('A success predicate is required')
         for predicate in rule['success']:
@@ -227,13 +229,17 @@ def compile_plan(tools, plan, validators):
                 raise PlanError('Success literal does not match its declared output field') from None
         grouped[target.name].append(rule)
     depths, visiting = {}, set()
-    def visit(name):
+    def visit(name, level=0):
+        if level >= 8:
+            raise PlanError('Prerequisite graph exceeds maximum depth 8')
         if name in visiting:
             raise PlanError('Prerequisite graph contains a cycle')
         if name in depths:
+            if level + depths[name] > 8:
+                raise PlanError('Prerequisite graph exceeds maximum depth 8')
             return depths[name]
         visiting.add(name)
-        depth = 1 + max((visit(rule['validator']) for rule in grouped[name]), default=0)
+        depth = 1 + max((visit(rule['validator'], level + 1) for rule in grouped[name]), default=0)
         visiting.remove(name)
         if depth > 8:
             raise PlanError('Prerequisite graph exceeds maximum depth 8')

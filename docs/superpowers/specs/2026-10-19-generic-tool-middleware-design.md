@@ -81,8 +81,8 @@ These are assistant implementation choices under the user's corrected scope:
 Tool input/output schemas remain unmodified. Initial binding compilation supports
 JSON objects/properties, required paths and scalar/array typed values. Clearly report
 unsupported constructs; never treat an unsupported check as a successful validation.
-Rules must cover every required prerequisite argument; shared required top-level
-input fields must retain matching bindings so tenant/customer scope is not silently
+Rules must cover every required prerequisite argument; shared declared top-level
+input fields, including optional validator fields, must retain matching bindings so tenant/customer scope is not silently
 lost. Runtime arguments must satisfy the fields used in bindings. Output predicates
 must refer to declared typed fields; exact JSON equality distinguishes true from 1.
 

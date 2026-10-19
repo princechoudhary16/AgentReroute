@@ -139,6 +139,7 @@ class OllamaProvider:
     that exceed it, so the native API is used and any context overflow is raised as an error.
     """
     measurement_kind = 'model_measurement'
+    supports_response_schema = True
     OPTIONS = {'temperature', 'top_p', 'top_k', 'seed', 'num_predict', 'repeat_penalty'}
 
     def __init__(self, model, base_url='http://127.0.0.1:11434', num_ctx=16384, think=None,
@@ -234,9 +235,9 @@ class OllamaProvider:
     def complete(self, stage, payload):
         return self.complete_messages(messages(stage, payload))
 
-    def complete_messages(self, chat_messages):
+    def complete_messages(self, chat_messages, *, response_schema=None):
         """Native JSON chat with caller-supplied messages and the same transport checks."""
-        body = {'model': self.model, 'messages': chat_messages, 'format': 'json',
+        body = {'model': self.model, 'messages': chat_messages, 'format': response_schema if response_schema is not None else 'json',
                 'stream': False, 'keep_alive': self.keep_alive,
                 'truncate': False, 'shift': False,
                 'options': {'num_ctx': self.num_ctx, **self.settings}}

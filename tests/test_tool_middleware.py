@@ -145,9 +145,11 @@ class MiddlewareTests(unittest.TestCase):
         plan={'version':1,'catalog_hash':catalog_hash(tools),'rules':[{'id':'r','target':'fetch','validator':'check',
               'bindings':{'reference':{'from':'/reference'}},'success':[{'pointer':'/valid','equals':True}],
               'confidence':'high','rationale':'Check reference first'}],'abstentions':[]}
-        layer=Middleware(tools,plan,validators=['check']);layer.dispatch('fetch',original)
+        layer=Middleware(tools,plan,validators=['check'])
+        with self.assertRaises(Blocked) as error:layer.dispatch('fetch',original)
+        self.assertEqual(error.exception.code,'validator_input_mutated')
         self.assertEqual(original,{'reference':{'id':'good'}})
-        self.assertEqual(seen,[{'id':'good'}])
+        self.assertEqual(seen,[])
 
     def test_chains_reuse_identical_evidence_only_within_one_dispatch_and_obey_budget(self):
         tools,plan,calls,_=shipping()
@@ -175,3 +177,99 @@ class MiddlewareTests(unittest.TestCase):
         for field in ('target','validator'):
             tools,plan,_,_=shipping();plan['rules'][0][field]=[]
             with self.subTest(field=field),self.assertRaises(PlanError):Middleware(tools,plan,validators=['validate_shipment_number'])
+
+    def test_existing_dispatcher_can_be_rewired_from_unchanged_openai_or_mcp_metadata(self):
+        from tool_middleware.adapters import from_dispatcher
+        tools,_,calls,_=shipping()
+        definitions=[{'type':'function','function':{'name':t.name,'description':t.description,'parameters':copy.deepcopy(t.input_schema)}} for t in tools]
+        outputs={t.name:t.output_schema for t in tools}
+        original=copy.deepcopy(definitions)
+        handlers={t.name:t.handler for t in tools}
+        adapted=from_dispatcher(definitions,lambda name,args:handlers[name](**args),
+                                effects={'validate_shipment_number':'read_only'},output_schemas=outputs)
+        _,plan,_,_=shipping();plan['catalog_hash']=catalog_hash(adapted)
+        layer=Middleware(adapted,plan,validators=['validate_shipment_number'])
+        self.assertEqual(layer.dispatch('get_shipment_status',{'shipment_number':'SHIP-123'}),{'status':'in transit'})
+        self.assertEqual(definitions,original)
+        self.assertEqual(calls,[('validate','SHIP-123'),('status','SHIP-123')])
+
+    def test_async_callable_objects_are_supported_by_wrapped_registry(self):
+        tools,plan,calls,result=shipping()
+        class AsyncValidator:
+            async def __call__(self,shipment_number):return {'valid':True}
+        tools[0].handler=AsyncValidator()
+        layer=Middleware(tools,plan,validators=['validate_shipment_number'])
+        self.assertIs(asyncio.run(layer.wrapped_tools()['get_shipment_status'](shipment_number='SHIP-123')),result)
+
+    def test_excessively_deep_model_graph_is_rejected_without_recursion_failure(self):
+        schema=obj(identifier={'type':'string'});output=obj(ok={'type':'boolean'})
+        tools=[Tool(f'tool_{n}','Declared tool',schema,lambda **kw:{'ok':True},output,'read_only') for n in range(513)]
+        rules=[{'id':f'r{n}','target':f'tool_{n}','validator':f'tool_{n+1}',
+                'bindings':{'identifier':{'from':'/identifier'}},'success':[{'pointer':'/ok','equals':True}],
+                'confidence':'high','rationale':'Declared prerequisite'} for n in range(512)]
+        plan={'version':1,'catalog_hash':catalog_hash(tools),'rules':rules,'abstentions':[]}
+        with self.assertRaises(PlanError):Middleware(tools,plan,validators=[t.name for t in tools])
+
+    def test_original_positional_and_positional_only_invocations_are_preserved(self):
+        layer,tools,plan,calls,result=self.make()
+        self.assertIs(layer.wrapped_tools()['get_shipment_status']('SHIP-123'),result)
+        def positional_only(shipment_number, /):return result
+        tools[1].handler=positional_only
+        layer=Middleware(tools,plan,validators=['validate_shipment_number'])
+        self.assertIs(layer.wrapped_tools()['get_shipment_status']('SHIP-123'),result)
+        tools[1].handler=lambda reference:reference
+        plan['rules']=[]
+        layer=Middleware(tools,plan,validators=['validate_shipment_number'])
+        self.assertEqual(layer.wrapped_tools()['get_shipment_status']('unchanged'),'unchanged')
+
+    def test_optional_validator_tenant_cannot_default_to_a_different_scope(self):
+        tools,plan,_,_=shipping()
+        for tool in tools:tool.input_schema=obj(shipment_number={'type':'string'},tenant_id={'type':'string'})
+        tools[0].input_schema['required']=['shipment_number']
+        tools[0].input_schema['properties']['tenant_id']['default']='A'
+        plan['catalog_hash']=catalog_hash(tools)
+        with self.assertRaises(PlanError):Middleware(tools,plan,validators=['validate_shipment_number'])
+        plan['rules'][0]['bindings']['tenant_id']={'from':'/tenant_id'}
+        self.assertIsNotNone(Middleware(tools,plan,validators=['validate_shipment_number']))
+
+    def test_bound_values_must_match_source_constraints_before_validation(self):
+        tools,plan,calls,_=shipping()
+        tools[1].input_schema=obj(shipment_number={'type':'string','const':'SHIP-123'})
+        tools[0].handler=lambda **kwargs:{'valid':True};plan['catalog_hash']=catalog_hash(tools)
+        layer=Middleware(tools,plan,validators=['validate_shipment_number'])
+        with self.assertRaises(Blocked):layer.dispatch('get_shipment_status',{'shipment_number':'BAD'})
+        self.assertEqual(calls,[])
+
+    def test_async_changes_to_protected_arguments_block_the_target(self):
+        async def exercise():
+            tools,plan,calls,_=shipping();started=asyncio.Event();release=asyncio.Event()
+            async def validate(shipment_number):
+                started.set();await release.wait();return {'valid':True}
+            tools[0].handler=validate
+            layer=Middleware(tools,plan,validators=['validate_shipment_number'])
+            args={'shipment_number':'SHIP-123'}
+            task=asyncio.create_task(layer.adispatch('get_shipment_status',args))
+            await started.wait();args['shipment_number']='BAD';release.set()
+            with self.assertRaises(Blocked) as error:await task
+            self.assertEqual(error.exception.code,'arguments_changed')
+            self.assertEqual(calls,[])
+        asyncio.run(exercise())
+
+    def test_valid_large_json_integer_in_validator_output_does_not_overflow(self):
+        tools,plan,_,result=shipping()
+        tools[0].output_schema=obj(valid={'type':'boolean'},count={'type':'integer'})
+        tools[0].handler=lambda **kwargs:{'valid':True,'count':10**400}
+        plan['catalog_hash']=catalog_hash(tools)
+        layer=Middleware(tools,plan,validators=['validate_shipment_number'])
+        self.assertIs(layer.dispatch('get_shipment_status',{'shipment_number':'SHIP-123'}),result)
+
+    def test_shadow_does_not_require_inspectable_positional_signatures(self):
+        tools,plan,calls,result=shipping()
+        class Uninspectable:
+            @property
+            def __signature__(self):raise ValueError('Extension callable has no signature')
+            def __call__(self,*args,**kwargs):return result
+        tools[1].handler=Uninspectable()
+        layer=Middleware(tools,plan,validators=['validate_shipment_number'],mode='shadow')
+        self.assertIs(layer.wrapped_tools()['get_shipment_status']('BAD'),result)
+        self.assertEqual(calls,[])

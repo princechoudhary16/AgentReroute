@@ -50,8 +50,8 @@
 **Files:** tool_middleware/{examples,cli,__main__}.py, tests/test_tool_middleware_cli.py, pyproject.toml, README.md, docs/{prevention,verification}.md.
 **Interfaces:** python -m tool_middleware smoke/evaluate/discover/inspect; synthetic shipment and unrelated IT tools; examples explicitly distinguish fixture vs actual Ollama discovery.
 
-- [ ] Write/run failing CLI tests for complete automatic validation and target-call counters, metadata-only discovery and inspectable plan artifacts.
-- [ ] Implement end-to-end examples and original-vs-wrapped comparisons with valid completion, invalid backend invocation, validator calls and false-block counts.
-- [ ] Verify actual local Ollama metadata discovery if available; record failures/abstentions honestly instead of changing constraints to force results.
-- [ ] Rewrite primary prevention docs around generic middleware and label retail as a separate experiment.
-- [ ] Run full suite, isolated wheel install/smoke, fresh whole-change review, red-green fixes, final checks and authorized branch push.
+- [x] Write/run failing CLI tests for complete automatic validation and target-call counters, metadata-only discovery and inspectable plan artifacts.
+- [x] Implement end-to-end examples and original-vs-wrapped comparisons with valid completion, invalid backend invocation, validator calls and false-block counts.
+- [x] Verify actual local Ollama metadata discovery if available; record failures/abstentions honestly instead of changing constraints to force results.
+- [x] Rewrite primary prevention docs around generic middleware and label retail as a separate experiment.
+- [x] Run full suite, isolated wheel install/smoke, fresh whole-change review, red-green fixes, final checks and authorized branch push.

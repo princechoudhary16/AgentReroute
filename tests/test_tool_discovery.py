@@ -61,3 +61,24 @@ class ToolDiscoveryTests(unittest.TestCase):
         tools,plan,calls,_=shipping()
         result=discover(tools,Model({'rules':plan['rules'],'abstentions':[]}),validators=[])
         self.assertEqual(result['rules'],[]);self.assertEqual(calls,[])
+
+    def test_prompt_defines_pointer_roots_without_inventing_an_input_envelope(self):
+        tools,reference,_,_=shipping();model=Model({'rules':reference['rules'],'abstentions':[]})
+        discover(tools,model,validators=['validate_shipment_number'])
+        self.assertIn('Do not prefix',model.requests[0][0]['content'])
+        self.assertIn('/shipment_number',model.requests[0][0]['content'])
+
+    def test_capable_models_receive_a_catalog_specific_output_schema(self):
+        tools,reference,_,_=shipping()
+        class StructuredModel(Model):
+            supports_response_schema=True
+            def complete_messages(self,messages,*,response_schema=None):
+                self.schema=response_schema
+                return super().complete_messages(messages)
+        model=StructuredModel({'rules':reference['rules'],'abstentions':[]})
+        discover(tools,model,validators=['validate_shipment_number'])
+        self.assertIsInstance(model.schema,dict)
+        rule=model.schema['properties']['rules']['items']['oneOf'][0]
+        self.assertEqual(rule['properties']['target']['enum'],['get_shipment_status'])
+        self.assertEqual(rule['properties']['bindings']['required'],['shipment_number'])
+        self.assertFalse(rule['properties']['bindings']['additionalProperties'])

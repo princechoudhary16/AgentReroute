@@ -114,21 +114,24 @@ same command to resume; changed code, data, or model settings require a new outp
 directory. The test suite covers diagnosis, providers, and tool prevention.
 
 
-## Prevent tool errors
+## Generic tool middleware
 
-The prevention layer rewires retail tools with approval, ownership, state, and
-idempotency checks. It includes an executable local backend and a dispatcher hook
-for the project’s future live orchestrator backend.
+Use an LLM to propose prerequisite checks from an existing tool catalog, then
+wrap its dispatcher. Before a guarded call, the middleware automatically runs
+explicitly designated read-only validators. Original APIs, arguments, and successful
+return values stay unchanged.
 
 ```bash
-python3 -m tool_prevention smoke
-python3 -m tool_prevention evaluate
+python3 -m tool_middleware smoke
+python3 -m tool_middleware evaluate
 ```
 
-See [prevention setup, guarantees, and limits](docs/prevention.md).
+See [discovery, integration, and limits](docs/prevention.md). The earlier
+[retail policy experiment](docs/retail-prevention-experiment.md) is separate.
 
 ## Documentation
 
+- [Ollama run explained step by step](docs/ollama-walkthrough.md)
 - [Usage, configuration, and implementation details](docs/usage.md)
 - [Verification results and limitations](docs/verification.md)
 - [Design](docs/superpowers/specs/2026-10-14-agentrx-reproduction-design.md)

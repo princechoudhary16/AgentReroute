@@ -14,9 +14,10 @@ dependencies = []
 [project.scripts]
 agentrx = "agentrx.cli:main"
 tool-prevention = "tool_prevention.cli:main"
+tool-middleware = "tool_middleware.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["agentrx*", "tool_prevention*"]
+include = ["agentrx*", "tool_prevention*", "tool_middleware*"]
 
 [tool.setuptools.package-data]
 agentrx = ["resources/*.json"]

@@ -133,7 +133,7 @@ Added a separate `tool_prevention` package with a persistent SQLite retail backe
 explicit policy compiler, protected registry/dispatcher, scoped approval tokens,
 conditional writes, durable operation results, trusted reconciliation, finite host
 completion obligations, and redacted audit/AgentRx trace export. See
-[setup and trust boundary](prevention.md).
+[retail experiment setup and trust boundary](retail-prevention-experiment.md).
 
 Verification:
 
@@ -188,3 +188,64 @@ late-timeout state races, payment composition, and evaluation postconditions. Th
 remaining integration limit is explicit: the collaborator's orchestrator branch
 has no implemented live tau backend to connect. The supplied proposed-action
 adapter and executable local reference do not substitute for that live task study.
+
+## Generic tool middleware — 2026-10-19
+
+The user clarified that retail was an example and the required prevention system
+must conservatively rewire an existing enterprise tool registry. Added
+`tool_middleware`: metadata-based LLM prerequisite discovery, catalog-pinned plans,
+strict compilation, and sync/async callable/dispatcher adapters. Original endpoint
+names, input schemas, target argument values, invocation shapes and successful
+results are preserved. Automatic prerequisite calls require explicit host designation
+as read-only. The earlier retail-specific `tool_prevention` package remains a
+[separate experiment](retail-prevention-experiment.md).
+
+Verification:
+
+- **125 tests pass**, including all earlier diagnosis/provider/retail tests, with
+  warnings treated as errors. New checks cover unrelated catalogs, original API
+  forwarding, positional calls, source-schema constraints, tenant bindings,
+  validator mutation, malformed evidence, async changes, chains/cycles/budgets,
+  shadow mode, compiler rejection, metadata-only discovery and native Ollama JSON
+  schema transport.
+- A fresh whole-change reviewer identified optional-tenant scope, mutable evidence,
+  positional calls, source-constraint and async mutation issues. Each was reproduced
+  by a failing test and fixed. Large JSON integers and excessive graph depth are
+  also covered. Final shadow invocation preservation has its own regression test.
+- Wheel installation outside the source checkout runs the generic middleware,
+  original diagnosis, and earlier retail smoke commands.
+
+Controlled fixture-plan comparison (four calls per domain):
+
+| Synthetic catalog | Original invalid target invocations | Wrapped invalid target invocations | Valid completion | Extra validator calls |
+| --- | ---: | ---: | ---: | ---: |
+| Shipping | 2 | 0 | 2/2 in both conditions | 4 |
+| Employee devices | 2 | 0 | 2/2 in both conditions | 4 |
+
+No valid control was falsely blocked. Original endpoints are deliberately permissive
+reference tools. This demonstrates enforcement mechanics, not real enterprise error
+prevalence, paper benchmark recovery, or discovery accuracy across arbitrary tools.
+
+Live local discovery was also tested using Ollama 0.40.2, temperature0, context16384:
+
+- Installed Qwen3-VL8B model `f227e448f8bd…` initially produced an invalid `/input/`
+  pointer, which was rejected. After clarifying pointer roots it produced a valid
+  shipment prerequisite, applied unchanged to the real local example handlers.
+- On employee tools, Qwen proposed a self-cycle and was rejected. Gemma4 model
+  `1983a63c16c9…` produced one usable employee rule; a later unconstrained-format run
+  used incorrect binding keys and was rejected. These failed suggestions remained
+  visibly unguarded; no hand-written replacement was counted as model discovery.
+- Added catalog-specific schema-constrained output generation through Ollama's
+  native `format` field. Rule names/binding keys are constrained before generation;
+  the compiler remains the acceptance boundary. Final structured runs produced one
+  accepted rule per catalog: Qwen for shipping and Gemma for employee devices.
+  Each automatically ran its validator, forwarded its valid input unchanged, and
+  blocked its invalid input before the target handler. These two small examples
+  establish runnable integration, not a discovery-accuracy estimate.
+
+Artifacts under ignored `runs/` include `generic-middleware-smoke-20261019`,
+`generic-middleware-evaluation-20261019`, `generic-middleware-live-*`,
+`generic-middleware-structured-*-20261019`, and `generic-middleware-package-20261019`.
+Plans, raw model responses, output schemas, model metadata/usage, and observed target
+calls are preserved. Missing/ambiguous relationships remain unguarded coverage;
+there is no claim that metadata-only discovery proves business correctness.

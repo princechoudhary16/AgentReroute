@@ -1,183 +1,204 @@
-# Tool prevention
+# Generic tool prerequisite middleware
 
-The new `tool_prevention` package checks proposed tool calls **before** they change
-state. AgentRx diagnoses saved runs; this component prevents declared tool-policy
-violations during execution. It runs offline without an LLM or API key.
+`tool_middleware` wraps an existing enterprise tool registry. An LLM examines its
+catalog and proposes simple prerequisites: for example, validate a shipment number
+before calling the shipment-status API. At runtime, the middleware automatically
+runs the explicitly designated read-only validator. If it succeeds, the original
+tool receives its original arguments and returns its original result. A failed or
+unverifiable check blocks the target call with a structured error.
 
-```bash
-python3 -m tool_prevention smoke --out runs/prevention-smoke
-python3 -m tool_prevention evaluate --out runs/prevention-evaluation
-python3 -m tool_prevention screen --corpus data/benchmark
-python3 -m tool_prevention compile
-```
+There are no new endpoint parameters, approval tokens, operation IDs, retail
+backends, or endpoint implementations. The earlier
+[retail policy experiment](retail-prevention-experiment.md) is a separate component.
 
-`smoke` rejects an unapproved cancellation, obtains a simulated customer approval
-through the trusted host interface, executes once, retries without duplicating the
-write, and finishes an explicit obligation. It writes `report.json`, `audit.json`,
-and an AgentRx-compatible `trace.json`. Each demo/evaluation uses a fresh database.
+## Try it
 
-## What gets rewired
-
-```python
-from tool_prevention import Context, rewire
-from tool_prevention.retail import RetailSystem
-from tool_prevention.adapters import ProtectedDispatcher
-
-# Trusted application startup; these privileged objects stay outside the agent.
-backend = RetailSystem.create("runs/my-system/retail.db")
-protected = rewire(backend, store_path="runs/my-system/grants.db")
-context = Context(session_id="session-1", customer_id="alice")
-
-# Give only these definitions/callables to the tool-calling agent.
-definitions = protected.tool_definitions()
-tools = protected.tools(context)
-dispatcher = ProtectedDispatcher(protected, context)
-# dispatcher.step(Action(name="...", kwargs={...}))
-```
-
-The compiler validates the adapter's actual schemas against the explicit retail
-policy. The replacement registry contains six read tools, seven protected mutation
-tools, `request_action_approval`, and `complete_task`. Unknown tools, incompatible
-schemas, unclassified tools, and unsupported backend guarantees fail compilation.
-The current compiler supports the retail policy family; it does not discover
-business rules automatically from arbitrary application code.
-
-A compatible backend supplies:
-
-| Interface | Required guarantee |
-| --- | --- |
-| `backend_identity()` | Persistent identity of this backend instance |
-| `tool_specs()` | Authoritative name/schema/effect declarations |
-| `read(context, name, arguments)` | Ownership-safe reads without side effects |
-| `snapshot()` | Authoritative resources and versions |
-| `execute_atomic(plan, operation_id)` | Atomic version checks, effects and durable idempotency record |
-| `lookup_execution(operation_id)` | Confirmed durable execution evidence or unknown |
-
-It must declare `conditional_writes` and `durable_idempotency`. The grant journal
-is bound to the backend identity, preventing accidental reuse against a fresh DB.
-The local SQLite retail backend implements this contract, including a simulated
-payment ledger. It does not connect to payment processors, shipping, or tau-bench.
-Returns/exchanges are modeled locally as requests with immediate simulated ledger
-entries; this is an executable reference model, not full tau-bench semantics.
-
-## Approval flow
-
-```python
-arguments = {"order_id": "pending-alice", "reason": "no longer needed"}
-request = tools["request_action_approval"](
-    tool_name="cancel_pending_order", arguments=arguments)
-
-# Separate trusted customer/host channel: show the exact quote and action.
-preview = protected.admin.preview(request["request_id"])
-# After the authenticated customer approves that exact action:
-grant = protected.admin.approve(request["request_id"])
-
-result = tools["cancel_pending_order"](
-    **arguments, operation_id="cancel-1", approval_token=grant["approval_token"])
-```
-
-`request_action_approval` creates a pending request; it cannot approve itself.
-Approving/denying/reconciling are trusted host operations absent from the agent's
-registry. In an application, deliver the grant through that trusted channel only
-after real approval. Demo code explicitly simulates this external decision.
-
-The opaque token binds the customer, session, exact arguments, policy version,
-quote/payment destination, and resource versions. It expires and can be consumed
-once. Changing the amount, order, session, or current resource state requires a
-new request. Tokens are stored as hashes and redacted from structured audit data.
-Sensitive logs and databases still require normal host access controls.
-
-A stable `operation_id` identifies one action. Repeating it returns the stored
-result; changing its arguments is rejected. Concurrent calls and restarts share
-the persistent journal. If a backend might have committed before a timeout, the
-operation stays `indeterminate`; retries cannot execute it again. The host can use
-`protected.admin.reconcile(context, operation_id)` to recover confirmed success.
-Success remains terminal even if a delayed caller later reports a timeout.
-
-CLI equivalents use the same persistent databases:
+Requires Python 3.10+; no third-party runtime dependencies.
 
 ```bash
-python3 -m tool_prevention request cancel_pending_order --session session-1 --customer alice \
-  --arguments '{"order_id":"pending-alice","reason":"no longer needed"}'
-python3 -m tool_prevention approve REQUEST_ID              # preview
-python3 -m tool_prevention approve REQUEST_ID --decision approve
-# The last command outputs a sensitive token to the trusted operator.
-# Supply it through PREVENTION_APPROVAL_TOKEN in your local environment.
-python3 -m tool_prevention call cancel_pending_order --session session-1 --customer alice \
-  --operation-id cancel-1 --arguments '{"order_id":"pending-alice","reason":"no longer needed"}'
-python3 -m tool_prevention audit
-python3 -m tool_prevention audit --trace --session session-1 --customer alice
+python3 -m tool_middleware smoke
+python3 -m tool_middleware evaluate
 ```
 
-Use `--state`, `--store`, and optionally `--policy` consistently to select another
-system. The CLI's `--customer` is a trusted operator input, not authentication.
-Do not expose these commands or the admin object directly to the LLM.
+These commands use **fixture plans**, not LLM inference. Smoke shows:
 
-## Enforced rules and limits
+```text
+get_shipment_status("SHIP-123")
+  → validate_shipment_number("SHIP-123") → valid
+  → original get_shipment_status("SHIP-123") → unchanged result
 
-The initial policy covers host authentication, ownership, exact-action approval,
-order status, item quantities, same-product replacements, inventory availability,
-owned payment methods, refund destinations, gift-card funds, and once-per-order
-item modifications/returns/exchanges. Money uses integer cents. Per-order funding
-allocations preserve mixed payment sources: cancellation refunds those sources, and
-payment changes refund all prior allocations and charge the new method atomically.
+get_shipment_status("BAD")
+  → validate_shipment_number("BAD") → invalid
+  → blocked; original status API is never called
+```
 
-The host can register `protected.require_action(context, tool, arguments)`;
-`complete_task` then refuses completion until that exact action succeeds. This
-catches explicit finite omissions. It cannot infer every obligation from a user's
-natural-language goal or prove the quality of an answer.
+Outputs include `catalog.json`, `plan.json`, `report.json`, and metadata-only
+`audit.json` under `runs/middleware-smoke/`. Evaluation compares original and
+wrapped tools for shipping and an unrelated employee/device catalog. These are
+small engineering controls with intentionally permissive original endpoints,
+not paper benchmark results or an estimate of enterprise-wide accuracy.
 
-An approved but mistaken order choice can still be valid under all these rules.
-Misinterpretation, unsupported reasoning, incomplete research, and infrastructure
-failures remain possible. AgentRx can still analyze the resulting audit trace.
+## Discover prerequisites with Ollama
 
-All side effects must go through the protected dispatcher. Keep raw backend tools,
-credentials, the journal, and approval authority outside the agent's accessible
-process/interface. This Python registry is not an OS sandbox against arbitrary
-agent code, shell access, or direct network access. Adapter guarantees and trusted
-host identity are prerequisites, not properties the compiler can prove by itself.
+The LLM is used during **setup** to discover dependencies. Normal calls run the
+resulting inspectable checks without asking an LLM to make a fresh judgment.
+Native Ollama discovery uses a catalog-specific [structured output schema](https://docs.ollama.com/capabilities/structured-outputs)
+to constrain tool names, binding keys and output predicates; the compiler still
+checks the proposed rules after generation.
 
-## This project's integration boundary
+```bash
+# Generate the example catalog, without invoking an LLM.
+python3 -m tool_middleware smoke
 
-On `origin/orchestrator`, `TauBenchEnvironment.__init__` currently raises
-`NotImplementedError`; `ScriptedEnvironment.rollout` produces already executed
-steps. Neither offers a live pre-execution tool boundary that can be safely patched.
-`rewire` explicitly rejects a replay-only object. `ProtectedDispatcher.step` accepts
-the planned `Action(name, kwargs)` shape and enforces calls before the backend.
-Install it where a future live agent dispatches proposed tool actions. The
-collaborator's orchestrator branch has not been merged or altered.
+# Supply an installed model name; the config's default may not be installed.
+python3 -m tool_middleware discover \
+  --catalog runs/middleware-smoke/catalog.json \
+  --validators validate_shipment_number \
+  --config configs/dev_ollama.json \
+  --model YOUR_INSTALLED_MODEL \
+  --out runs/middleware-discovery
 
-The diagnosis package's descriptive tool registry is unsuitable as executable
-schemas. This component uses its adapter contract and actual retail field names.
-Original live tau-bench task evaluation still needs the missing execution adapter.
+# Inspect coverage before applying the saved plan.
+python3 -m tool_middleware inspect \
+  --catalog runs/middleware-smoke/catalog.json \
+  --plan runs/middleware-discovery/plan.json \
+  --validators validate_shipment_number
 
-## Evaluation and research contribution
+# Apply that plan to the local example.
+python3 -m tool_middleware smoke \
+  --plan runs/middleware-discovery/plan.json \
+  --out runs/middleware-with-discovered-plan
+```
 
-`evaluate` executes a controlled local comparison of **unprotected**, **schema-only**,
-and **full prevention** conditions from equivalent initial states. The first two
-use a deliberately unchecked reference writer for cancellation/item modification;
-these baselines do not claim that the original tau-bench API has those weaknesses.
-All conditions retain SQLite conditional writes and share simulated settlement
-semantics. Full policy enforcement is the variable being tested. Valid completion
-checks the resulting order and refund state separately from dispatch success.
-Successful controls, unsafe/duplicate writes, completion
-omissions and local dispatch latency are reported separately. Timing excludes
-user approval and LLM time; concurrent baseline write counts can vary with scheduling.
-Other retail mutations have valid-control tests in the unit suite.
+Discovery sends metadata to the configured local Ollama server, never invokes
+enterprise tools, and saves the plan, original model response, model digest,
+telemetry, coverage, and abstentions. A plan with zero rules leaves every tool
+unguarded; inspect coverage instead of treating successful compilation as protection.
 
-`screen` inspects the available 73 historical traces without loading failure labels
-into policy decisions. Missing capability evidence is **unknown**, not a proven
-violation. Screening stops at the first definitive schema rejection and does not
-invent the remaining execution. Magentic traces without structured calls are
-reported as unsupported for this form of enforcement. Neither a recovered-task
-rate nor a paper-benchmark prevention score can be obtained from these logs alone.
+The application chooses which validators are safe to automate. The model cannot
+designate its own tools as read-only. Both a host `read_only` declaration and the
+explicit `validators` allowlist are required. The declaration is a host contract;
+the middleware cannot prove that the endpoint truly has no side effects.
 
-This is a useful engineering contribution and an evaluable project architecture,
-not a claim to invent runtime enforcement. Related prior work includes
-[AgentSpec](https://arxiv.org/abs/2503.18666),
-[OPA's policy/enforcement separation](https://www.openpolicyagent.org/docs), and
-[Cedar schema validation](https://docs.cedarpolicy.com/policies/validation.html).
-The project's research question is how much observed failure can be covered by
-explicit deterministic policies, with what false rejections and integration cost,
-and which failures still need diagnosis. Live tasks, matched controls, additional
-policy families and model comparisons are needed to answer that empirically.
+## Connect existing tools
+
+A small neutral adapter describes existing callables:
+
+```python
+from tool_middleware import Tool, rewire, Blocked
+from tool_middleware.discovery import discover
+from agentrx.providers import OllamaProvider
+
+# Existing functions remain unchanged.
+# input_schema and output_schema describe their real contracts.
+tools = [
+    Tool("validate_shipment_number", "Check existence; valid=true means valid.",
+         validator_input_schema, original_validate, validator_output_schema,
+         effect="read_only"),
+    Tool("get_shipment_status", "Requires a validated shipment number.",
+         status_input_schema, original_get_status, status_output_schema),
+]
+
+model = OllamaProvider("YOUR_INSTALLED_MODEL")
+model.prepare_for_run()
+plan = discover(tools, model, validators=["validate_shipment_number"])
+# Inspect/save the plan before activating it. Later, reload that same saved plan.
+layer = rewire(tools, plan, validators=["validate_shipment_number"])
+
+# Replace the agent-visible callable registry, keeping its original definitions.
+agent_tools = layer.wrapped_tools()
+try:
+    result = agent_tools["get_shipment_status"](shipment_number="SHIP-123")
+except Blocked as error:
+    feedback_to_agent = error.to_dict()
+```
+
+The plan must have been discovered from this exact catalog, including descriptions,
+schemas and effect declarations. Changed metadata invalidates its catalog hash.
+The host must rediscover/review it. Handler implementations and their correspondence
+to the declared schemas remain host responsibilities.
+
+For an existing dispatcher instead of individual functions:
+
+```python
+from tool_middleware.adapters import from_dispatcher
+
+tools = from_dispatcher(
+    existing_tool_definitions,
+    execute=original_dispatch,            # (tool_name, arguments) -> original result
+    effects={"validate_shipment_number": "read_only"},
+    output_schemas=known_output_schemas,  # needed when definitions omit them
+)
+layer = rewire(tools, saved_plan, validators=["validate_shipment_number"])
+result = layer.dispatch("get_shipment_status", original_arguments)
+```
+
+The adapter accepts neutral, OpenAI-style, and MCP-style **metadata**. It does not
+implement those network transports. Your executor supplies the actual dispatch and
+must return the declared JSON response shape; transport envelopes need a host
+adapter or schemas describing that envelope. Keep your original framework tool
+definitions in place. The middleware changes dispatch behavior, not schemas.
+
+Both synchronous and asynchronous handlers work. Use
+`await layer.adispatch(name, arguments)` with async dispatchers. Wrapped handlers
+become async when the target or a prerequisite needs it. Sync handlers, target
+exceptions, and successful result objects retain their normal behavior.
+
+## What a rule can express
+
+```json
+{
+  "id": "shipment_is_valid",
+  "target": "get_shipment_status",
+  "validator": "validate_shipment_number",
+  "bindings": {"shipment_number": {"from": "/shipment_number"}},
+  "success": [{"pointer": "/valid", "equals": true}],
+  "confidence": "high",
+  "rationale": "Status requires an existing shipment number."
+}
+```
+
+A full plan also includes `version: 1`, its `catalog_hash`, and an `abstentions`
+list. Bindings copy target argument values or provide explicit schema-valid
+literals; they do not repair/coerce the target's arguments. Predicates compare
+literal JSON values on declared output fields. Boolean `true` is different from
+numeric `1`. Shared declared fields such as `tenant_id`, including optional
+validator fields, must retain matching bindings. Validator arguments are copied;
+a validator that mutates those copies is rejected before its result becomes
+evidence. Protected values are checked again immediately before forwarding, so
+changes while an async validator is awaiting block the target.
+
+Rules can chain validators. Cycles and chains deeper than eight tools are rejected.
+A dispatch permits at most 16 automatic validation calls by default
+(`max_validations` is configurable). Identical checks can share evidence within
+one dispatch. Every new top-level call validates afresh; there is no cross-call
+or cross-session evidence cache.
+
+The compiler supports explicit JSON schema types, object properties/required
+fields, arrays/items, enum/const, numeric bounds and string/array length bounds.
+It does not interpret arbitrary JSON Schema extensions, `$ref`, regex patterns,
+or generated code. Missing output schemas, unclear success semantics, unsupported
+checks and low-confidence suggestions are reported as gaps/abstentions. Bound
+source paths and predicate paths must be required in their declared schemas; optional
+target paths are currently unsupported. Tools
+without applicable rules continue unchanged and are listed as unguarded.
+
+## Conservative rollout and limits
+
+Use `mode="shadow"` to log where guards would apply while forwarding the original
+call without additional validator traffic or blocking. In `enforce` mode, a false
+predicate, missing/malformed validator result, validator failure, or exhausted
+budget blocks the target. No target retry or compensation is attempted.
+
+Catalog descriptions and model output are untrusted input. Compilation checks
+structure, references, schema compatibility, scope bindings and automatic-tool
+permission. It cannot prove an LLM's proposed dependency is semantically correct.
+Review the concrete plan and test representative valid calls before deployment;
+a wrong dependency can overblock an otherwise legitimate request.
+
+This layer provides conservative preflight checks, not complete correctness.
+State can change between a validator and a remote target call. Reasoning mistakes,
+missing business rules, infrastructure errors and unguarded tools remain possible.
+All protected calls must pass through this dispatcher; keep raw privileged access
+outside the agent's interface. This is not an OS sandbox or a replacement for an
+endpoint's own authorization and consistency checks.
