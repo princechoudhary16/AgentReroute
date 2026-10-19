@@ -173,3 +173,13 @@ class OllamaProviderTests(unittest.TestCase):
             OllamaHandler.model_digest='b'*64
             CachedProvider(OllamaProvider('model',self.url),d,{'rep':0}).complete('global',{'policy':'','tools':{}})
             self.assertEqual(len(OllamaHandler.records),2)
+
+    def test_generic_json_chat_uses_custom_messages_and_existing_native_safeguards(self):
+        p=OllamaProvider('model',self.url,num_ctx=8192)
+        custom=[{'role':'system','content':'Return dependency JSON'}, {'role':'user','content':'{"tools":[]}'}]
+        self.assertEqual(p.complete_messages(custom),{'constraints':[]})
+        body=OllamaHandler.records[0]['body']
+        self.assertEqual(body['messages'],custom)
+        self.assertIs(body['truncate'],False)
+        self.assertIs(body['shift'],False)
+        self.assertEqual(body['format'],'json')

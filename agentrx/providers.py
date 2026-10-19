@@ -232,7 +232,11 @@ class OllamaProvider:
         raise ProviderError('Ollama retries exhausted')
 
     def complete(self, stage, payload):
-        body = {'model': self.model, 'messages': messages(stage, payload), 'format': 'json',
+        return self.complete_messages(messages(stage, payload))
+
+    def complete_messages(self, chat_messages):
+        """Native JSON chat with caller-supplied messages and the same transport checks."""
+        body = {'model': self.model, 'messages': chat_messages, 'format': 'json',
                 'stream': False, 'keep_alive': self.keep_alive,
                 'truncate': False, 'shift': False,
                 'options': {'num_ctx': self.num_ctx, **self.settings}}

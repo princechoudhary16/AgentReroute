@@ -40,10 +40,10 @@
 **Files:** tool_middleware/discovery.py, agentrx/providers.py, tests/test_tool_discovery.py, tests/test_providers.py.
 **Interfaces:** discover(tools,model,validators)->versioned catalog-pinned plan with abstentions. Model supplies complete_messages(messages)->JSON object. OllamaProvider.complete continues existing stages unchanged and delegates to complete_messages.
 
-- [ ] Write/run failing discovery tests for actual request metadata, conservative prompt, schema validation, invented/low-confidence rules, no handler execution and model errors.
-- [ ] Extract generic JSON chat from the native Ollama client, preserving all transport/response checks and existing stage behavior.
-- [ ] Implement typed proposal filtering/compilation and coverage/abstention reports; no model output is executable code or runtime authority.
-- [ ] Run discovery and existing provider tests, record result and commit.
+- [x] Write/run failing discovery tests for actual request metadata, conservative prompt, schema validation, invented/low-confidence rules, no handler execution and model errors.
+- [x] Extract generic JSON chat from the native Ollama client, preserving all transport/response checks and existing stage behavior.
+- [x] Implement typed proposal filtering/compilation and coverage/abstention reports; no model output is executable code or runtime authority.
+- [x] Run discovery and existing provider tests, record result and commit.
 
 ### Task 3: Runnable examples, evaluation, documentation and package verification
 
