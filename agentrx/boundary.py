@@ -1,6 +1,7 @@
 """Conclusive, mechanically deduplicated rule/step divergence measurements."""
 import ast
 import math
+import re
 from .io import digest
 
 
@@ -17,11 +18,18 @@ def constraint_fingerprint(constraint):
         source = '\n'.join(code['code_lines'])
         try:
             tree = ast.parse(source)
-            for node in ast.walk(tree):
-                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == code['function_name']:
-                    node.name = '_checker'
-                elif isinstance(node, ast.Name) and node.id == code['function_name']:
-                    node.id = '_checker'
+            name = code['function_name']
+            nodes = list(ast.walk(tree))
+            definitions = [n for n in nodes if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == name]
+            # Only the unused entry-point label is harmless. References, shadowing,
+            # rebinding or multiple definitions retain the original AST identity.
+            ambiguous = any((isinstance(n, ast.Name) and n.id == name) or
+                            (isinstance(n, ast.arg) and n.arg == name) or
+                            (isinstance(n, ast.alias) and (n.asname or n.name.split('.')[0]) == name) or
+                            (isinstance(n, (ast.Global, ast.Nonlocal)) and name in n.names) or
+                            (isinstance(n, ast.ClassDef) and n.name == name) for n in nodes)
+            if len(definitions) == 1 and not ambiguous:
+                definitions[0].name = '<checker-entry-point>'  # Cannot collide with a Python identifier.
             definition = ast.dump(tree, include_attributes=False)
         except (SyntaxError, ValueError):
             definition = {'source': source, 'function_name': code['function_name']}
@@ -29,8 +37,39 @@ def constraint_fingerprint(constraint):
         definition = {'nl_check': constraint['nl_check'], 'check_hint': constraint['check_hint']}
     else:
         raise ValueError('Unsupported check type')
-    return digest({'check_type': kind, 'event_trigger': constraint.get('event_trigger', {}),
+    return digest({'check_type': kind, 'event_trigger': _canonical_guard(constraint.get('event_trigger', constraint.get('trigger', {}))),
                    'definition': definition})
+
+
+def _canonical_guard(trigger):
+    guard = {}
+    for key in ('step_index', 'substep_index'):
+        value = trigger.get(key)
+        if value in (None, '*'):
+            continue
+        if type(value) is int:
+            ranges = [(value, value)]
+        elif isinstance(value, list):
+            ranges = [(v, v) for v in value]
+        elif isinstance(value, str) and value.isdigit():
+            ranges = [(int(value), int(value))]
+        else:
+            match = re.fullmatch(r'(\d+)\s*(?:-|:|\.\.)\s*(\d+)', str(value))
+            if not match:
+                raise ValueError('Unsupported index selector')
+            ranges = [(int(match[1]), int(match[2]))]
+        merged = []
+        for start, end in sorted(ranges):
+            if merged and start <= merged[-1][1] + 1:
+                merged[-1][1] = max(merged[-1][1], end)
+            else:
+                merged.append([start, end])
+        guard[key] = merged
+    for key in ('role_name', 'tool_name', 'content_regex'):
+        value = trigger.get(key, trigger.get('agent_name') if key == 'role_name' else None)
+        if value not in (None, '*'):
+            guard[key] = str(value)
+    return guard
 
 
 def compute_boundary(checks, threshold):

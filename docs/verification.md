@@ -290,3 +290,18 @@ The built wheel also passed ranked AgentRx, original AgentRx, generic middleware
 and retail smoke commands from a temporary directory outside the checkout in an
 isolated Python3.12 environment. The initial build attempt lacked setuptools in
 the system Python; `uv build --offline` succeeded using cached build dependencies.
+
+A fresh whole-change review found three defects, each reproduced by a failing
+regression before fixing: function-name normalization merged differently scoped
+Python checkers; equivalent wildcard/default/alias selectors bypassed deduplication;
+and the consumer accepted an `ok` status despite checker errors. Fingerprinting
+now retains ambiguous Python identities and canonicalizes guard defaults and
+simple selector equivalents. Consumer validation preserves both raw and grouped
+checker-error status. **144 tests pass with warnings treated as errors** after
+these fixes, and all four smoke commands pass again from the rebuilt wheel.
+
+Review decisions retained: responsible agents may differ from event speakers;
+artifact validation checks consistency rather than authenticity or truth; broader
+generated-check quality and threshold calibration need empirical work. Consumers
+must accommodate agent attribution, trust their artifacts, and treat scores and
+the demonstration threshold as unvalidated estimates.

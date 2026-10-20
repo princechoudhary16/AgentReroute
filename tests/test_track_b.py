@@ -243,3 +243,53 @@ class RankedReportTests(unittest.TestCase):
             self.assertEqual(report['top_k_step_accuracy'],{'1':0.0,'2':0.0,'3':0.0})
             self.assertEqual(report['failed_jobs'],1)
             self.assertEqual(report['attribution_counts'],{'error':1,'abstained':1})
+
+
+class ReviewRegressionTests(unittest.TestCase):
+    def test_shadowed_function_names_do_not_merge_opposite_executed_rules(self):
+        from agentrx.constraints import check_constraint
+        from tests.test_constraints import python_constraint
+        rules=[]
+        for name,lines in [('one',['def one(one, offset):','    return isinstance(one, dict)']),
+                           ('two',['def two(one, offset):','    return isinstance(two, dict)'])]:
+            rule=python_constraint(['return True'],{'step_index':3})
+            rule['assertion_name']=name
+            rule['python_check']={'function_name':name,'code_lines':lines}
+            rules.append(rule)
+        checks=[check_constraint(rule,trace(),2,None,{}) for rule in rules]
+        self.assertEqual([c['verdict'] for c in checks],['SAT','VIOL'])
+        boundary=compute_boundary(checks,.3)
+        self.assertEqual(boundary['conclusive_checks'],2)
+        self.assertEqual(boundary['divergence_rate'],.5)
+        self.assertEqual(boundary_decision(boundary),'repair_required')
+
+    def test_wildcard_alias_and_selector_equivalent_guards_cannot_dilute_divergence(self):
+        from agentrx.constraints import check_constraint
+        from tests.test_constraints import python_constraint
+        def run(guards):
+            return [check_constraint(python_constraint(['return True'],guard),trace(),2,None,{}) for guard in guards]
+        failing=check_constraint(python_constraint(['return False'],{}),trace(),2,None,{})
+        wildcard=[{}, {'step_index':'*'}, {'role_name':'*'}, {'step_index':None,'tool_name':None}]
+        b=compute_boundary([failing,*run(wildcard)],.3)
+        self.assertEqual(b['conclusive_checks'],2)
+        self.assertEqual(b['divergence_rate'],.5)
+        self.assertEqual(boundary_decision(b),'repair_required')
+        aliases=[{'role_name':'assistant','step_index':3},
+                 {'agent_name':'assistant','step_index':'3'},
+                 {'role_name':'assistant','step_index':[3,3]},
+                 {'role_name':'assistant','step_index':'3-3'},
+                 {'role_name':'assistant','step_index':'3:3','ignored_metadata':'label'}]
+        self.assertEqual(compute_boundary(run(aliases),.3)['unique_checks'],1)
+
+    def test_consumer_cannot_hide_raw_or_grouped_checker_errors_as_ok(self):
+        normalized=validate_candidates({'candidates':[candidate()],'abstention_reason':None},trace())['candidates']
+        for checks in ([check('VIOL'),check('ERROR',identity='b')], [check('VIOL'),check('ERROR')]):
+            boundary=compute_boundary(checks,.3)
+            valid=build_handoff(trace(),boundary,candidates=normalized,status='partial_checker_errors')
+            self.assertEqual(validate_handoff(valid,trace(),checks),valid)
+            invalid=copy.deepcopy(valid);invalid['status']='ok'
+            with self.subTest(checks=checks), self.assertRaises(ValueError):validate_handoff(invalid,trace(),checks)
+        with self.assertRaises(ValueError):
+            build_handoff(trace(),compute_boundary([check('VIOL'),check('ERROR',identity='b')],.3),candidates=normalized,status='ok')
+        with self.assertRaises(ValueError):
+            validate_handoff(build_handoff(trace(),compute_boundary([check('VIOL')],.3),candidates=normalized,status='partial_checker_errors'),trace(),[check('VIOL')])

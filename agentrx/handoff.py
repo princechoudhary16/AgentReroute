@@ -67,6 +67,12 @@ def validate_handoff(payload, trajectory, checks=None):
     status, attribution = payload['status'], payload['attribution_status']
     if status not in ('ok', 'partial_checker_errors', 'error') or attribution not in ('ranked', 'abstained', 'not_requested', 'error'):
         raise ValueError('Unknown handoff status')
+    if status == 'ok' and b['error_checks']:
+        raise ValueError('Known checker errors require partial or error status')
+    if checks is not None and status != 'error':
+        expected_status = 'partial_checker_errors' if any(c.get('verdict') == 'ERROR' for c in checks) else 'ok'
+        if status != expected_status:
+            raise ValueError('Handoff status does not match original checker errors')
     if (status == 'error') != (attribution == 'error'):
         raise ValueError('Pipeline and attribution error statuses disagree')
     if attribution in ('ranked', 'abstained') and payload['decision'] != 'repair_required':
