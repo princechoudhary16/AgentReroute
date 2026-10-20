@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 from .taxonomy import category
+from .boundary import constraint_fingerprint
 
 TYPES = {'SCHEMA', 'PROTOCOL', 'RELATIONAL_POST', 'PROVENANCE', 'TEMPORAL', 'CAPABILITY', 'ANY'}
 
@@ -141,6 +142,7 @@ def check_constraint(raw, trajectory, offset, provider, context):
               'assertion_name': raw.get('assertion_name', '<invalid>'), 'verdict': 'ERROR'}
     try:
         c = validate_constraint(raw)
+        result['rule_fingerprint'] = constraint_fingerprint(c)
         result.update(taxonomy_targets=c['taxonomy_targets'], constraint_type=c['constraint_type'],
                       check_type=c['check_type'], check_hint=c['check_hint'])
         if not guard_matches(c, trajectory['steps'][offset]):

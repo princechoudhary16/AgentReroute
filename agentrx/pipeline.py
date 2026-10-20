@@ -2,7 +2,8 @@
 from pathlib import Path
 from .constraints import check_constraint, prefix, validate_constraint
 from .io import write_json
-from .taxonomy import category, agent
+from .taxonomy import agent
+from .predictions import validate_prediction
 
 DEFAULTS = {'evidence': True, 'checklist': True, 'generation': 'stepwise', 'protocol': 'joint',
             'python_timeout': 3}
@@ -29,44 +30,6 @@ def _constraints(answer):
         raise ValueError('Duplicate assertion names within synthesis output')
     return constraints
 
-
-def validate_prediction(raw, trajectory, require_category=True):
-    if not isinstance(raw, dict):
-        raise ValueError('Prediction must be an object')
-    rationale = raw.get('rationale', raw.get('reason_for_failure', ''))
-    if not isinstance(rationale, str) or not rationale.strip():
-        raise ValueError('Prediction needs an evidence-grounded rationale')
-    label = category(raw.get('category', raw.get('failure_case'))) if (
-        require_category or raw.get('category') == 'Inconclusive') else None
-    index = raw.get('step_index', raw.get('index'))
-    role = raw.get('agent', raw.get('failed_agent'))
-    if not require_category and index is None and str(raw.get('custom_category', '')).strip():
-        label = 'Inconclusive'
-    if label == 'Inconclusive' and index is None:
-        if not str(raw.get('custom_category', '')).strip():
-            raise ValueError('Inconclusive prediction needs custom_category')
-        return {'step_index': None, 'agent': None, 'category': label, 'rationale': rationale,
-                'evidence_refs': [], 'custom_category': raw['custom_category']}
-    step = next((s for s in trajectory['steps'] if s['index'] == index and type(index) is int), None)
-    if step is None:
-        raise ValueError('Prediction step is absent from trajectory')
-    known_agents = {agent(e['role']) for s in trajectory['steps'] for e in s['substeps']}
-    if not isinstance(role, str) or not role.strip() or agent(role) not in known_agents:
-        raise ValueError('Prediction agent is absent from trajectory')
-    refs = raw.get('evidence_refs', [])
-    if not isinstance(refs, list):
-        raise ValueError('evidence_refs must be a list')
-    pairs = {(s['index'], e['sub_index']) for s in trajectory['steps'] for e in s['substeps']}
-    for ref in refs:
-        if not isinstance(ref, dict) or (ref.get('step_index'), ref.get('substep_index')) not in pairs:
-            raise ValueError('Prediction evidence refers to absent event')
-    result = {'step_index': index, 'agent': role, 'rationale': rationale, 'evidence_refs': refs}
-    if label:
-        if label == 'Inconclusive' and not str(raw.get('custom_category', '')).strip():
-            raise ValueError('Inconclusive prediction needs custom_category')
-        result['category'] = label
-        if label == 'Inconclusive': result['custom_category'] = raw['custom_category']
-    return result
 
 
 def diagnose(trajectory, policy, tools, config, provider, artifacts):
