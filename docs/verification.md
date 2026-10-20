@@ -249,3 +249,44 @@ Artifacts under ignored `runs/` include `generic-middleware-smoke-20261019`,
 Plans, raw model responses, output schemas, model metadata/usage, and observed target
 calls are preserved. Missing/ambiguous relationships remain unguarded coverage;
 there is no claim that metadata-only discovery proves business correctness.
+
+## Track B ranked recovery handoff — 2026-10-20
+
+Added an opt-in ranked protocol with strict divergence gating, mechanically
+fingerprinted rule/step deduplication, UNCLEAR/conflict exclusion, grounded
+candidate validation and the versioned `agentrx-recovery-v1` consumer contract.
+Legacy paper protocols retain their existing output. New reports keep all intended
+jobs in top-k denominators and label model confidence as uncalibrated.
+
+Verification performed locally:
+
+- **141 tests pass** before final review, including existing provider, middleware,
+  retail prevention and paper scoring tests. New cases cover strict threshold
+  equality, zero evidence, duplicates/conflicts, malformed candidates, ranker and
+  generation errors, abstention, native Ollama response schemas, CLI output and
+  missing/failed/abstained report denominators.
+- `python3 -m agentrx smoke-track-b --out runs/track-b-offline-20261020`
+  completed three independent fixture repetitions and saved loadable handoffs.
+  The recorded correct top-one result verifies plumbing, not model accuracy.
+- Live local Ollama 0.40.2, installed Qwen3-VL8B digest `f227e448f8bd…`,
+  context16384, temperature0: controlled evidence with **live ranked inference**
+  produced step3 / `MisinterpretationOfToolOutput`, one candidate, confidence1.0.
+  Both controlled checks violated; divergence1.0 exceeded threshold0.30. This is
+  labeled `hybrid_integration`, not a fully generated benchmark measurement.
+- A separate **fully generated** run on the same short synthetic counting trace
+  completed without transport errors but produced only one skipped evaluation.
+  It correctly recorded zero conclusive checks, null divergence, `inconclusive`
+  and attribution `not_requested`. This exposes inadequate generated-check
+  coverage; it is not successful fault localization.
+
+Live artifacts, prompts/responses, model identity and handoffs are under ignored
+`runs/track-b-live-20261020/`. This small pilot does not establish benchmark
+accuracy, calibration, an optimal threshold, or 19-mode taxonomy coverage. The
+existing taxonomy has nine failure types. The orchestrator's vote/share payload
+needs an explicit adapter for the new contract; this feature does not perform
+recovery actions.
+
+The built wheel also passed ranked AgentRx, original AgentRx, generic middleware
+and retail smoke commands from a temporary directory outside the checkout in an
+isolated Python3.12 environment. The initial build attempt lacked setuptools in
+the system Python; `uv build --offline` succeeded using cached build dependencies.

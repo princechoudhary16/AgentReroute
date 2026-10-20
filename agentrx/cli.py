@@ -72,13 +72,15 @@ def fetch_reference(destination):
     return destination
 
 
-def smoke(output):
+def smoke(output, ranked=False):
     output=Path(output)
     demo=json.loads(files('agentrx').joinpath('resources/demo.json').read_text(encoding='utf-8'))
     trajectory=normalize(demo['trajectory'],'tau')
     case={'trajectory':trajectory,'gold':normalize_gold(demo['annotation']),'policy':'','tools':{}}
     validate_case(case)
     cases=[case]
+    if ranked:
+        demo['responses']['ranked_judge'] = json.loads(files('agentrx').joinpath('resources/track_b_demo.json').read_text(encoding='utf-8'))
     write_json(output/'fixture_replay.json',demo['responses'])
     write_json(output/'corpus/cases.json',cases)
     write_json(output/'corpus/manifest.json',{'corpus_hash':digest(cases),'available_total':1,
@@ -89,6 +91,9 @@ def smoke(output):
             'client':{'provider':'replay','replay_file':str((output/'fixture_replay.json').resolve())},
             'variants':[{'name':'baseline','evidence':False,'checklist':False},
                         {'name':'agentrx','evidence':True,'checklist':True}]}
+    if ranked:
+        config['name'] = 'offline-track-b-smoke'
+        config['variants'] = [{'name':'ranked','protocol':'ranked','divergence_threshold':.3,'max_candidates':3}]
     return run_experiment(output/'corpus',config,output/'experiment')
 
 
@@ -124,6 +129,8 @@ def parser():
     evaluate.add_argument('--run',type=Path,required=True)
     replay=commands.add_parser('smoke',help='Offline fixture test of generation/checking/judging/repetition plumbing')
     replay.add_argument('--out',type=Path,default=Path('runs/smoke'))
+    ranked=commands.add_parser('smoke-track-b',help='Offline fixture test of divergence gating and ranked recovery payload')
+    ranked.add_argument('--out',type=Path,default=Path('runs/smoke-track-b'))
     external=commands.add_parser('import-predictions',help='Score external W&W or other baseline predictions')
     external.add_argument('--corpus',type=Path,default=Path('data/benchmark'))
     external.add_argument('--input',type=Path,required=True)
@@ -138,6 +145,7 @@ def parser():
 
 def _brief(summary, path):
     return {'measurement_kind':summary['measurement_kind'], 'output':str(path.resolve()),
+            **({'handoff_summary':str((path/summary['handoff_summary']).resolve())} if 'handoff_summary' in summary else {}),
             'scope':summary.get('measurement_scope', 'unlabeled_stress'),
             'result_rows':len(summary.get('results',[]))}
 
@@ -156,6 +164,8 @@ def main(argv=None):
             value={'validated_pairs':len(cases),'corpus_hash':manifest['corpus_hash'],'domains':manifest['domains']}
         elif args.command=='smoke':
             value=_brief(smoke(args.out),args.out/'experiment')
+        elif args.command=='smoke-track-b':
+            value=_brief(smoke(args.out,ranked=True),args.out/'experiment')
         elif args.command=='run':
             config = resolve_run_config(args.config, args.model)
             if args.model:
@@ -200,6 +210,7 @@ def main(argv=None):
             cached=CachedProvider(provider,args.out/'requests',{'single':digest(trajectory),'variant':variant})
             result=diagnose(trajectory,policy,tools,variant,cached,args.out)
             value={'status':result['status'],'prediction':result['prediction'],
+                   **({'recovery_handoff':result['recovery_handoff']} if 'recovery_handoff' in result else {}),
                    'measurement_kind':result['measurement_kind'],'error':result.get('error'),
                    'violation_count':len(result['violations']),'output':str(args.out.resolve())}
             print(json.dumps(value,indent=2))

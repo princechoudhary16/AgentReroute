@@ -88,3 +88,28 @@ class CLITests(unittest.TestCase):
         self.assertNotIn('max_completion_tokens',client['settings'])
         explicit=apply_model_selection({'client':{'provider':'ollama','model':'old','model_env':'LOCAL_MODEL'}},'new:8b')
         self.assertNotIn('model_env',explicit['client'])
+
+    def test_track_b_offline_smoke_and_single_diagnosis_save_versioned_payloads(self):
+        from agentrx.handoff import load_handoff
+        from agentrx.io import read_json
+        with tempfile.TemporaryDirectory() as d:
+            out=Path(d)/'smoke'
+            result=self.run_cli('smoke-track-b','--out',out)
+            self.assertEqual(result.returncode,0,result.stderr)
+            brief=json.loads(result.stdout)
+            self.assertIn('handoff_summary',brief)
+            report=read_json(out/'experiment/handoff_summary.json')
+            self.assertEqual(report['measurement_kind'],'offline_fixture')
+            self.assertEqual(report['results'][0]['top_k_step_accuracy']['1'],1)
+            jobs=list((out/'experiment/jobs').glob('**/result.json'))
+            self.assertEqual(len(jobs),3)
+            job=jobs[0].parent
+            handoff=load_handoff(job/'recovery_handoff.json',read_json(job/'trajectory_ir.json'),read_json(job/'checks.json'))
+            self.assertEqual(handoff['decision'],'repair_required')
+            self.assertEqual(handoff['candidates'][0]['confidence'],.85)
+            trajectory=Path(d)/'input.json'
+            trajectory.write_text(json.dumps(read_json(job/'trajectory_ir.json')))
+            diagnosed=self.run_cli('diagnose','--input',trajectory,'--domain','tau',
+                '--config','configs/track_b_ollama.json','--replay',out/'fixture_replay.json','--out',Path(d)/'single')
+            self.assertEqual(diagnosed.returncode,0,diagnosed.stderr)
+            self.assertEqual(json.loads(diagnosed.stdout)['recovery_handoff']['attribution_status'],'ranked')

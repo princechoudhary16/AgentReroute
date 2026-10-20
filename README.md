@@ -114,6 +114,18 @@ same command to resume; changed code, data, or model settings require a new outp
 directory. The test suite covers diagnosis, providers, and tool prevention.
 
 
+## Ranked recovery handoff (Track B)
+
+```bash
+python3 -m agentrx smoke-track-b
+python3 -m agentrx run --config configs/track_b_ollama.json --model YOUR_INSTALLED_MODEL --out runs/track-b
+```
+
+Adds a configurable divergence gate and up to three ranked fault candidates in
+`recovery_handoff.json`. Confidence scores are uncalibrated model estimates.
+See [payload, thresholds and recovery integration](docs/track-b.md).
+
+
 ## Generic tool middleware
 
 Use an LLM to propose prerequisite checks from an existing tool catalog, then
