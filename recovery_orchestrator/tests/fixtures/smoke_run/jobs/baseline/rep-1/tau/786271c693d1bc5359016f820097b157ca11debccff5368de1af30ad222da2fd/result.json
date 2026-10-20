@@ -1,0 +1,34 @@
+{
+  "trajectory_id": "fixture-count-mismatch",
+  "domain": "tau",
+  "measurement_kind": "offline_fixture",
+  "config": {
+    "evidence": false,
+    "checklist": false,
+    "generation": "stepwise",
+    "protocol": "joint",
+    "python_timeout": 3,
+    "name": "baseline"
+  },
+  "status": "ok",
+  "prediction": {
+    "step_index": 3,
+    "agent": "assistant",
+    "rationale": "At step 3 the assistant says 3 available options, but the step 2 product output has only two available variants; no recovery follows.",
+    "evidence_refs": [
+      {
+        "step_index": 2,
+        "substep_index": 1
+      },
+      {
+        "step_index": 3,
+        "substep_index": 1
+      }
+    ],
+    "category": "MisinterpretationOfToolOutput"
+  },
+  "checks": [],
+  "violations": [],
+  "errors": [],
+  "experiment_identity": "0d20ae29f47bad6dda0185aac2cedcc0eb9188a2d600d19245222200c3ed9b9a"
+}

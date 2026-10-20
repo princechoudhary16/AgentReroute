@@ -8,13 +8,15 @@ from pathlib import Path
 
 from .policy import BaselinePolicy, EVConfig, EVPolicy
 from .rca import find_runs, list_trajectories, load_payload, trace_dir_name
-from .registry import StrategyRegistry, mock_registry
+from .registry import StrategyRegistry, default_registry, mock_registry
 from .tau_retail import WRITE_TOOLS
 from .trace import Trace
 
 
 def _registry(path):
-    return StrategyRegistry.load(path) if path else mock_registry()
+    if path == 'mock':
+        return mock_registry()
+    return StrategyRegistry.load(path) if path else default_registry()
 
 
 def _variants(text):
@@ -93,7 +95,7 @@ def build_parser():
     def common(p, need_run=True):
         p.add_argument('--fa-run', required=need_run, help='FA experiment output dir (contains jobs/)')
         p.add_argument('--variants', help='comma-separated FA variants to pool (default: full AgentRx)')
-        p.add_argument('--registry', help='strategy registry JSON (default: mock registry)')
+        p.add_argument('--registry', help="strategy registry JSON, or 'mock' (default: bundled Repair-team snapshot)")
         p.add_argument('--policy', choices=['ev', 'baseline'], default='ev')
         p.add_argument('--retries', type=int, default=3)
         p.add_argument('--allow-irreversible', action='store_true',

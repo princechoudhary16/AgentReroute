@@ -88,6 +88,8 @@ class LoopGuard:
                reference: float | None) -> str | None:
         """Register an attempt. Returns 'worsened' if the guard says stop."""
         self.tried.add((rollback_step, strategy_id))
+        if score is None and reference is None:
+            return None             # bookkeeping only: marks the pair tried, not an attempt
         self.tried_list.append((rollback_step, strategy_id))
         self.scores.append(score)
         if self.stop_on_worse and score is not None and reference is not None and score < reference:

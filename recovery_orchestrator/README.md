@@ -99,7 +99,8 @@ recovery_orchestrator/
 │
 ├── registry.py         [2] strategy schema + validation
 ├── resources/
-│   └── mock_registry.json  [2] MOCK strategies (placeholder priors/costs)
+│   ├── repair_registry.json [2] Repair team's export_registry() snapshot (CLI default)
+│   └── mock_registry.json  [2] small MOCK registry used by unit tests
 ├── policy.py           [2] BaselinePolicy, EVPolicy, UnmodifiedReplayPolicy, EVConfig
 ├── detectors.py        [2] loop and tool-error detectors, RuntimeMonitor
 │
@@ -113,6 +114,9 @@ recovery_orchestrator/
 │
 ├── evaluation.py       [5] gold loading, oracle/mis-attribution, decision eval,
 │                           calibration, recovery metrics
+├── integration/
+│   ├── cross_branch_check.py  orchestrator × repair-strategies × faultattribution check
+│   └── REPORT.md           latest cross-branch results and open questions
 └── tests/
     ├── test_rca.py, test_registry_trace.py, test_policy.py,
     ├── test_orchestrator.py, test_evaluation.py, test_leakage.py
@@ -270,12 +274,22 @@ Done (offline core): adapter, registry schema and mock, policies, budget,
 guards, detectors, verifier gate, orchestrator loop, controls, metrics, CLI, and
 tests (synthetic environment and scripted LLM).
 
+Repair integration: the Repair team's registry is bundled
+(`resources/repair_registry.json`) and is the CLI default. Their
+`OrchestratorRepairer` plugs in as `Orchestrator(..., repairer=...)`; the loop
+calls the repairer's optional `record_outcome(trajectory_id, verified, rollout)`
+after every repaired attempt, with the verifier's verdict (never the reward).
+A repairer directive of kind `none` means "not applicable": it is skipped, not
+replayed. If the repairer substitutes a strategy, that strategy is logged as
+`applied_strategy` and not offered again on the same step. Results and open
+questions: [integration/REPORT.md](integration/REPORT.md).
+
 Not yet:
 * **tau-bench replay.** `TauBenchEnvironment` documents the plan (prefix tool
   re-execution, user-simulator history restore, ledger-only reward). The tau-bench
   dependency still needs team agreement.
 * **Live LLM client** for the verifier and replay agent. `llm.LLMClient` is the interface.
-* **Repair team registry.** The mock registry's priors and costs are invented.
+* **Registry priors** are the Repair team's estimates, not measured (see REPORT R3).
 * **Calibration** of FA agreement against gold, once live FA runs exist (none are measured yet).
 
 ## Fixtures

@@ -4,5 +4,4 @@ __pycache__/
 build/
 dist/
 runs/
-tests/
-resources/
+REPORT.md

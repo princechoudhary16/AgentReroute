@@ -28,6 +28,7 @@ class Attempt:
     tokens: int
     stopped_early: str | None
     verifier: dict | None
+    applied_strategy: str = ''           # directive's strategy; a repairer may pick another ladder rung
 
 
 @dataclass
@@ -85,7 +86,7 @@ class Orchestrator:
             log('verify_original', **_vdict(result))
 
         best: tuple[float, Rollout, VerifierResult] | None = None
-        stop_reason, last_decision = None, None
+        stop_reason, last_decision, skipped, skipped_pairs = None, None, [], set()
         while True:
             decision: Decision = self.policy.decide(payload, trace, guard)
             last_decision = decision
@@ -99,14 +100,29 @@ class Orchestrator:
                 stop_reason = f'budget: {blocked}'
                 log('budget_stop', reason=blocked, **budget.summary())
                 break
+            directive = self._directive(option, trace)
+            if directive.kind == 'none' and directive is not UNMODIFIED:
+                # The repairer has no plan this backend can execute (e.g. a terminal
+                # compensate/escalate plan). Replaying unchanged would just duplicate the
+                # control, so skip it and let the policy pick another option.
+                if (option.rollback_step, option.strategy.id) in skipped_pairs:
+                    log('no_progress', option=option.describe())
+                    break           # policies that allow repeats would ask for it forever
+                skipped_pairs.add((option.rollback_step, option.strategy.id))
+                skipped.append(directive.strategy_id)
+                guard.record(option.rollback_step, option.strategy.id, None, None)
+                guard.record(option.rollback_step, directive.strategy_id, None, None)
+                log('repair_not_applicable', option=option.describe(), applied_strategy=directive.strategy_id)
+                continue
             budget.start_attempt(option.rollback_step)
             outcome.intervened = True
-            rollout, result, directive = self._attempt(trace, task, option, budget)
+            rollout, result = self._attempt(trace, task, option, directive, budget)
             outcome.attempts.append(Attempt(budget.attempts, option.describe(), rollout.rollout_id,
                                             directive.kind, rollout.tokens, rollout.stopped_early,
-                                            _vdict(result)))
+                                            _vdict(result), directive.strategy_id))
             log('attempt', number=budget.attempts, rollout_id=rollout.rollout_id,
-                stopped_early=rollout.stopped_early, verifier=_vdict(result))
+                applied_strategy=directive.strategy_id, stopped_early=rollout.stopped_early,
+                verifier=_vdict(result))
             if result.passed:
                 outcome.status, outcome.reason = RECOVERED, 'verifier passed'
                 outcome.final_rollout_id, outcome.gaps = rollout.rollout_id, result.gaps
@@ -115,6 +131,9 @@ class Orchestrator:
             if not rollout.stopped_early and (best is None or score > best[0]):
                 best = (score, rollout, result)
             self.policy.observe_failure(option)
+            if directive.strategy_id != option.strategy.id:
+                # The repairer substituted another strategy; never offer that one again here either.
+                guard.record(option.rollback_step, directive.strategy_id, None, None)
             if guard.record(option.rollback_step, option.strategy.id, score, reference) == 'worsened':
                 stop_reason = 'loop guard: repair worsened the verifier score'
                 log('guard_stop', score=score, reference=reference)
@@ -129,17 +148,21 @@ class Orchestrator:
             outcome.reason = stop_reason or f'no verified repair ({last_decision.reason})'
         elif stop_reason:
             outcome.status, outcome.reason = ABORTED, stop_reason
+        elif skipped:
+            outcome.status = ESCALATE
+            outcome.reason = f'repairer had no executable plan ({", ".join(skipped)}); {last_decision.reason}'
         elif last_decision.action == ESCALATED:
             outcome.status, outcome.reason = ESCALATE, last_decision.reason
         else:
             outcome.status, outcome.reason = ABSTAIN, last_decision.reason
         return self._finish(outcome, budget, log)
 
-    def _attempt(self, trace: Trace, task, option: Option, budget: BudgetManager):
+    def _directive(self, option: Option, trace: Trace):
         if option.strategy is UNMODIFIED_STRATEGY:
-            directive = UNMODIFIED
-        else:
-            directive = self.repairer.build(option.strategy, option.primary, trace)
+            return UNMODIFIED
+        return self.repairer.build(option.strategy, option.primary, trace)
+
+    def _attempt(self, trace: Trace, task, option: Option, directive, budget: BudgetManager):
         prefix = build_prefix(trace, option.rollback_step, self.env.write_tools)
         monitor = RuntimeMonitor(trace.trajectory_id, trace.domain,
                                  write_tools=self.env.write_tools) if self.monitor_loops else None
@@ -147,10 +170,19 @@ class Orchestrator:
         budget.charge(rollout.tokens)
         if rollout.stopped_early:
             # A looping or truncated rollout fails without spending verifier tokens.
-            return rollout, VerifierResult(False, 0.0, 'FAIL', (f'stopped early: {rollout.stopped_early}',)), directive
-        result = self.verifier.verify(task, rollout)
-        budget.charge(result.tokens, verifier=True)
-        return rollout, result, directive
+            result = VerifierResult(False, 0.0, 'FAIL', (f'stopped early: {rollout.stopped_early}',))
+        else:
+            result = self.verifier.verify(task, rollout)
+            budget.charge(result.tokens, verifier=True)
+        if directive is not UNMODIFIED:
+            self._report_outcome(trace.trajectory_id, result.passed, rollout)
+        return rollout, result
+
+    def _report_outcome(self, trajectory_id, verified: bool, rollout: Rollout) -> None:
+        """Tell a learning repairer the verifier's verdict (never the ground-truth reward)."""
+        record = getattr(self.repairer, 'record_outcome', None)
+        if record is not None:
+            record(trajectory_id, verified, rollout)
 
     def _finish(self, outcome: Outcome, budget: BudgetManager, log) -> Outcome:
         outcome.budget = budget.summary()

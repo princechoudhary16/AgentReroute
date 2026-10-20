@@ -115,11 +115,29 @@ def parse_strategy(item: dict) -> Strategy:
                     description=item.get('description', ''), template=item.get('template', ''))
 
 
+def _bundled(name: str) -> StrategyRegistry:
+    text = files('recovery_orchestrator').joinpath(f'resources/{name}.json').read_text(encoding='utf-8')
+    return StrategyRegistry.from_dict(json.loads(text), name)
+
+
 def mock_registry() -> StrategyRegistry:
-    """Placeholder registry with the agreed schema, until the Repair team ships theirs."""
-    text = files('recovery_orchestrator').joinpath('resources/mock_registry.json').read_text(encoding='utf-8')
-    return StrategyRegistry.from_dict(json.loads(text), 'mock')
+    """Small placeholder registry with the agreed schema; unit tests depend on it."""
+    return _bundled('mock_registry')
 
 
-__all__ = ['Strategy', 'StrategyRegistry', 'RegistryError', 'mock_registry', 'parse_strategy',
+def repair_registry() -> StrategyRegistry:
+    """Snapshot of the Repair team's exported registry (see the file's ``_note``)."""
+    return _bundled('repair_registry')
+
+
+def default_registry() -> StrategyRegistry:
+    """The Repair team's snapshot when bundled, else the mock."""
+    try:
+        return repair_registry()
+    except FileNotFoundError:
+        return mock_registry()
+
+
+__all__ = ['Strategy', 'StrategyRegistry', 'RegistryError', 'mock_registry', 'repair_registry',
+           'default_registry', 'parse_strategy',
            'CATEGORIES', 'KINDS']

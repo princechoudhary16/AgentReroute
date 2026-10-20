@@ -1,0 +1,30 @@
+{
+  "trajectory_id": "syn-1",
+  "domain": "tau",
+  "measurement_kind": "offline_fixture",
+  "config": {
+    "evidence": false,
+    "checklist": false,
+    "generation": "stepwise",
+    "protocol": "joint",
+    "python_timeout": 3,
+    "name": "baseline"
+  },
+  "status": "ok",
+  "prediction": {
+    "step_index": 3,
+    "agent": "Assistant",
+    "category": "InvalidInvocation",
+    "rationale": "r",
+    "evidence_refs": [
+      {
+        "step_index": 6,
+        "substep_index": 1
+      }
+    ]
+  },
+  "checks": [],
+  "violations": [],
+  "errors": [],
+  "experiment_identity": "synthetic-identity"
+}

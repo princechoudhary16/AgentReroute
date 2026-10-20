@@ -8,7 +8,7 @@ Only ``evaluation`` reads the ledger.
 from __future__ import annotations
 
 import itertools
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Protocol
 
 from .detectors import Finding, RuntimeMonitor
@@ -40,6 +40,11 @@ UNMODIFIED = RepairDirective('none', 'unmodified_replay')
 
 
 class Repairer(Protocol):
+    """Repair-team interface. A repairer may also define
+    ``record_outcome(trajectory_id, verified, rollout)``; the orchestrator then calls it
+    after every verified (or failed) attempt so the repairer can learn. It receives the
+    verifier's verdict only, never the ground-truth reward."""
+
     def build(self, strategy: Strategy, candidate: Candidate, trace: Trace) -> RepairDirective: ...
 
 
@@ -67,7 +72,8 @@ class Rollout:
     trajectory_id: str
     rollback_step: int
     strategy_id: str
-    steps: list[Step]                       # prefix + injected guidance + regenerated steps
+    steps: list[Step]                       # prefix + injected guidance + regenerated steps;
+                                            # indices are unique and increasing (environments renumber)
     tokens: int = 0
     seconds: float = 0.0
     stopped_early: str | None = None        # e.g. 'loop' when the runtime monitor fired
@@ -141,6 +147,8 @@ class ScriptedEnvironment:
             for s in prefix.steps:
                 monitor.observe(s)
         for step in new_steps:
+            # Injected guidance occupies its own index; regenerated steps follow it.
+            step = replace(step, index=len(steps) + 1) if steps and step.index <= steps[-1].index else step
             steps.append(step)
             if monitor is not None:
                 found = monitor.observe(step)
