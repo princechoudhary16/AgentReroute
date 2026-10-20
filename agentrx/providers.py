@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib import error, parse, request
 from .io import digest, read_json, write_json
-from .prompts import messages, prompt_identity
+from .prompts import messages, prompt_identity, ranked_response_schema
 
 
 class ProviderError(RuntimeError):
@@ -233,7 +233,8 @@ class OllamaProvider:
         raise ProviderError('Ollama retries exhausted')
 
     def complete(self, stage, payload):
-        return self.complete_messages(messages(stage, payload))
+        return self.complete_messages(messages(stage, payload),
+            response_schema=ranked_response_schema(payload) if stage == 'ranked_judge' else None)
 
     def complete_messages(self, chat_messages, *, response_schema=None):
         """Native JSON chat with caller-supplied messages and the same transport checks."""

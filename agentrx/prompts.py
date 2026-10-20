@@ -1,7 +1,7 @@
 """Versioned reconstruction prompts; taxonomy wording is from the MIT reference."""
 import json
 from .io import digest
-from .taxonomy import taxonomy
+from .taxonomy import taxonomy, CATEGORIES
 
 PROMPT_VERSION = 'agentrx-reconstruction-v1'
 CONSTRAINT_SCHEMA = {
@@ -58,6 +58,44 @@ JUDGING = (
     'custom_category, with null step/agent if localization is unsupported. '
 )
 
+RANKED_JUDGING = (
+    'Rank distinct hypotheses for the earliest unrecovered causally decisive failure in this trace. '
+    'Look ahead for recovery and distinguish root causes from downstream symptoms. '
+    'Violations and divergence are fallible evidence, not proof of causality. '
+    'Return {"candidates": [{"step_index": original integer, "agent": observed responsible role, '
+    '"category": canonical failure identifier, "confidence": number from 0 to 1, '
+    '"rationale": evidence-grounded explanation including recovery, '
+    '"evidence_refs": [{"step_index": original integer, "substep_index": original integer}]}], '
+    '"abstention_reason": null}. Return zero to max_candidates distinct step hypotheses; '
+    'do not pad the list with unsupported alternatives. Empty candidates require a nonempty '
+    'abstention_reason. Each nonempty candidate requires specific observed evidence references. '
+    'Confidence is an uncalibrated model estimate of critical-failure responsibility, '
+    'not divergence, a vote share, or a normalized probability distribution. '
+    'Do not use Inconclusive as a candidate category; abstain instead. '
+    'The responsible agent may differ from the selected event speaker. '
+)
+
+
+def ranked_response_schema(payload):
+    trajectory = payload['trajectory']
+    steps = [s['index'] for s in trajectory['steps']]
+    roles = sorted({e['role'] for s in trajectory['steps'] for e in s['substeps']})
+    properties = {
+        'step_index': {'type': 'integer', 'enum': steps},
+        'agent': {'type': 'string', 'enum': roles},
+        'category': {'type': 'string', 'enum': list(CATEGORIES[:-1])},
+        'confidence': {'type': 'number', 'minimum': 0, 'maximum': 1},
+        'rationale': {'type': 'string', 'minLength': 1},
+        'evidence_refs': {'type': 'array', 'minItems': 1, 'items': {
+            'type': 'object', 'properties': {'step_index': {'type': 'integer', 'enum': steps},
+                'substep_index': {'type': 'integer', 'enum': sorted({e['sub_index'] for s in trajectory['steps'] for e in s['substeps']})}},
+            'required': ['step_index', 'substep_index'], 'additionalProperties': False}}}
+    return {'type': 'object', 'properties': {
+        'candidates': {'type': 'array', 'maxItems': payload['max_candidates'], 'items': {
+            'type': 'object', 'properties': properties, 'required': list(properties), 'additionalProperties': False}},
+        'abstention_reason': {'type': ['string', 'null']}},
+        'required': ['candidates', 'abstention_reason'], 'additionalProperties': False}
+
 
 def messages(stage, payload):
     if stage in ('global', 'dynamic'):
@@ -73,6 +111,8 @@ def messages(stage, payload):
                        '"reasoning": "cite exact event evidence"}]}. Return one entry per criterion. '
                        'UNCLEAR means missing/ambiguous evidence and is discarded; fail only on definite '
                        'CLEAR_FAIL. Do not infer consent or facts beyond explicit evidence. ')
+    elif stage == 'ranked_judge':
+        instruction = RANKED_JUDGING + 'Taxonomy: ' + json.dumps(taxonomy(payload.get('checklist', False)))
     elif stage in ('judge', 'localize', 'categorize'):
         instruction = JUDGING + 'Taxonomy: ' + json.dumps(taxonomy(payload.get('checklist', False)))
         if payload.get('checklist'):
@@ -92,5 +132,5 @@ def messages(stage, payload):
 def prompt_identity():
     # Include actual prompt constants and resource contents, not only a manual version.
     return digest({'version': PROMPT_VERSION, 'common': COMMON, 'generation': GENERATION,
-                   'judge': JUDGING, 'schema': CONSTRAINT_SCHEMA, 'taxonomy': taxonomy(True),
+                   'judge': JUDGING, 'ranked_judge': RANKED_JUDGING, 'schema': CONSTRAINT_SCHEMA, 'taxonomy': taxonomy(True),
                    'semantic_template': messages('semantic', {})[0]['content']})

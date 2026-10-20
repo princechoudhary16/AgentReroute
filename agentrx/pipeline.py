@@ -3,7 +3,9 @@ from pathlib import Path
 from .constraints import check_constraint, prefix, validate_constraint
 from .io import write_json
 from .taxonomy import agent
-from .predictions import validate_prediction
+from .predictions import validate_prediction, validate_candidates
+from .boundary import compute_boundary, boundary_decision, validate_threshold
+from .handoff import build_handoff
 
 DEFAULTS = {'evidence': True, 'checklist': True, 'generation': 'stepwise', 'protocol': 'joint',
             'python_timeout': 3}
@@ -11,12 +13,21 @@ DEFAULTS = {'evidence': True, 'checklist': True, 'generation': 'stepwise', 'prot
 
 def validate_config(config):
     result = {**DEFAULTS, **config}
-    if result['generation'] not in ('stepwise', 'oneshot') or result['protocol'] not in ('joint', 'step_then_category'):
+    if result['generation'] not in ('stepwise', 'oneshot') or result['protocol'] not in ('joint', 'step_then_category', 'ranked'):
         raise ValueError('Unsupported generation/judge protocol')
     if type(result['evidence']) is not bool or type(result['checklist']) is not bool:
         raise ValueError('evidence/checklist must be booleans')
     if not isinstance(result['python_timeout'], (int,float)) or result['python_timeout'] <= 0:
         raise ValueError('python_timeout must be positive')
+    if result['protocol'] == 'ranked':
+        if not result['evidence']:
+            raise ValueError('Ranked protocol requires evidence generation')
+        validate_threshold(result.get('divergence_threshold'))
+        result.setdefault('max_candidates', 3)
+        if type(result['max_candidates']) is not int or result['max_candidates'] not in (2, 3):
+            raise ValueError('max_candidates must be 2 or 3')
+    elif 'divergence_threshold' in result or 'max_candidates' in result:
+        raise ValueError('Boundary options require protocol ranked')
     return result
 
 
@@ -73,7 +84,26 @@ def diagnose(trajectory, policy, tools, config, provider, artifacts):
             payload['violations'] = violations
             payload['checker_errors'] = [{'step_index': e['step_index'], 'assertion_name': e['assertion_name'],
                                           'error': e['error']} for e in errors]
-        if config['protocol'] == 'step_then_category':
+        if config['protocol'] == 'ranked':
+            boundary = compute_boundary(checks, config['divergence_threshold'])
+            if boundary_decision(boundary) == 'repair_required':
+                ranked = validate_candidates(provider.complete('ranked_judge', {**payload,
+                    'boundary': boundary, 'max_candidates': config['max_candidates']}),
+                    trajectory, config['max_candidates'])
+                result['recovery_handoff'] = build_handoff(trajectory, boundary, **ranked,
+                    measurement_kind=provider.measurement_kind,
+                    status='partial_checker_errors' if errors else 'ok')
+            else:
+                result['recovery_handoff'] = build_handoff(trajectory, boundary,
+                    measurement_kind=provider.measurement_kind,
+                    status='partial_checker_errors' if errors else 'ok')
+            handoff = result['recovery_handoff']
+            raw = ({k: v for k, v in handoff['candidates'][0].items() if k not in ('rank', 'confidence')}
+                   if handoff['candidates'] else
+                   {'step_index': None, 'agent': None, 'category': 'Inconclusive',
+                    'custom_category': handoff['decision'] + '/' + handoff['attribution_status'],
+                    'rationale': handoff['abstention_reason']})
+        elif config['protocol'] == 'step_then_category':
             selected = validate_prediction(provider.complete('localize', payload), trajectory, require_category=False)
             write_json(artifacts/'localization.json', selected)
             if selected.get('category') == 'Inconclusive':
@@ -93,6 +123,13 @@ def diagnose(trajectory, policy, tools, config, provider, artifacts):
         result['error'] = f'{type(exc).__name__}: {exc}'
         result['prediction'] = None
     finally:
+        if config['protocol'] == 'ranked':
+            if result['status'] == 'error':
+                result['recovery_handoff'] = build_handoff(trajectory,
+                    compute_boundary(checks, config['divergence_threshold']),
+                    measurement_kind=provider.measurement_kind, status='error',
+                    abstention_reason=result['error'])
+            write_json(artifacts/'recovery_handoff.json', result['recovery_handoff'])
         write_json(artifacts/'checks.json', checks)
         write_json(artifacts/'validation_log.json', violations)
         write_json(artifacts/'result.json', result)

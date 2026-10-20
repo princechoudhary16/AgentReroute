@@ -107,6 +107,16 @@ class OllamaProviderTests(unittest.TestCase):
         self.assertIs(sent['body']['think'], False)
         self.assertEqual(p.last_telemetry['usage']['total_tokens'], 128)
 
+    def test_ranked_judge_uses_native_schema_and_legacy_generation_uses_json(self):
+        from tests.test_track_b import trace
+        from agentrx.prompts import ranked_response_schema
+        p=OllamaProvider('model',self.url,num_ctx=8192)
+        payload={'trajectory':trace(),'max_candidates':2,'boundary':{},'checklist':True}
+        p.complete('ranked_judge',payload)
+        self.assertEqual(OllamaHandler.records[-1]['body']['format'],ranked_response_schema(payload))
+        p.complete('global',{'policy':'','tools':{}})
+        self.assertEqual(OllamaHandler.records[-1]['body']['format'],'json')
+
     def test_context_overflow_is_an_error_not_silent_truncation(self):
         OllamaHandler.prompt_tokens = 4096
         p = OllamaProvider('qwen2.5-coder:7b', self.url, num_ctx=4096)

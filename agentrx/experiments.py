@@ -12,6 +12,7 @@ from .io import digest, read_json, write_json
 from .pipeline import diagnose, validate_config
 from .prompts import prompt_identity
 from .providers import CachedProvider, HTTPProvider
+from .handoff import validate_handoff, CONFIDENCE_KIND
 
 
 CLIENT_KEYS = {'provider','model','base_url','api_key_env','deployment','api_version','settings',
@@ -37,7 +38,7 @@ def experiment_variants(config):
         raise ValueError('variants must be a non-empty list')
     result, names = [], set()
     for variant in variants:
-        if set(variant) - {'name','evidence','checklist','generation','protocol','python_timeout'}:
+        if set(variant) - {'name','evidence','checklist','generation','protocol','python_timeout','divergence_threshold','max_candidates'}:
             raise ValueError('Unsupported variant field')
         name = variant.get('name','')
         if not isinstance(name,str) or not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_.-]*',name) or name in names:
@@ -180,8 +181,73 @@ def evaluate_run(corpus_dir, output):
                'std_convention':'sample standard deviation across independent repetitions',
                'replication_claim':'No exact numeric replication claimed; original corpus membership/model settings require verification.'}
     write_json(output/'summary.json',summary)
+    ranked = _handoff_report(output, selected, config, metadata)
+    if ranked is not None:
+        summary['handoff_summary'] = 'handoff_summary.json'
+        write_json(output/'summary.json',summary)
     _reports(output,summary)
     return summary
+
+
+def _handoff_report(output, selected, config, metadata):
+    reports = []
+    for variant in config['variants']:
+        if variant['protocol'] != 'ranked':
+            continue
+        for domain in config['domains']:
+            cases = [c for c in selected if c['trajectory']['domain'] == domain]
+            if not cases:
+                continue
+            denominator = len(cases) * config['repetitions']
+            counts = {'missing_jobs': 0, 'invalid_handoffs': 0, 'failed_jobs': 0}
+            decisions, attributions, hits = {}, {}, {str(k): 0 for k in (1, 2, 3)}
+            bins = [{'lower': i/5, 'upper': (i+1)/5, 'count': 0, 'correct': 0, 'confidence_sum': 0} for i in range(5)]
+            for repetition in range(config['repetitions']):
+                for case in cases:
+                    trajectory = case['trajectory']
+                    path = job_path(output, variant['name'], repetition, trajectory)/'result.json'
+                    if not path.exists():
+                        counts['missing_jobs'] += 1
+                        continue
+                    result = read_json(path)
+                    if result.get('status') == 'error':
+                        counts['failed_jobs'] += 1
+                    try:
+                        handoff = validate_handoff(result.get('recovery_handoff'), trajectory, result.get('checks', []))
+                        if handoff['status'] != result['status'] or handoff['measurement_kind'] != metadata['measurement_kind']:
+                            raise ValueError('Handoff/result provenance mismatch')
+                    except (ValueError, KeyError, TypeError):
+                        counts['invalid_handoffs'] += 1
+                        continue
+                    for target, key in ((decisions, 'decision'), (attributions, 'attribution_status')):
+                        value = handoff[key]
+                        target[value] = target.get(value, 0) + 1
+                    candidates = handoff['candidates'] if handoff['attribution_status'] == 'ranked' and handoff['status'] != 'error' else []
+                    gold_step = case['gold']['critical']['step_index']
+                    for k in (1, 2, 3):
+                        hits[str(k)] += any(c['step_index'] == gold_step for c in candidates[:k])
+                    for candidate in candidates:
+                        b = bins[min(int(candidate['confidence'] * 5), 4)]
+                        b['count'] += 1
+                        b['confidence_sum'] += candidate['confidence']
+                        b['correct'] += candidate['step_index'] == gold_step
+            for b in bins:
+                n = b['count']
+                b['mean_estimate'] = b.pop('confidence_sum') / n if n else None
+                b['observed_step_correctness'] = b.pop('correct') / n if n else None
+            reports.append({'variant': variant['name'], 'domain': domain, 'denominator': denominator,
+                            **counts, 'decision_counts': decisions, 'attribution_counts': attributions,
+                            'top_k_step_hits': hits, 'top_k_step_accuracy': {k: n/denominator for k, n in hits.items()},
+                            'confidence_bins': bins})
+    if not reports:
+        return None
+    report = {'schema_version': 'agentrx-ranked-evaluation-v1', 'measurement_kind': metadata['measurement_kind'],
+              'confidence_kind': CONFIDENCE_KIND, 'results': reports,
+              'denominator_convention': 'All intended case/repetition jobs, including missing, failed, abstained and not-requested.',
+              'confidence_note': 'Exploratory candidate-level bins for critical-step correctness; estimates are uncalibrated. Empty bins are null.',
+              'ranking_note': 'Top-k step localization only; existing summary.json retains top-one category/agent metrics.'}
+    write_json(output/'handoff_summary.json', report)
+    return report
 
 
 def _reports(output, summary):
