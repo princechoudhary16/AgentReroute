@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "repair-strategies"
+version = "0.1.0"
+description = "AgentReroute repair strategies: fault-specific, verifiable repair plans for failed agent runs"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+repair-strategies = "repair_strategies.cli:main"
+
+[tool.setuptools]
+package-dir = {"repair_strategies" = "."}
+packages = ["repair_strategies", "repair_strategies.evidence", "repair_strategies.policy", "repair_strategies.memory", "repair_strategies.strategies", "repair_strategies.adapters"]
+
+[tool.setuptools.package-data]
+repair_strategies = ["resources/*.json"]

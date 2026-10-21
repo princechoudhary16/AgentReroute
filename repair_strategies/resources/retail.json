@@ -1,0 +1,571 @@
+{
+ "name": "retail",
+ "description": "tau-bench retail tools and the parts of its policy that can be checked from a trace.",
+ "tools": [
+  {
+   "name": "find_user_id_by_email",
+   "description": "Find a user id by email.",
+   "effect": "read",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "email": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "email"
+    ]
+   }
+  },
+  {
+   "name": "find_user_id_by_name_zip",
+   "description": "Find a user id by first name, last name and zip code.",
+   "effect": "read",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "first_name": {
+      "type": "string"
+     },
+     "last_name": {
+      "type": "string"
+     },
+     "zip": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "first_name",
+     "last_name",
+     "zip"
+    ]
+   }
+  },
+  {
+   "name": "get_user_details",
+   "description": "Get the details of a user, including orders and payment methods.",
+   "effect": "read",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "user_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "user_id"
+    ]
+   }
+  },
+  {
+   "name": "get_order_details",
+   "description": "Get the status and details of an order.",
+   "effect": "read",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "order_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "order_id"
+    ]
+   }
+  },
+  {
+   "name": "get_product_details",
+   "description": "Get the inventory details of a product and its variants.",
+   "effect": "read",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "product_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "product_id"
+    ]
+   }
+  },
+  {
+   "name": "list_all_product_types",
+   "description": "List the name and product id of every product type.",
+   "effect": "read",
+   "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+   }
+  },
+  {
+   "name": "calculate",
+   "description": "Evaluate an arithmetic expression with + - * / and parentheses.",
+   "effect": "read",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "expression": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "expression"
+    ]
+   }
+  },
+  {
+   "name": "cancel_pending_order",
+   "description": "Cancel a pending order. Reason is 'no longer needed' or 'ordered by mistake'. Refunds go to the original payment methods.",
+   "effect": "write",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "order_id": {
+      "type": "string"
+     },
+     "reason": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "order_id",
+     "reason"
+    ]
+   }
+  },
+  {
+   "name": "modify_pending_order_address",
+   "description": "Modify the shipping address of a pending order.",
+   "effect": "write",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "order_id": {
+      "type": "string"
+     },
+     "address1": {
+      "type": "string"
+     },
+     "address2": {
+      "type": "string"
+     },
+     "city": {
+      "type": "string"
+     },
+     "state": {
+      "type": "string"
+     },
+     "country": {
+      "type": "string"
+     },
+     "zip": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "order_id",
+     "address1",
+     "address2",
+     "city",
+     "state",
+     "country",
+     "zip"
+    ]
+   }
+  },
+  {
+   "name": "modify_pending_order_payment",
+   "description": "Change the payment method of a pending order.",
+   "effect": "write",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "order_id": {
+      "type": "string"
+     },
+     "payment_method_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "order_id",
+     "payment_method_id"
+    ]
+   }
+  },
+  {
+   "name": "modify_pending_order_items",
+   "description": "Modify items of a pending order to other variants of the same products. Can be done once per order.",
+   "effect": "write",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "order_id": {
+      "type": "string"
+     },
+     "item_ids": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "new_item_ids": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "payment_method_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "order_id",
+     "item_ids",
+     "new_item_ids",
+     "payment_method_id"
+    ]
+   }
+  },
+  {
+   "name": "modify_user_address",
+   "description": "Modify the default address of a user.",
+   "effect": "write",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "user_id": {
+      "type": "string"
+     },
+     "address1": {
+      "type": "string"
+     },
+     "address2": {
+      "type": "string"
+     },
+     "city": {
+      "type": "string"
+     },
+     "state": {
+      "type": "string"
+     },
+     "country": {
+      "type": "string"
+     },
+     "zip": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "user_id",
+     "address1",
+     "address2",
+     "city",
+     "state",
+     "country",
+     "zip"
+    ]
+   }
+  },
+  {
+   "name": "return_delivered_order_items",
+   "description": "Return items of a delivered order. The refund goes to the original payment method or an existing gift card.",
+   "effect": "write",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "order_id": {
+      "type": "string"
+     },
+     "item_ids": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "payment_method_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "order_id",
+     "item_ids",
+     "payment_method_id"
+    ]
+   }
+  },
+  {
+   "name": "exchange_delivered_order_items",
+   "description": "Exchange items of a delivered order for other variants of the same products. The price difference is charged or refunded to payment_method_id.",
+   "effect": "write",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "order_id": {
+      "type": "string"
+     },
+     "item_ids": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "new_item_ids": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "payment_method_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "order_id",
+     "item_ids",
+     "new_item_ids",
+     "payment_method_id"
+    ]
+   }
+  },
+  {
+   "name": "transfer_to_human_agents",
+   "description": "Transfer the user to a human agent with a summary of the issue.",
+   "effect": "write",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "summary": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "summary"
+    ]
+   }
+  }
+ ],
+ "agent_tools": {
+  "planner": [
+   "find_user_id_by_email",
+   "find_user_id_by_name_zip",
+   "get_user_details",
+   "transfer_to_human_agents"
+  ],
+  "order_agent": [
+   "get_order_details",
+   "get_product_details",
+   "get_user_details",
+   "cancel_pending_order",
+   "modify_pending_order_address",
+   "modify_pending_order_payment",
+   "modify_pending_order_items",
+   "modify_user_address"
+  ],
+  "product_agent": [
+   "list_all_product_types",
+   "get_product_details",
+   "calculate"
+  ],
+  "returns_agent": [
+   "get_order_details",
+   "get_product_details",
+   "get_user_details",
+   "return_delivered_order_items",
+   "exchange_delivered_order_items",
+   "calculate"
+  ]
+ },
+ "equivalents": {
+  "find_user_id_by_email": [
+   "find_user_id_by_name_zip"
+  ],
+  "find_user_id_by_name_zip": [
+   "find_user_id_by_email"
+  ]
+ },
+ "rules": [
+  {
+   "id": "authenticate_first",
+   "kind": "requires_prior_call",
+   "tools": [
+    "get_user_details",
+    "get_order_details",
+    "cancel_pending_order",
+    "modify_pending_order_address",
+    "modify_pending_order_payment",
+    "modify_pending_order_items",
+    "modify_user_address",
+    "return_delivered_order_items",
+    "exchange_delivered_order_items"
+   ],
+   "any_of": [
+    "find_user_id_by_email",
+    "find_user_id_by_name_zip"
+   ],
+   "message": "Authenticate the user by email or by name and zip code before acting on any account or order."
+  },
+  {
+   "id": "confirm_before_write",
+   "kind": "requires_confirmation",
+   "tools": [
+    "cancel_pending_order",
+    "modify_pending_order_address",
+    "modify_pending_order_payment",
+    "modify_pending_order_items",
+    "modify_user_address",
+    "return_delivered_order_items",
+    "exchange_delivered_order_items"
+   ],
+   "message": "List the action details and obtain explicit user confirmation (yes) before changing the database."
+  },
+  {
+   "id": "cancel_reason",
+   "kind": "argument_enum",
+   "tool": "cancel_pending_order",
+   "argument": "reason",
+   "values": [
+    "no longer needed",
+    "ordered by mistake"
+   ],
+   "message": "A cancellation reason must be \"no longer needed\" or \"ordered by mistake\"."
+  },
+  {
+   "id": "modify_items_once",
+   "kind": "at_most_once",
+   "tool": "modify_pending_order_items",
+   "key": [
+    "order_id"
+   ],
+   "message": "Items of a pending order can be modified only once per order."
+  },
+  {
+   "id": "ids_from_evidence",
+   "kind": "argument_grounded",
+   "tools": [
+    "cancel_pending_order",
+    "modify_pending_order_address",
+    "modify_pending_order_payment",
+    "modify_pending_order_items",
+    "modify_user_address",
+    "return_delivered_order_items",
+    "exchange_delivered_order_items"
+   ],
+   "arguments": [
+    "user_id",
+    "order_id",
+    "item_ids",
+    "new_item_ids",
+    "payment_method_id"
+   ],
+   "message": "Use only identifiers that appear in the user's messages or in tool outputs."
+  }
+ ],
+ "compensations": {
+  "modify_pending_order_address": {
+   "inverse": "modify_pending_order_address",
+   "keep": [
+    "order_id"
+   ],
+   "restore": {
+    "tool": "get_order_details",
+    "match": {
+     "order_id": "order_id"
+    },
+    "fields": {
+     "address1": "address.address1",
+     "address2": "address.address2",
+     "city": "address.city",
+     "state": "address.state",
+     "country": "address.country",
+     "zip": "address.zip"
+    }
+   }
+  },
+  "modify_user_address": {
+   "inverse": "modify_user_address",
+   "keep": [
+    "user_id"
+   ],
+   "restore": {
+    "tool": "get_user_details",
+    "match": {
+     "user_id": "user_id"
+    },
+    "fields": {
+     "address1": "address.address1",
+     "address2": "address.address2",
+     "city": "address.city",
+     "state": "address.state",
+     "country": "address.country",
+     "zip": "address.zip"
+    }
+   }
+  },
+  "modify_pending_order_payment": {
+   "inverse": "modify_pending_order_payment",
+   "keep": [
+    "order_id"
+   ],
+   "restore": {
+    "tool": "get_order_details",
+    "match": {
+     "order_id": "order_id"
+    },
+    "fields": {
+     "payment_method_id": "payment_history.0.payment_method_id"
+    }
+   }
+  }
+ },
+ "safe_defaults": {
+  "modify_pending_order_address": {
+   "address2": ""
+  },
+  "modify_user_address": {
+   "address2": ""
+  }
+ },
+ "fact_keywords": {
+  "refund": [
+   "refund",
+   "amount",
+   "price",
+   "total"
+  ],
+  "price": [
+   "price",
+   "amount",
+   "total"
+  ],
+  "total": [
+   "total",
+   "amount",
+   "price"
+  ],
+  "cost": [
+   "price",
+   "amount",
+   "total"
+  ],
+  "status": [
+   "status"
+  ],
+  "tracking": [
+   "tracking_id",
+   "tracking"
+  ],
+  "available": [
+   "available"
+  ],
+  "balance": [
+   "balance"
+  ],
+  "address": [
+   "address"
+  ]
+ }
+}
