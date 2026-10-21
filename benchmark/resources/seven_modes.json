@@ -1,0 +1,128 @@
+{
+  "version": "1.0",
+  "modes": [
+    {
+      "id": "instruction_adherence",
+      "number": 1,
+      "family": "planning_orchestration",
+      "name": "Instruction/plan adherence failure",
+      "definition": "The agent ignores directives, under-executes, or over-executes unplanned actions that violate the overarching plan or domain policy.",
+      "decision_rules": [
+        "The agent had the information it needed and the correct goal, but skipped, reordered or added an action relative to the plan or policy.",
+        "Claiming a write action is done without calling the write tool is under-execution and belongs here.",
+        "If the agent pursues a different goal or calls an irrelevant tool or agent, use drift instead."
+      ]
+    },
+    {
+      "id": "drift",
+      "number": 2,
+      "family": "planning_orchestration",
+      "name": "Drift",
+      "definition": "The agent diverges from the intended path by selecting irrelevant tools or subsequent agents for the given user query.",
+      "decision_rules": [
+        "The selected tool or next agent cannot serve the current sub-goal.",
+        "Label the step that made the irrelevant selection, not the later step where the consequence shows."
+      ]
+    },
+    {
+      "id": "cycles",
+      "number": 3,
+      "family": "planning_orchestration",
+      "name": "Cycles",
+      "definition": "The agent repeatedly invokes itself or other tools without making progress, resulting in redundant loops and wasted computation.",
+      "decision_rules": [
+        "The same call (same tool and arguments) or the same handoff repeats with no state change in between.",
+        "Label the first redundant repetition: the step where the agent should have stopped or changed strategy.",
+        "A single retry after an explicit error is not a cycle."
+      ]
+    },
+    {
+      "id": "tool_failure",
+      "number": 4,
+      "family": "tool_execution",
+      "name": "Tool failure",
+      "definition": "An external API fails silently, returns unexpected results, or hits a rate limit, and the agent fails to detect or handle it gracefully.",
+      "decision_rules": [
+        "The tool's own output is wrong or an error (explicit or silent), and the agent proceeds as if it were valid.",
+        "fault_step is the tool step; critical_step is the agent step that consumed the bad output without handling it.",
+        "If the tool output is correct and the agent misreads it, use misinterpretation_of_tool_output."
+      ]
+    },
+    {
+      "id": "misinterpretation_of_tool_output",
+      "number": 5,
+      "family": "tool_execution",
+      "name": "Misinterpretation of tool output",
+      "definition": "The agent successfully executes a tool but hallucinates or misunderstands the resulting data payload.",
+      "decision_rules": [
+        "The tool output is correct and contains the needed value, but the agent's next action or claim contradicts it.",
+        "Label the agent step whose action or claim contradicts the output."
+      ]
+    },
+    {
+      "id": "context_propagation",
+      "number": 6,
+      "family": "context_memory",
+      "name": "Context propagation failure",
+      "definition": "An orchestrator or upstream agent fails to pass the correct, necessary context to dependent subordinate agents or tools.",
+      "decision_rules": [
+        "Information available to the sender is missing or altered in the handoff, and the receiver needed it.",
+        "Label the sending step, and the sender as the responsible agent."
+      ]
+    },
+    {
+      "id": "missing_details",
+      "number": 7,
+      "family": "context_memory",
+      "name": "Missing details in final output",
+      "definition": "The agent returns a seemingly error-free response and halts, but omits crucial information originally requested in the prompt.",
+      "decision_rules": [
+        "The final user-facing answer lacks requested information that the agent had obtained.",
+        "If the information was never obtained because of an earlier failure, label that earlier failure instead."
+      ]
+    }
+  ],
+  "special_labels": {
+    "out_of_scope": "A real failure that none of the seven modes describes. Counted in reports, excluded from mode macro-F1.",
+    "inconclusive": "A submission abstained. Counted as a miss for accuracy metrics."
+  },
+  "mappings": {
+    "agentrx": {
+      "Instruction/PlanAdherenceFailure": {"mode": "instruction_adherence", "fit": "exact"},
+      "InventionOfNewInformation": {"mode": "out_of_scope", "fit": "none", "note": "Hallucination is not one of the seven modes; omissions inside it would be missing_details and need manual relabelling."},
+      "InvalidInvocation": {"mode": "tool_failure", "fit": "approximate", "note": "Malformed calls produce tool errors the agent fails to handle."},
+      "MisinterpretationOfToolOutput": {"mode": "misinterpretation_of_tool_output", "fit": "approximate", "note": "AgentRx merges handoff failures into this category; those are context_propagation here."},
+      "IntentPlanMisalignment": {"mode": "drift", "fit": "approximate"},
+      "UnderspecifiedUserIntent": {"mode": "out_of_scope", "fit": "none"},
+      "IntentNotSupported": {"mode": "out_of_scope", "fit": "none"},
+      "GuardrailsTriggered": {"mode": "out_of_scope", "fit": "none"},
+      "SystemFailure": {"mode": "tool_failure", "fit": "approximate"},
+      "Inconclusive": {"mode": "inconclusive", "fit": "exact"}
+    },
+    "to_agentrx": {
+      "instruction_adherence": "Instruction/PlanAdherenceFailure",
+      "drift": "IntentPlanMisalignment",
+      "cycles": "Instruction/PlanAdherenceFailure",
+      "tool_failure": "SystemFailure",
+      "misinterpretation_of_tool_output": "MisinterpretationOfToolOutput",
+      "context_propagation": "MisinterpretationOfToolOutput",
+      "missing_details": "InventionOfNewInformation"
+    },
+    "mast": {
+      "FM-1.1 Disobey task specification": {"mode": "instruction_adherence", "fit": "exact"},
+      "FM-1.2 Disobey role specification": {"mode": "instruction_adherence", "fit": "approximate"},
+      "FM-1.3 Step repetition": {"mode": "cycles", "fit": "exact"},
+      "FM-1.4 Loss of conversation history": {"mode": "context_propagation", "fit": "approximate"},
+      "FM-1.5 Unaware of termination conditions": {"mode": "cycles", "fit": "approximate"},
+      "FM-2.1 Conversation reset": {"mode": "context_propagation", "fit": "approximate"},
+      "FM-2.2 Fail to ask for clarification": {"mode": "out_of_scope", "fit": "none"},
+      "FM-2.3 Task derailment": {"mode": "drift", "fit": "exact"},
+      "FM-2.4 Information withholding": {"mode": "context_propagation", "fit": "exact"},
+      "FM-2.5 Ignored other agent's input": {"mode": "context_propagation", "fit": "approximate"},
+      "FM-2.6 Reasoning-action mismatch": {"mode": "misinterpretation_of_tool_output", "fit": "approximate"},
+      "FM-3.1 Premature termination": {"mode": "missing_details", "fit": "approximate"},
+      "FM-3.2 No or incomplete verification": {"mode": "out_of_scope", "fit": "none"},
+      "FM-3.3 Incorrect verification": {"mode": "out_of_scope", "fit": "none"}
+    }
+  }
+}

@@ -1,0 +1,141 @@
+[
+  {
+    "task_id": "fixture-cancel",
+    "user_id": "mia_garcia_4516",
+    "instruction": "You are Mia Garcia (email mia.garcia2723@example.com). Cancel your pending order #W1000001 because you no longer need it.",
+    "actions": [
+      {
+        "name": "cancel_pending_order",
+        "kwargs": {
+          "order_id": "#W1000001",
+          "reason": "no longer needed"
+        }
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "task_id": "fixture-return",
+    "user_id": "mia_garcia_4516",
+    "instruction": "You are Mia Garcia (email mia.garcia2723@example.com). Return the headphones from delivered order #W1000002 and get the refund on your gift card.",
+    "actions": [
+      {
+        "name": "return_delivered_order_items",
+        "kwargs": {
+          "order_id": "#W1000002",
+          "item_ids": [
+            "3000000001"
+          ],
+          "payment_method_id": "gift_card_3036421"
+        }
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "task_id": "fixture-exchange",
+    "user_id": "noah_brown_6181",
+    "instruction": "You are Noah Brown (email noah.brown7922@example.com). In delivered order #W1000003, exchange the red M T-shirt for the black L one, paying any difference with PayPal.",
+    "actions": [
+      {
+        "name": "exchange_delivered_order_items",
+        "kwargs": {
+          "order_id": "#W1000003",
+          "item_ids": [
+            "1000000002"
+          ],
+          "new_item_ids": [
+            "1000000004"
+          ],
+          "payment_method_id": "paypal_5727330"
+        }
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "task_id": "fixture-address",
+    "user_id": "noah_brown_6181",
+    "instruction": "You are Noah Brown (email noah.brown7922@example.com). Change the shipping address of pending order #W1000004 to 77 Oak Avenue, Austin, TX 78702, USA.",
+    "actions": [
+      {
+        "name": "modify_pending_order_address",
+        "kwargs": {
+          "order_id": "#W1000004",
+          "address1": "77 Oak Avenue",
+          "address2": "",
+          "city": "Austin",
+          "state": "TX",
+          "country": "USA",
+          "zip": "78702"
+        }
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "task_id": "fixture-modify-items",
+    "user_id": "mia_garcia_4516",
+    "instruction": "You are Mia Garcia (email mia.garcia2723@example.com). In pending order #W1000001, switch the 500ml water bottle to the 1000ml steel one, paying with your credit card.",
+    "actions": [
+      {
+        "name": "modify_pending_order_items",
+        "kwargs": {
+          "order_id": "#W1000001",
+          "item_ids": [
+            "2000000001"
+          ],
+          "new_item_ids": [
+            "2000000002"
+          ],
+          "payment_method_id": "credit_card_7387803"
+        }
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "task_id": "fixture-payment",
+    "user_id": "noah_brown_6181",
+    "instruction": "You are Noah Brown (email noah.brown7922@example.com). Pay for pending order #W1000004 with your mastercard credit card instead of PayPal.",
+    "actions": [
+      {
+        "name": "modify_pending_order_payment",
+        "kwargs": {
+          "order_id": "#W1000004",
+          "payment_method_id": "credit_card_7815826"
+        }
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "task_id": "fixture-refund-amount",
+    "user_id": "ava_lee_2203",
+    "instruction": "You are Ava Lee (email ava.lee5521@example.com). Return the water bottle from delivered order #W1000005 to your original credit card, and ask how much will be refunded.",
+    "actions": [
+      {
+        "name": "return_delivered_order_items",
+        "kwargs": {
+          "order_id": "#W1000005",
+          "item_ids": [
+            "2000000001"
+          ],
+          "payment_method_id": "credit_card_4421987"
+        }
+      }
+    ],
+    "outputs": [
+      "20.0"
+    ]
+  },
+  {
+    "task_id": "fixture-tshirt-options",
+    "user_id": "ava_lee_2203",
+    "instruction": "You are Ava Lee (email ava.lee5521@example.com). Ask how many T-shirt variants are currently available. Do not change anything.",
+    "actions": [],
+    "outputs": [
+      "3"
+    ]
+  }
+]

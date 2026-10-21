@@ -1,0 +1,110 @@
+{
+  "6086499569": {
+    "name": "T-Shirt",
+    "product_id": "6086499569",
+    "variants": {
+      "1000000001": {
+        "item_id": "1000000001",
+        "options": {
+          "color": "blue",
+          "size": "M"
+        },
+        "available": true,
+        "price": 50.0
+      },
+      "1000000002": {
+        "item_id": "1000000002",
+        "options": {
+          "color": "red",
+          "size": "M"
+        },
+        "available": true,
+        "price": 52.5
+      },
+      "1000000003": {
+        "item_id": "1000000003",
+        "options": {
+          "color": "blue",
+          "size": "L"
+        },
+        "available": false,
+        "price": 50.0
+      },
+      "1000000004": {
+        "item_id": "1000000004",
+        "options": {
+          "color": "black",
+          "size": "L"
+        },
+        "available": true,
+        "price": 55.0
+      }
+    }
+  },
+  "8310926033": {
+    "name": "Water Bottle",
+    "product_id": "8310926033",
+    "variants": {
+      "2000000001": {
+        "item_id": "2000000001",
+        "options": {
+          "capacity": "500ml",
+          "material": "steel"
+        },
+        "available": true,
+        "price": 20.0
+      },
+      "2000000002": {
+        "item_id": "2000000002",
+        "options": {
+          "capacity": "1000ml",
+          "material": "steel"
+        },
+        "available": true,
+        "price": 28.0
+      },
+      "2000000003": {
+        "item_id": "2000000003",
+        "options": {
+          "capacity": "750ml",
+          "material": "glass"
+        },
+        "available": true,
+        "price": 24.0
+      }
+    }
+  },
+  "7228247242": {
+    "name": "Headphones",
+    "product_id": "7228247242",
+    "variants": {
+      "3000000001": {
+        "item_id": "3000000001",
+        "options": {
+          "type": "over-ear",
+          "color": "black"
+        },
+        "available": true,
+        "price": 199.0
+      },
+      "3000000002": {
+        "item_id": "3000000002",
+        "options": {
+          "type": "over-ear",
+          "color": "white"
+        },
+        "available": true,
+        "price": 209.0
+      },
+      "3000000003": {
+        "item_id": "3000000003",
+        "options": {
+          "type": "in-ear",
+          "color": "black"
+        },
+        "available": false,
+        "price": 129.0
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "pilot-gemma4-31b-cloud-v3",
+  "backend": "ollama",
+  "model": "gemma4:31b-cloud",
+  "data_dir": "benchmark/data/tau_retail",
+  "temperature": 0.0,
+  "seeds": [0, 1, 2],
+  "task_ids": ["retail-000", "retail-001", "retail-002", "retail-003", "retail-004", "retail-005", "retail-006",
+               "retail-007", "retail-008", "retail-009", "retail-010", "retail-011", "retail-014", "retail-015",
+               "retail-016", "retail-017", "retail-018", "retail-019", "retail-020", "retail-021"],
+  "timings": ["early"],
+  "max_steps": 60,
+  "cache_dir": "benchmark/runs/pilot-gemma-v2/llm_cache"
+}

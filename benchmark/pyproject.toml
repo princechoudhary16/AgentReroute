@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentreroute-benchmark"
+version = "0.1.0"
+description = "AgentReroute benchmark: fault-injected multi-agent runs, gold labels, attribution and recovery scoring"
+requires-python = ">=3.10"
+dependencies = []   # stdlib only; models are served by a local Ollama server
+
+[project.scripts]
+agentreroute-bench = "benchmark.cli:main"
+
+[tool.setuptools]
+package-dir = {"benchmark" = "."}
+packages = ["benchmark", "benchmark.env", "benchmark.faults", "benchmark.scoring"]
+
+[tool.setuptools.package-data]
+benchmark = ["resources/*.json", "resources/fixture_retail/*"]
