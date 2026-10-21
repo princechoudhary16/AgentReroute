@@ -29,6 +29,31 @@ class CLITests(unittest.TestCase):
             self.assertEqual(combined[0]['prediction']['category'],'MisinterpretationOfToolOutput')
             self.assertTrue(any(c['verdict']=='VIOL' for c in combined[0]['checks']))
 
+    def test_smoke_is_rerunnable_after_implementation_change(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(self.run_cli('smoke','--out',d).returncode,0)
+            meta=Path(d)/'experiment/experiment.json'
+            def make_stale():
+                data=json.loads(meta.read_text())
+                data['identity']['implementation_hash']='stale'
+                data['identity_hash']='stale'
+                meta.write_text(json.dumps(data))
+            make_stale()
+            again=self.run_cli('smoke','--out',d)
+            self.assertEqual(again.returncode,0,again.stderr)
+            make_stale()
+            resumed=self.run_cli('smoke','--out',d,'--keep')
+            self.assertEqual(resumed.returncode,2)
+            self.assertIn('Experiment identity changed (changed: implementation_hash)',resumed.stderr)
+
+    def test_smoke_refuses_to_delete_a_non_smoke_experiment(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d)/'experiment').mkdir()
+            (Path(d)/'experiment/keep.txt').write_text('precious')
+            result=self.run_cli('smoke','--out',d)
+            self.assertEqual(result.returncode,2)
+            self.assertTrue((Path(d)/'experiment/keep.txt').exists())
+
     def test_missing_credentials_fail_before_run_writes_results(self):
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(self.run_cli('smoke','--out',Path(d)/'smoke').returncode,0)

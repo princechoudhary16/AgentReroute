@@ -12,7 +12,8 @@ Requires Python 3.10+. No third-party runtime dependencies or installation neede
 
 ```bash
 python3 -m agentrx smoke
-python3 -m unittest discover -v
+python3 -m agentrx test     # live progress, green/red summary
+python3 -m agentrx check    # one-screen health summary (tests, smoke, audit, prevention)
 ```
 
 The demo runs offline with prerecorded model responses. It verifies the pipeline,
