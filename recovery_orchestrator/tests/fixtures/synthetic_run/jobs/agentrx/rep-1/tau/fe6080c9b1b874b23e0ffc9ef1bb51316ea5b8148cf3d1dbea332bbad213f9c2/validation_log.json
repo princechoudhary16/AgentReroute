@@ -1,0 +1,32 @@
+[
+  {
+    "step_index": 7,
+    "assertion_name": "items_grounded",
+    "verdict": "VIOL",
+    "taxonomy_targets": [
+      "MisinterpretationOfToolOutput"
+    ],
+    "constraint_type": "RELATIONAL_POST",
+    "check_type": "nl_check",
+    "check_hint": "...",
+    "evidence": [],
+    "rubric_results": [],
+    "unclear_count": 0,
+    "origin": "dynamic"
+  },
+  {
+    "step_index": 9,
+    "assertion_name": "confirm_before_write",
+    "verdict": "VIOL",
+    "taxonomy_targets": [
+      "Instruction/PlanAdherenceFailure"
+    ],
+    "constraint_type": "RELATIONAL_POST",
+    "check_type": "nl_check",
+    "check_hint": "...",
+    "evidence": [],
+    "rubric_results": [],
+    "unclear_count": 0,
+    "origin": "dynamic"
+  }
+]

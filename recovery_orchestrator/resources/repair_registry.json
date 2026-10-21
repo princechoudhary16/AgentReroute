@@ -1,0 +1,327 @@
+{
+  "schema_version": 1,
+  "_note": "Snapshot of repair_strategies.adapters.orchestrator.export_registry() from branch repair-strategies @ 5378e88. Regenerate with `python3 -m repair_strategies registry --out <this file>` on that branch.",
+  "strategies": [
+    {
+      "id": "grounded_replacement",
+      "name": "Replace unsupported claims with verified values",
+      "kind": "reasoning_repair",
+      "targets": [
+        "InventionOfNewInformation"
+      ],
+      "cost": {
+        "tokens": 700,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.55,
+      "reversible": true,
+      "description": "Checks every identifier, amount and count against user turns and tool outputs; replaces contradicted values with the verified ones and re-queries the tool that can verify the rest, delivered as a tool message.",
+      "template": "Checks every identifier, amount and count against user turns and tool outputs; replaces contradicted values with the verified ones and re-queries the tool that can verify the rest, delivered as a tool message. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "complete_omitted_details",
+      "name": "Supply requested facts the answer left out",
+      "kind": "reasoning_repair",
+      "targets": [
+        "InventionOfNewInformation"
+      ],
+      "cost": {
+        "tokens": 500,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.6,
+      "reversible": true,
+      "description": "Finds facts the user asked for that were retrieved but missing from the final answer and supplies them as verified values to include.",
+      "template": "Finds facts the user asked for that were retrieved but missing from the final answer and supplies them as verified values to include. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "abstain_or_ask",
+      "name": "Abstain or ask when no source exists",
+      "kind": "clarify",
+      "targets": [
+        "InventionOfNewInformation"
+      ],
+      "cost": {
+        "tokens": 400,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.4,
+      "reversible": true,
+      "description": "When a claimed fact has no source, asks the user if it is theirs to give, otherwise forbids the claim and has the agent say the information is unavailable.",
+      "template": "When a claimed fact has no source, asks the user if it is theirs to give, otherwise forbids the claim and has the agent say the information is unavailable. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "repair_handoff",
+      "name": "Patch the handoff with the missing context",
+      "kind": "reasoning_repair",
+      "targets": [
+        "MisinterpretationOfToolOutput"
+      ],
+      "cost": {
+        "tokens": 300,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.65,
+      "reversible": true,
+      "description": "Finds the fields the receiving agent needs that the handoff omitted or altered, recovers them from earlier evidence, patches the handoff and re-runs only the receiver.",
+      "template": "Finds the fields the receiving agent needs that the handoff omitted or altered, recovers them from earlier evidence, patches the handoff and re-runs only the receiver. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "structured_reading",
+      "name": "Read the tool output in code",
+      "kind": "reasoning_repair",
+      "targets": [
+        "MisinterpretationOfToolOutput"
+      ],
+      "cost": {
+        "tokens": 600,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.6,
+      "reversible": true,
+      "description": "Parses the consumed output into fields, computes counts and sums in code, and delivers the authoritative reading as a tool message together with the corrected values.",
+      "template": "Parses the consumed output into fields, computes counts and sums in code, and delivers the authoritative reading as a tool message together with the corrected values. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "independent_reading",
+      "name": "Second reading in a fresh context",
+      "kind": "reasoning_repair",
+      "targets": [
+        "MisinterpretationOfToolOutput"
+      ],
+      "cost": {
+        "tokens": 1500,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.5,
+      "reversible": true,
+      "description": "A separate model reads the raw output with only the user request; values it reports are confirmed against the parsed output before they are delivered.",
+      "template": "A separate model reads the raw output with only the user request; values it reports are confirmed against the parsed output before they are delivered. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "cross_source_check",
+      "name": "Re-query the source to catch silent corruption",
+      "kind": "retry",
+      "targets": [
+        "MisinterpretationOfToolOutput"
+      ],
+      "cost": {
+        "tokens": 400,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.35,
+      "reversible": true,
+      "description": "Re-queries the output the agent relied on, and an equivalent tool when one accepts the same arguments, so stale or corrupted data is replaced by a fresh reading.",
+      "template": "Re-queries the output the agent relied on, and an equivalent tool when one accepts the same arguments, so stale or corrupted data is replaced by a fresh reading. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "intent_contract_replan",
+      "name": "Replan against an explicit intent contract",
+      "kind": "reasoning_repair",
+      "targets": [
+        "IntentPlanMisalignment"
+      ],
+      "cost": {
+        "tokens": 1200,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.5,
+      "reversible": true,
+      "description": "Extracts the goal, entities in scope, required and forbidden actions; rolls back to before the plan was formed; regenerates in a fresh context with a lesson from the abandoned branch; gates every action against the contract.",
+      "template": "Extracts the goal, entities in scope, required and forbidden actions; rolls back to before the plan was formed; regenerates in a fresh context with a lesson from the abandoned branch; gates every action against the contract. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "confirm_ambiguous_writes",
+      "name": "Confirm the target of a write with the user",
+      "kind": "clarify",
+      "targets": [
+        "IntentPlanMisalignment"
+      ],
+      "cost": {
+        "tokens": 400,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.45,
+      "reversible": true,
+      "description": "When the action changes data and its target is not the one the user named, has the agent state the exact action and target and ask the user to confirm before executing it.",
+      "template": "When the action changes data and its target is not the one the user named, has the agent state the exact action and target and ask the user to confirm before executing it. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "policy_gate",
+      "name": "Enforce policy before each call with persistent plan state",
+      "kind": "reasoning_repair",
+      "targets": [
+        "Instruction/PlanAdherenceFailure"
+      ],
+      "cost": {
+        "tokens": 800,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.6,
+      "reversible": true,
+      "description": "Compiles the policy into pre-execution rules applied to every call, and carries a done/pending checklist of confirmed actions through the whole re-execution.",
+      "template": "Compiles the policy into pre-execution rules applied to every call, and carries a done/pending checklist of confirmed actions through the whole re-execution. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "policy_gate_fresh",
+      "name": "Policy gate after a fresh resample",
+      "kind": "reasoning_repair",
+      "targets": [
+        "Instruction/PlanAdherenceFailure"
+      ],
+      "cost": {
+        "tokens": 900,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.45,
+      "reversible": true,
+      "description": "The same gate and plan state, regenerating from the rollback point in a fresh context.",
+      "template": "The same gate and plan state, regenerating from the rollback point in a fresh context. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "hard_call_repair",
+      "name": "Block the invalid call and request the corrected one",
+      "kind": "retry",
+      "targets": [
+        "InvalidInvocation"
+      ],
+      "cost": {
+        "tokens": 400,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.7,
+      "reversible": true,
+      "description": "Validates the call against the tool schema, returns the exact violations as a tool error and asks for the corrected call only; invalid calls are blocked before execution on replay.",
+      "template": "Validates the call against the tool schema, returns the exact violations as a tool error and asks for the corrected call only; invalid calls are blocked before execution on replay. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "switch_on_schema_drift",
+      "name": "Switch to an equivalent tool on schema drift",
+      "kind": "retry",
+      "targets": [
+        "InvalidInvocation"
+      ],
+      "cost": {
+        "tokens": 400,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.5,
+      "reversible": true,
+      "description": "When the error says the tool or its arguments changed (deprecated, unknown argument), routes the call to an equivalent tool.",
+      "template": "When the error says the tool or its arguments changed (deprecated, unknown argument), routes the call to an equivalent tool. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "loop_nudge",
+      "name": "Point out the repetition",
+      "kind": "loop_break",
+      "targets": [
+        "Cycle"
+      ],
+      "cost": {
+        "tokens": 200,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.45,
+      "reversible": true,
+      "description": "Tells the agent the call already returned the same result and repeating it will not change the outcome.",
+      "template": "Tells the agent the call already returned the same result and repeating it will not change the outcome. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "loop_force_change",
+      "name": "Ban the repeated call and force a different approach",
+      "kind": "loop_break",
+      "targets": [
+        "Cycle"
+      ],
+      "cost": {
+        "tokens": 300,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.5,
+      "reversible": true,
+      "description": "Blocks the repeated call and lists the other actions available to the agent.",
+      "template": "Blocks the repeated call and lists the other actions available to the agent. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "loop_replan",
+      "name": "Replan from before the loop",
+      "kind": "loop_break",
+      "targets": [
+        "Cycle"
+      ],
+      "cost": {
+        "tokens": 800,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.4,
+      "reversible": true,
+      "description": "Rolls back to where the loop started and regenerates in a fresh context with the repeated call banned.",
+      "template": "Rolls back to where the loop started and regenerates in a fresh context with the repeated call banned. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "loop_rollback",
+      "name": "Roll back to the last user turn",
+      "kind": "loop_break",
+      "targets": [
+        "Cycle"
+      ],
+      "cost": {
+        "tokens": 1000,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.3,
+      "reversible": true,
+      "description": "Restarts the agent turn that led into the loop, from the last user message.",
+      "template": "Restarts the agent turn that led into the loop, from the last user message. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "tool_outcome_routing",
+      "name": "Retry, switch or abstain by tool reliability",
+      "kind": "retry",
+      "targets": [
+        "SystemFailure"
+      ],
+      "cost": {
+        "tokens": 200,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.55,
+      "reversible": true,
+      "description": "Classifies the error as transient or persistent and uses per-tool outcome memory to retry with backoff, switch to an equivalent tool, or abstain.",
+      "template": "Classifies the error as transient or persistent and uses per-tool outcome memory to retry with backoff, switch to an equivalent tool, or abstain. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "targeted_clarification",
+      "name": "Ask only for the missing fields",
+      "kind": "clarify",
+      "targets": [
+        "UnderspecifiedUserIntent"
+      ],
+      "cost": {
+        "tokens": 300,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.6,
+      "reversible": true,
+      "description": "Determines which required arguments of the intended action no evidence supplies, fills declared low-risk fields with safe defaults, and asks the user only for the rest.",
+      "template": "Determines which required arguments of the intended action no evidence supplies, fills declared low-risk fields with safe defaults, and asks the user only for the rest. Attributed step {step_index} ({category}): {rationale}"
+    },
+    {
+      "id": "compensate_and_escalate",
+      "name": "Undo what can be undone, then escalate",
+      "kind": "clarify",
+      "targets": [
+        "GuardrailsTriggered",
+        "IntentNotSupported"
+      ],
+      "cost": {
+        "tokens": 200,
+        "latency_s": 0.0
+      },
+      "prior_success": 0.9,
+      "reversible": false,
+      "description": "The request is outside policy or capability: compensates every executed write that has an inverse, lists those that cannot be undone, and escalates with a summary.",
+      "template": "The request is outside policy or capability: compensates every executed write that has an inverse, lists those that cannot be undone, and escalates with a summary. Attributed step {step_index} ({category}): {rationale}"
+    }
+  ]
+}

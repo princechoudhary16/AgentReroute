@@ -1,0 +1,62 @@
+{
+  "trajectory_id": "syn-1",
+  "domain": "tau",
+  "measurement_kind": "offline_fixture",
+  "config": {
+    "evidence": true,
+    "checklist": true,
+    "generation": "stepwise",
+    "protocol": "joint",
+    "python_timeout": 3,
+    "name": "agentrx"
+  },
+  "status": "ok",
+  "prediction": {
+    "step_index": 9,
+    "agent": "Assistant",
+    "category": "Instruction/Plan Adherence Failure",
+    "rationale": "Returned the wrong item.",
+    "evidence_refs": [
+      {
+        "step_index": 6,
+        "substep_index": 1
+      }
+    ]
+  },
+  "checks": [
+    {
+      "step_index": 9,
+      "assertion_name": "confirm_before_write",
+      "verdict": "VIOL",
+      "taxonomy_targets": [
+        "Instruction/PlanAdherenceFailure"
+      ],
+      "constraint_type": "RELATIONAL_POST",
+      "check_type": "nl_check",
+      "check_hint": "...",
+      "evidence": [],
+      "rubric_results": [],
+      "unclear_count": 0,
+      "origin": "dynamic"
+    }
+  ],
+  "violations": [
+    {
+      "step_index": 9,
+      "assertion_name": "confirm_before_write",
+      "verdict": "VIOL",
+      "taxonomy_targets": [
+        "Instruction/PlanAdherenceFailure"
+      ],
+      "constraint_type": "RELATIONAL_POST",
+      "check_type": "nl_check",
+      "check_hint": "...",
+      "evidence": [],
+      "rubric_results": [],
+      "unclear_count": 0,
+      "origin": "dynamic"
+    }
+  ],
+  "errors": [],
+  "experiment_identity": "synthetic-identity"
+}

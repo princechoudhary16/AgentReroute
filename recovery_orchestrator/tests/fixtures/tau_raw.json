@@ -1,0 +1,140 @@
+[
+  {
+    "task_id": "syn-1",
+    "reward": 0.0,
+    "trial": 0,
+    "records": {},
+    "info": {
+      "task": {
+        "user_id": "u1",
+        "actions": [
+          {
+            "name": "return_delivered_order_items",
+            "kwargs": {
+              "order_id": "#W1",
+              "item_ids": [
+                "111"
+              ],
+              "note": "GOLDSENTINEL-action"
+            }
+          }
+        ],
+        "instruction": "You are user u1 (a@b.c). Return the headphones from order #W1.",
+        "outputs": [
+          "GOLDSENTINEL-output"
+        ]
+      },
+      "reward_info": {
+        "reward": 0.0,
+        "info": {
+          "note": "GOLDSENTINEL-reward"
+        },
+        "actions": [
+          {
+            "name": "return_delivered_order_items",
+            "kwargs": {
+              "order_id": "#W1",
+              "item_ids": [
+                "111"
+              ],
+              "note": "GOLDSENTINEL-action"
+            }
+          }
+        ]
+      }
+    },
+    "traj": [
+      {
+        "role": "system",
+        "content": "# Retail agent policy\nAuthenticate the user first. Confirm before writes.",
+        "index": 1
+      },
+      {
+        "role": "user",
+        "content": "I want to return my headphones from order #W1. My email is a@b.c.",
+        "index": 2
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "c1",
+            "type": "function",
+            "function": {
+              "name": "find_user_id_by_email",
+              "arguments": "{\"email\": \"a@b.c\"}"
+            }
+          }
+        ],
+        "index": 3
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "c1",
+        "name": "find_user_id_by_email",
+        "content": "u1",
+        "index": 4
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "c2",
+            "type": "function",
+            "function": {
+              "name": "get_order_details",
+              "arguments": "{\"order_id\": \"#W1\"}"
+            }
+          }
+        ],
+        "index": 5
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "c2",
+        "name": "get_order_details",
+        "content": "{\"order_id\": \"#W1\", \"status\": \"delivered\", \"items\": [{\"item_id\": \"111\", \"name\": \"Headphones\"}, {\"item_id\": \"222\", \"name\": \"Watch\"}]}",
+        "index": 6
+      },
+      {
+        "role": "assistant",
+        "content": "Order #W1 only contains a Watch. Shall I return the Watch?",
+        "index": 7
+      },
+      {
+        "role": "user",
+        "content": "Oh. Ok, return the watch then.",
+        "index": 8
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "c3",
+            "type": "function",
+            "function": {
+              "name": "return_delivered_order_items",
+              "arguments": "{\"order_id\": \"#W1\", \"item_ids\": [\"222\"]}"
+            }
+          }
+        ],
+        "index": 9
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "c3",
+        "name": "return_delivered_order_items",
+        "content": "{\"status\": \"return requested\"}",
+        "index": 10
+      },
+      {
+        "role": "assistant",
+        "content": "Done, the watch return is requested.",
+        "index": 11
+      }
+    ]
+  }
+]

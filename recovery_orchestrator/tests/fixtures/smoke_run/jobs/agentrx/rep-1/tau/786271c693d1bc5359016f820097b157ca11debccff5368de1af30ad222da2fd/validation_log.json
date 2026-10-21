@@ -1,0 +1,100 @@
+[
+  {
+    "step_index": 3,
+    "assertion_name": "count_claim_grounded",
+    "verdict": "VIOL",
+    "taxonomy_targets": [
+      "MisinterpretationOfToolOutput"
+    ],
+    "constraint_type": "RELATIONAL_POST",
+    "check_type": "nl_check",
+    "check_hint": "Check that the available count agrees with the tool output.",
+    "evidence": [
+      {
+        "index": 1,
+        "substeps": [
+          {
+            "sub_index": 1,
+            "role": "user",
+            "content": "How many T-shirt options are available?"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "substeps": [
+          {
+            "sub_index": 1,
+            "role": "tool",
+            "content": "{\"variants\": {\"a\": {\"available\": true}, \"b\": {\"available\": false}, \"c\": {\"available\": true}}}",
+            "name": "get_product_details"
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "substeps": [
+          {
+            "sub_index": 1,
+            "role": "assistant",
+            "content": "There are 3 available T-shirt options."
+          }
+        ]
+      }
+    ],
+    "rubric_results": [
+      {
+        "criterion_index": 0,
+        "evaluation": "CLEAR_FAIL",
+        "reasoning": "Step 3 claims 3; step 2 has two true availability flags."
+      }
+    ],
+    "unclear_count": 0,
+    "origin": "global"
+  },
+  {
+    "step_index": 3,
+    "assertion_name": "available_count_matches",
+    "verdict": "VIOL",
+    "taxonomy_targets": [
+      "MisinterpretationOfToolOutput"
+    ],
+    "constraint_type": "RELATIONAL_POST",
+    "check_type": "python_check",
+    "check_hint": "Compare the claimed available count against true available flags in the preceding product output.",
+    "evidence": [
+      {
+        "index": 1,
+        "substeps": [
+          {
+            "sub_index": 1,
+            "role": "user",
+            "content": "How many T-shirt options are available?"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "substeps": [
+          {
+            "sub_index": 1,
+            "role": "tool",
+            "content": "{\"variants\": {\"a\": {\"available\": true}, \"b\": {\"available\": false}, \"c\": {\"available\": true}}}",
+            "name": "get_product_details"
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "substeps": [
+          {
+            "sub_index": 1,
+            "role": "assistant",
+            "content": "There are 3 available T-shirt options."
+          }
+        ]
+      }
+    ],
+    "origin": "dynamic"
+  }
+]

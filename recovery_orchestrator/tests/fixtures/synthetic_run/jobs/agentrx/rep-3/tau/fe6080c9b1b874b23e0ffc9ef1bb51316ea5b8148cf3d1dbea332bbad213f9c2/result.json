@@ -1,0 +1,19 @@
+{
+  "trajectory_id": "syn-1",
+  "domain": "tau",
+  "measurement_kind": "offline_fixture",
+  "config": {
+    "evidence": true,
+    "checklist": true,
+    "generation": "stepwise",
+    "protocol": "joint",
+    "python_timeout": 3,
+    "name": "agentrx"
+  },
+  "status": "error",
+  "prediction": null,
+  "checks": [],
+  "violations": [],
+  "errors": [],
+  "experiment_identity": "synthetic-identity"
+}

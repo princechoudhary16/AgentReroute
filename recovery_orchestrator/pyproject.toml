@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "recovery-orchestrator"
+version = "0.1.0"
+description = "AgentReroute recovery orchestrator: where, when and how to intervene on failed agent runs"
+requires-python = ">=3.10"
+dependencies = []   # stdlib only; tau-bench is the one dependency still to agree with the team
+
+[tool.setuptools]
+package-dir = {"recovery_orchestrator" = "."}
+packages = ["recovery_orchestrator"]
+
+[tool.setuptools.package-data]
+recovery_orchestrator = ["resources/*.json"]

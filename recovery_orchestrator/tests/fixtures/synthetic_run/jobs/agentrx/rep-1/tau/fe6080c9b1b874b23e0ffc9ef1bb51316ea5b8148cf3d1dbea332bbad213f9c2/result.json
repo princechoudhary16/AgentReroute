@@ -1,0 +1,92 @@
+{
+  "trajectory_id": "syn-1",
+  "domain": "tau",
+  "measurement_kind": "offline_fixture",
+  "config": {
+    "evidence": true,
+    "checklist": true,
+    "generation": "stepwise",
+    "protocol": "joint",
+    "python_timeout": 3,
+    "name": "agentrx"
+  },
+  "status": "partial_checker_errors",
+  "prediction": {
+    "step_index": 7,
+    "agent": "assistant",
+    "category": "Misinterpretation of Tool Output / Handoff Failure",
+    "rationale": "Misread order items.",
+    "evidence_refs": [
+      {
+        "step_index": 6,
+        "substep_index": 1
+      }
+    ]
+  },
+  "checks": [
+    {
+      "step_index": 7,
+      "assertion_name": "items_grounded",
+      "verdict": "VIOL",
+      "taxonomy_targets": [
+        "MisinterpretationOfToolOutput"
+      ],
+      "constraint_type": "RELATIONAL_POST",
+      "check_type": "nl_check",
+      "check_hint": "...",
+      "evidence": [],
+      "rubric_results": [],
+      "unclear_count": 0,
+      "origin": "dynamic"
+    },
+    {
+      "step_index": 9,
+      "assertion_name": "confirm_before_write",
+      "verdict": "VIOL",
+      "taxonomy_targets": [
+        "Instruction/PlanAdherenceFailure"
+      ],
+      "constraint_type": "RELATIONAL_POST",
+      "check_type": "nl_check",
+      "check_hint": "...",
+      "evidence": [],
+      "rubric_results": [],
+      "unclear_count": 0,
+      "origin": "dynamic"
+    }
+  ],
+  "violations": [
+    {
+      "step_index": 7,
+      "assertion_name": "items_grounded",
+      "verdict": "VIOL",
+      "taxonomy_targets": [
+        "MisinterpretationOfToolOutput"
+      ],
+      "constraint_type": "RELATIONAL_POST",
+      "check_type": "nl_check",
+      "check_hint": "...",
+      "evidence": [],
+      "rubric_results": [],
+      "unclear_count": 0,
+      "origin": "dynamic"
+    },
+    {
+      "step_index": 9,
+      "assertion_name": "confirm_before_write",
+      "verdict": "VIOL",
+      "taxonomy_targets": [
+        "Instruction/PlanAdherenceFailure"
+      ],
+      "constraint_type": "RELATIONAL_POST",
+      "check_type": "nl_check",
+      "check_hint": "...",
+      "evidence": [],
+      "rubric_results": [],
+      "unclear_count": 0,
+      "origin": "dynamic"
+    }
+  ],
+  "errors": [],
+  "experiment_identity": "synthetic-identity"
+}

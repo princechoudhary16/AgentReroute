@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "_note": "MOCK registry. Priors and costs are placeholders, not measurements. Replace with the Repair team's registry.",
+  "strategies": [
+    {
+      "id": "reground_tool_output",
+      "name": "Re-ground on tool output",
+      "kind": "reasoning_repair",
+      "targets": ["MisinterpretationOfToolOutput", "InventionOfNewInformation"],
+      "cost": {"tokens": 1500, "latency_s": 5},
+      "prior_success": 0.45,
+      "reversible": true,
+      "description": "Before continuing, re-read the latest tool outputs and state only facts they support.",
+      "template": "Before you respond, re-read every tool output so far. A previous attempt at this point made a mistake: {rationale} Base your next action strictly on the tool outputs."
+    },
+    {
+      "id": "policy_reminder",
+      "name": "Policy / plan reminder",
+      "kind": "reasoning_repair",
+      "targets": ["Instruction/PlanAdherenceFailure", "IntentPlanMisalignment"],
+      "cost": {"tokens": 1200, "latency_s": 4},
+      "prior_success": 0.35,
+      "reversible": true,
+      "description": "Restate the relevant policy rules and the user's goal before the next action.",
+      "template": "Before your next action, restate the user's request and the policy rules that apply. A previous attempt at this point went wrong: {rationale}"
+    },
+    {
+      "id": "fix_invocation",
+      "name": "Fix tool invocation",
+      "kind": "reasoning_repair",
+      "targets": ["InvalidInvocation"],
+      "cost": {"tokens": 1000, "latency_s": 3},
+      "prior_success": 0.5,
+      "reversible": true,
+      "description": "Check tool name and argument values against the tool schema and earlier outputs.",
+      "template": "Your next tool call must match the tool schema exactly and use argument values taken from earlier tool outputs. A previous attempt made an invalid call: {rationale}"
+    },
+    {
+      "id": "ask_clarification",
+      "name": "Ask the user to clarify",
+      "kind": "clarify",
+      "targets": ["UnderspecifiedUserIntent"],
+      "cost": {"tokens": 800, "latency_s": 3},
+      "prior_success": 0.3,
+      "reversible": true,
+      "description": "Ask a targeted clarification question instead of assuming.",
+      "template": "The user's request is ambiguous at this point ({rationale}). Ask one specific clarification question before acting."
+    },
+    {
+      "id": "retry_tool_call",
+      "name": "Retry after transient failure",
+      "kind": "retry",
+      "targets": ["SystemFailure"],
+      "cost": {"tokens": 200, "latency_s": 10},
+      "prior_success": 0.25,
+      "reversible": true,
+      "description": "Re-issue the failed call after a short wait; no reasoning change.",
+      "template": ""
+    },
+    {
+      "id": "break_loop",
+      "name": "Break repetition loop",
+      "kind": "loop_break",
+      "targets": ["Cycle"],
+      "cost": {"tokens": 800, "latency_s": 3},
+      "prior_success": 0.3,
+      "reversible": true,
+      "description": "Point out the repeated calls and require a different next action.",
+      "template": "You have repeated the same action several times without progress ({rationale}). Choose a different next action."
+    },
+    {
+      "id": "generic_reflect",
+      "name": "Generic reflection",
+      "kind": "reasoning_repair",
+      "targets": ["*"],
+      "cost": {"tokens": 1000, "latency_s": 4},
+      "prior_success": 0.15,
+      "reversible": true,
+      "description": "Untargeted fallback: think again carefully before the next action.",
+      "template": "A previous attempt went wrong at this point. Think carefully about the user's goal and the tool outputs before acting."
+    }
+  ]
+}
