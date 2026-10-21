@@ -2,9 +2,10 @@
 
     python scripts/compare_openrouter_agentrx_vs_mprl.py --n 6 --max-calls 90
 
-Both systems see identical inputs: for retail benchmark episodes, the public full trace plus the policy and tool
-schemas from the episode's task view (exactly what MPRLRecoveryPolicy reads); for external traces, the agentrx
-case. Every model request goes through one persistent CachedProvider, so reruns only pay for new requests.
+Both systems see identical inputs: for retail benchmark episodes, the public output_only trace plus the policy and
+tool schemas from the episode's task view; for external traces, the agentrx case (compacted). The full trace view
+(per-step input histories, ~20x larger) only backs the RecoveryEnv replays, which run offline. Every model request
+goes through one persistent CachedProvider, so reruns only pay for new requests.
 
 Budget: --max-calls caps live HTTP requests (retries included) for the whole run. Semantic (LLM-judged) constraint
 checks cost one request per guarded step, so each system gets at most --max-semantic of them per trace; the rest
@@ -24,13 +25,13 @@ sys.path.insert(0, str(ROOT))
 from agentrx.io import read_json, write_json  # noqa: E402
 from agentrx.pipeline import diagnose, diagnose_mp_rl  # noqa: E402
 from agentrx.providers import CachedProvider, HTTPProvider, ProviderError  # noqa: E402
-from agentrx.rl_cross_branch import (MPRLRecoveryPolicy, _repairable, candidates_to_benchmark_hypotheses,  # noqa: E402
-                                     trace_tools_and_policy)
+from agentrx.rl_cross_branch import _repairable, candidates_to_benchmark_hypotheses, trace_tools_and_policy  # noqa: E402,E501
 from agentrx.rl_policy import DualLoopRLJudge  # noqa: E402
 from agentrx.taxonomy import agent, category  # noqa: E402
 from benchmark.corpus import load_gold, load_public  # noqa: E402
 from benchmark.env.scripted import scripted_llm  # noqa: E402
 from benchmark.env.workflow import Directive  # noqa: E402
+from benchmark.scoring.baselines import heuristic_findings  # noqa: E402
 from benchmark.scoring.recovery import BudgetCaps, RecoveryEnv, _EpisodeRunner  # noqa: E402
 from benchmark.taxonomy import from_agentrx  # noqa: E402
 from repair_strategies.adapters.benchmark import RepairStrategyPolicy  # noqa: E402
@@ -122,9 +123,21 @@ class Meter:
 
 
 # ------------------------------------------------------------------------------ trace selection
+def compact(trajectory):
+    """The trace without per-step input histories and system prompts (the full view is ~20x larger)."""
+    out = {k: v for k, v in trajectory.items() if k != 'system_prompts'}
+    out['steps'] = [{k: v for k, v in s.items() if k not in ('input', 'input_digest', 'state_version')}
+                    for s in trajectory['steps']]
+    return out
+
+
 def retail_episodes(n):
-    """n failed test episodes, round-robin over MODES so every mode is represented (sorted ids within a mode)."""
+    """n failed test episodes, round-robin over MODES so every mode is represented (sorted ids within a mode).
+
+    trace_attr (output_only view) is what both systems attribute on; trace (full view) backs the RecoveryEnv.
+    """
     gold, traces = load_gold(CORPUS, 'test'), load_public(CORPUS, 'test', 'full')
+    traces_out = load_public(CORPUS, 'test', 'output_only')
     index = read_json(CORPUS/'gold'/'episodes.json')
     by_mode = {m: sorted(t for t, g in gold.items() if g['status'] == 'failed' and g['critical']['mode'] == m
                          and t in index) for m in MODES}
@@ -133,7 +146,8 @@ def retail_episodes(n):
         for m in MODES:
             if by_mode[m] and len(picked) < n:
                 picked.append(by_mode[m].pop(0))
-    return [{'kind': 'retail', 'id': t, 'gold': gold[t], 'trace': traces[t], 'ref': index[t]} for t in picked]
+    return [{'kind': 'retail', 'id': t, 'gold': gold[t], 'trace': traces[t], 'trace_attr': traces_out[t],
+             'ref': index[t]} for t in picked]
 
 
 def external_cases():
@@ -195,13 +209,12 @@ def run_mp_rl(item, inputs, ledger, http, artifacts):
         row['pred']['mode'] = top[0]['mode']
     if item['kind'] == 'retail':
         env, runner = episode_env(item)
-        # Fresh judge: its re-diagnosis repeats the requests above, so every one is a cache hit.
-        policy_obj = MPRLRecoveryPolicy(provider=ledger, rl_judge=DualLoopRLJudge(), use_llm_synthesis=True,
-                                        learn=False)
-        ledger.begin()
-        with Meter(ledger, http) as r:
-            row.update(_recover(policy_obj, env, runner, item['id']))
-        row.update(recovery_calls=r.calls, recovery_live=r.live, hypotheses=len(policy_obj.hypotheses.get(item['id'], [])))
+        # MPRLRecoveryPolicy.recover() minus its re-diagnosis: the same abstain rule as attribute(), then the
+        # repair engine it subclasses, over the top-3 hypotheses computed above.
+        if any(c.get('violated_checks') for c in ranked) or heuristic_findings(env.trace):
+            env.hypotheses = [_repairable(h) for h in top]
+        row['hypotheses'] = len(env.hypotheses)
+        row.update(_recover(RepairStrategyPolicy(directive_cls=Directive, max_hypotheses=3), env, runner, item['id']))
     return row
 
 
@@ -307,9 +320,10 @@ def markdown(results, summary, budget, args, stopped):
     lines += [f'| {k} | {v} |' for k, v in budget.items() if k != 'provider_failures']
     if budget['provider_failures']:
         lines += ['', 'Last provider failures:', ''] + [f'- `{f}`' for f in budget['provider_failures']]
-    lines += ['', 'Recovery: agentrx top-1 → RepairStrategyPolicy(max_hypotheses=1); mp_rl → MPRLRecoveryPolicy '
-                  '(top-3, frozen θ0, learn=False). "rec" = the delivered rollout scores reward 1 on the harness '
-                  'ledger. Scripted agents replay the episodes offline; only attribution calls the model.']
+    lines += ['', 'Recovery: agentrx top-1 → RepairStrategyPolicy(max_hypotheses=1); mp_rl top-3 (frozen θ0, '
+                  'MPRLRecoveryPolicy abstain rule) → RepairStrategyPolicy(max_hypotheses=3). "rec" = the delivered '
+                  'rollout scores reward 1 on the harness ledger. Scripted agents replay the episodes offline; only '
+                  'attribution calls the model.']
     return '\n'.join(lines) + '\n'
 
 
@@ -325,9 +339,11 @@ def main(argv=None):
     parser.add_argument('--out', default='runs/openrouter_comparison')
     args = parser.parse_args(argv)
     out = Path(args.out)
+    # Unbounded, the :free MiniMax model spent 17k-41k reasoning tokens (4-8 minutes) on one synthesis call.
     http = HTTPProvider.from_config({'provider': 'openai-compatible', 'base_url': BASE_URL, 'model': args.model,
-                                     'api_key_env': 'OPENROUTER_API_KEY', 'settings': {'temperature': 0},
-                                     'timeout': 180, 'retries': 2})
+                                     'api_key_env': 'OPENROUTER_API_KEY',
+                                     'settings': {'temperature': 0, 'reasoning_effort': 'low', 'max_tokens': 4096},
+                                     'timeout': 120, 'retries': 2})
     http.retry_delay = 4                                   # backoff 4s, 8s: never faster than --min-interval
     gate = LiveGate(http, args.max_calls, args.min_interval)
     cached = CachedProvider(gate, out/'cache', {'study': 'openrouter_comparison', 'model': args.model})
@@ -348,9 +364,9 @@ def main(argv=None):
             break
         if item['kind'] == 'retail':
             policy, tools = trace_tools_and_policy(episode_env(item)[0].task_view)   # what MPRLRecoveryPolicy reads
-            inputs = (item['trace'], policy, tools)
+            inputs = (item['trace_attr'], policy, tools)
         else:
-            inputs = (item['case']['trajectory'], item['case']['policy'], item['case']['tools'])
+            inputs = (compact(item['case']['trajectory']), item['case']['policy'], item['case']['tools'])
         slug = item['id'].replace('/', '_')
         print(f'[{i}/{len(items)}] {item["id"]} ({item["kind"]}) live so far {http.http_requests}', flush=True)
         row = {'id': item['id'], 'kind': item['kind'], 'gold': {**item['gold']['critical'],

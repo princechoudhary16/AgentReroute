@@ -18,9 +18,12 @@ class ProviderError(RuntimeError):
 
 
 def env_key(name):
-    """os.environ, else (Windows) the user-level HKCU\\Environment value a process started earlier cannot see."""
+    """os.environ, else (Windows) the user-level HKCU\\Environment value a process started earlier cannot see.
+
+    A variable set to '' in the process environment disables the fallback (e.g. a test proving a key is absent).
+    """
     key = os.environ.get(name)
-    if not key and sys.platform == 'win32':
+    if key is None and sys.platform == 'win32':
         import winreg
         try:
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment') as reg:
@@ -171,8 +174,10 @@ class HTTPProvider:
                 retry_after = exc.headers.get('Retry-After') if exc.headers else None
                 exc.close()
                 if exc.code == 400 and self.provider == 'openai-compatible' and 'response_format' in body:
-                    # Some OpenRouter :free upstreams reject response_format; the prompt still demands JSON.
+                    # Some OpenRouter :free upstreams reject response_format or reasoning_effort; the prompt
+                    # still demands JSON.
                     del body['response_format']
+                    body.pop('reasoning_effort', None)
                     encoded = json.dumps(body, ensure_ascii=False).encode()
                     continue
                 if exc.code not in (429, 500, 502, 503, 504) or attempt == self.retries:

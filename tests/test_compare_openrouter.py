@@ -1,5 +1,6 @@
 """Offline checks of the OpenRouter comparison script's budget layers and episode selection (no network)."""
 import importlib.util
+import json
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -66,6 +67,11 @@ class SelectionTests(unittest.TestCase):
         items = cmp.retail_episodes(6)
         self.assertEqual([i['gold']['critical']['mode'] for i in items], list(cmp.MODES))
         self.assertTrue(all(i['gold']['status'] == 'failed' for i in items))
+        for i in items:     # attribution sees the compact view; replays keep the full one, step for step
+            self.assertNotIn('input', json.dumps(i['trace_attr']['steps'][1]))
+            self.assertIn('input', i['trace']['steps'][1])
+            self.assertEqual([s['index'] for s in i['trace_attr']['steps']], [s['index'] for s in i['trace']['steps']])
+            self.assertEqual(cmp.compact(i['trace'])['steps'][1].keys(), i['trace_attr']['steps'][1].keys())
 
 
 if __name__ == '__main__':

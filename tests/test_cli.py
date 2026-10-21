@@ -57,7 +57,8 @@ class CLITests(unittest.TestCase):
     def test_missing_credentials_fail_before_run_writes_results(self):
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(self.run_cli('smoke','--out',Path(d)/'smoke').returncode,0)
-            env={k:v for k,v in os.environ.items() if k not in ('OPENAI_API_KEY','AZURE_OPENAI_API_KEY')}
+            # '' (not deleted): an empty process variable also blocks the Windows HKCU\Environment fallback.
+            env={**os.environ,'OPENAI_API_KEY':'','AZURE_OPENAI_API_KEY':''}
             result=self.run_cli('run','--corpus',Path(d)/'smoke/corpus',
                                 '--config','configs/pilot_gpt5.json','--out',Path(d)/'live',env=env)
             self.assertEqual(result.returncode,2)

@@ -63,7 +63,7 @@ class OpenRouterHardeningTests(unittest.TestCase):
                              http_error(429, retry_after='999'), http_error(400),
                              completion('<think>x</think>```json\n' + json.dumps(ANSWER) + '\n```')])
         provider = HTTPProvider(MODEL, BASE_URL, 'sk-or-test', provider='openai-compatible', retries=4,
-                                retry_delay=2)
+                                retry_delay=2, settings={'reasoning_effort': 'low', 'max_tokens': 4096})
         with mock.patch.object(request, 'build_opener', return_value=opener), \
                 mock.patch('agentrx.providers.time.sleep') as sleep:
             answer = provider.complete('judge', {'trajectory': {'steps': []}, 'checklist': False})
@@ -77,11 +77,25 @@ class OpenRouterHardeningTests(unittest.TestCase):
         self.assertEqual(first.get_header('X-title'), 'AgentReroute')
         self.assertEqual(first.get_header('Authorization'), 'Bearer sk-or-test')
         bodies = [json.loads(r.data) for r in opener.requests]
-        self.assertTrue(all('response_format' in b for b in bodies[:5]))
+        self.assertTrue(all('response_format' in b and b['reasoning_effort'] == 'low' for b in bodies[:5]))
         self.assertNotIn('response_format', bodies[5])
+        self.assertNotIn('reasoning_effort', bodies[5])
+        self.assertEqual(bodies[5]['max_tokens'], 4096)         # the token bound survives the fallback
         self.assertEqual((provider.last_telemetry['attempts'], provider.last_telemetry['response_format']),
                          (6, False))
         self.assertEqual(provider._backoff(10), 60)
+
+    def test_env_key_registry_fallback_and_empty_override(self):
+        reg = mock.MagicMock()
+        reg.QueryValueEx.return_value = ('from-hkcu', 1)
+        with mock.patch.dict('sys.modules', {'winreg': reg}), mock.patch('agentrx.providers.sys.platform', 'win32'):
+            with mock.patch.dict('os.environ', {}, clear=True):
+                self.assertEqual(env_key('SOME_KEY'), 'from-hkcu')
+            with mock.patch.dict('os.environ', {'SOME_KEY': ''}, clear=True):
+                self.assertEqual(env_key('SOME_KEY'), '')         # explicit blank wins: no registry read
+            with mock.patch.dict('os.environ', {'SOME_KEY': 'proc'}, clear=True):
+                self.assertEqual(env_key('SOME_KEY'), 'proc')
+        self.assertEqual(reg.QueryValueEx.call_count, 1)
 
     def test_400_fallback_is_openai_compatible_only_and_once(self):
         for kind, outcomes in (('openai', [http_error(400)]), ('openai-compatible', [http_error(400)] * 2)):
