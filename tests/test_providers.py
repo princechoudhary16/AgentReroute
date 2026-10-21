@@ -1,9 +1,13 @@
+import io
 import json
 import threading
 import unittest
+from email.message import Message
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from unittest import mock
 from unittest.mock import patch
-from agentrx.providers import HTTPProvider, OllamaProvider, ProviderError
+from urllib import error, request
+from agentrx.providers import HTTPProvider, OllamaProvider, ProviderError, _parse_json_object, env_key
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -200,3 +204,95 @@ class OllamaProviderTests(unittest.TestCase):
         schema={'type':'object','properties':{'rules':{'type':'array'}},'required':['rules']}
         p.complete_messages([{'role':'user','content':'Return rules'}],response_schema=schema)
         self.assertEqual(OllamaHandler.records[0]['body']['format'],schema)
+
+
+# OpenRouter hardening of HTTPProvider (offline: scripted opener, no network)
+BASE_URL = 'https://openrouter.ai/api/v1'
+MODEL = 'minimax/minimax-m3.1-flash:free'
+ANSWER = {'step_index': 2, 'agent': 'planner', 'category': 'InvalidInvocation', 'rationale': 'ok'}
+
+
+def http_error(code, retry_after=None):
+    headers = Message()
+    if retry_after is not None:
+        headers['Retry-After'] = retry_after
+    return error.HTTPError(BASE_URL + '/chat/completions', code, 'error', headers, io.BytesIO(b'{}'))
+
+
+def completion(content):
+    return io.BytesIO(json.dumps({'id': 'gen-1', 'model': MODEL, 'usage': {'total_tokens': 9},
+                                  'choices': [{'finish_reason': 'stop',
+                                               'message': {'content': content}}]}).encode())
+
+
+class FakeOpener:
+    def __init__(self, outcomes):
+        self.outcomes, self.requests = list(outcomes), []
+
+    def open(self, req, timeout=None):
+        self.requests.append(req)
+        outcome = self.outcomes.pop(0)
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+
+class OpenRouterHardeningTests(unittest.TestCase):
+    def test_strips_think_tags_and_markdown_fences(self):
+        raw = json.dumps(ANSWER)
+        self.assertEqual(_parse_json_object(raw), ANSWER)
+        self.assertEqual(_parse_json_object('<think>reasoning</think>\n```json\n' + raw + '\n```'), ANSWER)
+        self.assertEqual(_parse_json_object('<think>a\n{"x": 1}\nb</think>```\n' + raw + '```'), ANSWER)
+        self.assertEqual(_parse_json_object('Here is my verdict:\n' + raw + '\nHope this helps.'), ANSWER)
+        with self.assertRaisesRegex(ProviderError, r'Malformed model JSON response \(JSONDecodeError\)'):
+            _parse_json_object('<think>only thoughts</think> no json here')
+        with self.assertRaisesRegex(ProviderError, 'Model must return a JSON object'):
+            _parse_json_object('```json\n[1, 2]\n```')
+
+    def test_cloudflare_headers_and_exponential_backoff(self):
+        opener = FakeOpener([http_error(429), http_error(429), http_error(503, retry_after='3'),
+                             http_error(429, retry_after='999'), http_error(400),
+                             completion('<think>x</think>```json\n' + json.dumps(ANSWER) + '\n```')])
+        provider = HTTPProvider(MODEL, BASE_URL, 'sk-or-test', provider='openai-compatible', retries=4,
+                                retry_delay=2, settings={'reasoning_effort': 'low', 'max_tokens': 4096})
+        with mock.patch.object(request, 'build_opener', return_value=opener), \
+                mock.patch('agentrx.providers.time.sleep') as sleep:
+            answer = provider.complete('judge', {'trajectory': {'steps': []}, 'checklist': False})
+        self.assertEqual(answer, ANSWER)
+        # 2s * 2**attempt, then numeric Retry-After, capped at 60; the 400 fallback retries without sleeping.
+        self.assertEqual([c.args[0] for c in sleep.call_args_list], [2, 4, 3.0, 60.0])
+        first = opener.requests[0]
+        self.assertEqual(first.full_url, BASE_URL + '/chat/completions')
+        self.assertEqual(first.get_header('User-agent'), 'AgentReroute/1.0')
+        self.assertEqual(first.get_header('Http-referer'), 'https://github.com/AgentReroute')
+        self.assertEqual(first.get_header('X-title'), 'AgentReroute')
+        self.assertEqual(first.get_header('Authorization'), 'Bearer sk-or-test')
+        bodies = [json.loads(r.data) for r in opener.requests]
+        self.assertTrue(all('response_format' in b and b['reasoning_effort'] == 'low' for b in bodies[:5]))
+        self.assertNotIn('response_format', bodies[5])
+        self.assertNotIn('reasoning_effort', bodies[5])
+        self.assertEqual(bodies[5]['max_tokens'], 4096)         # the token bound survives the fallback
+        self.assertEqual((provider.last_telemetry['attempts'], provider.last_telemetry['response_format']),
+                         (6, False))
+        self.assertEqual(provider._backoff(10), 60)
+
+    def test_env_key_registry_fallback_and_empty_override(self):
+        reg = mock.MagicMock()
+        reg.QueryValueEx.return_value = ('from-hkcu', 1)
+        with mock.patch.dict('sys.modules', {'winreg': reg}), mock.patch('agentrx.providers.sys.platform', 'win32'):
+            with mock.patch.dict('os.environ', {}, clear=True):
+                self.assertEqual(env_key('SOME_KEY'), 'from-hkcu')
+            with mock.patch.dict('os.environ', {'SOME_KEY': ''}, clear=True):
+                self.assertEqual(env_key('SOME_KEY'), '')         # explicit blank wins: no registry read
+            with mock.patch.dict('os.environ', {'SOME_KEY': 'proc'}, clear=True):
+                self.assertEqual(env_key('SOME_KEY'), 'proc')
+        self.assertEqual(reg.QueryValueEx.call_count, 1)
+
+    def test_400_fallback_is_openai_compatible_only_and_once(self):
+        for kind, outcomes in (('openai', [http_error(400)]), ('openai-compatible', [http_error(400)] * 2)):
+            opener = FakeOpener(outcomes)
+            provider = HTTPProvider(MODEL, BASE_URL, 'k', provider=kind, retries=2, retry_delay=0)
+            with mock.patch.object(request, 'build_opener', return_value=opener), \
+                    self.assertRaisesRegex(ProviderError, 'Model HTTP 400'):
+                provider.complete('judge', {'checklist': False})
+            self.assertEqual(len(opener.requests), len(outcomes), kind)

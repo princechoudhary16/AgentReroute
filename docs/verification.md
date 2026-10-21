@@ -132,8 +132,7 @@ run start, not locked against another process updating its tag mid-generation.
 Added a separate `tool_prevention` package with a persistent SQLite retail backend,
 explicit policy compiler, protected registry/dispatcher, scoped approval tokens,
 conditional writes, durable operation results, trusted reconciliation, finite host
-completion obligations, and redacted audit/AgentRx trace export. See
-[retail experiment setup and trust boundary](retail-prevention-experiment.md).
+completion obligations, and redacted audit/AgentRx trace export.
 
 Verification:
 
@@ -198,7 +197,7 @@ strict compilation, and sync/async callable/dispatcher adapters. Original endpoi
 names, input schemas, target argument values, invocation shapes and successful
 results are preserved. Automatic prerequisite calls require explicit host designation
 as read-only. The earlier retail-specific `tool_prevention` package remains a
-[separate experiment](retail-prevention-experiment.md).
+separate experiment.
 
 Verification:
 

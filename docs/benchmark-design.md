@@ -229,7 +229,7 @@ generation with causation check and labels, corpus with splits and public/gold
 separation, faultattribution export, external importers (AgentRx release,
 Who&When), attribution/detection/recovery scoring with bootstrap CIs and McNemar,
 baselines, recovery harness with budget caps, agent robustness metrics, the `evaluate`
-suite, dashboard, CLI, 70 tests. First real-model pilot: `docs/pilot-2026-10-20.md`.
+suite, dashboard, CLI, 70 tests.
 
 Deviations and open items:
 

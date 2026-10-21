@@ -1,4 +1,4 @@
-"""Regression tests for the problems found in the 2026-10-20 pilot (docs/pilot-2026-10-20.md)."""
+"""Regression tests for the problems found in the 2026-10-20 pilot."""
 import unittest
 
 from benchmark.corpus import load_gold

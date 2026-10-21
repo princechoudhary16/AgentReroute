@@ -41,8 +41,8 @@ python3 -m benchmark evaluate --corpus benchmark/runs/pilot/corpus --split test 
 
 `evaluate` runs the standard suite (attribution baselines including the LLM judge, all
 recovery conditions with controls, McNemar against full restart, agent robustness) and
-writes `report.md` and `dashboard.html`. The first real-model results are in
-[docs/pilot-2026-10-20.md](../docs/pilot-2026-10-20.md).
+writes `report.md` and `dashboard.html`. The first real-model pilot findings are recorded in
+`benchmark/tests/test_pilot_fixes.py`.
 
 `generate` resumes where it stopped and retries Ollama timeouts, 429 and 5xx with
 backoff. LLM responses are cached (`cache_dir`), which makes reruns and rollback replays
