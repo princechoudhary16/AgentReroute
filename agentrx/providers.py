@@ -3,6 +3,8 @@ import copy
 import json
 import os
 import platform
+import re
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +15,40 @@ from .prompts import messages, prompt_identity, ranked_response_schema
 
 class ProviderError(RuntimeError):
     pass
+
+
+def env_key(name):
+    """os.environ, else (Windows) the user-level HKCU\\Environment value a process started earlier cannot see."""
+    key = os.environ.get(name)
+    if not key and sys.platform == 'win32':
+        import winreg
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment') as reg:
+                key, _ = winreg.QueryValueEx(reg, name)
+        except OSError:
+            pass
+    return key
+
+
+def _parse_json_object(text):
+    """The JSON object in a model reply, tolerating <think> blocks, markdown fences and surrounding prose."""
+    if not isinstance(text, str):
+        raise ProviderError('Malformed model JSON response (TypeError)')
+    cleaned = re.sub(r'<think>.*?</think>', '', text, flags=re.S).strip()
+    cleaned = re.sub(r'^```(?:json)?\s*|\s*```$', '', cleaned, flags=re.I).strip()
+    try:
+        value = json.loads(cleaned)
+    except json.JSONDecodeError:
+        first, last = cleaned.find('{'), cleaned.rfind('}')
+        try:
+            value = json.loads(cleaned[first:last + 1]) if 0 <= first < last else None
+        except json.JSONDecodeError:
+            value = None
+        if value is None:
+            raise ProviderError('Malformed model JSON response (JSONDecodeError)') from None
+    if not isinstance(value, dict):
+        raise ProviderError('Model must return a JSON object')
+    return value
 
 
 class NoRedirect(request.HTTPRedirectHandler):
@@ -52,6 +88,7 @@ class HTTPProvider:
                          'settings': self.settings, 'client': 'python-urllib', 'python': platform.python_version()}
         self.last_telemetry = {}
         self.last_raw = None
+        self.http_requests = 0          # every HTTP request sent by this instance, retries included
 
     @classmethod
     def from_config(cls, config):
@@ -65,7 +102,7 @@ class HTTPProvider:
         key_env = config.get('api_key_env',
                              'AZURE_OPENAI_API_KEY' if kind == 'azure'
                              else ('GEMINI_API_KEY' if kind == 'gemini' else 'OPENAI_API_KEY'))
-        key = config.get('api_key') or os.environ.get(key_env)
+        key = config.get('api_key') or env_key(key_env)
         if not key:
             raise ProviderError(f'Set {key_env} in your local environment or config before model-backed runs')
         if config.get('base_url_env') and not os.environ.get(config['base_url_env']):
@@ -85,51 +122,70 @@ class HTTPProvider:
                    settings=config.get('settings'), timeout=config.get('timeout', 180),
                    retries=config.get('retries', 3), max_input_chars=config.get('max_input_chars'))
 
+    def _backoff(self, attempt, retry_after=None):
+        """Seconds before the next attempt: a numeric Retry-After header, else exponential; both capped at 60."""
+        try:
+            return min(60.0, max(0.0, float(retry_after)))
+        except (TypeError, ValueError):
+            return min(60, self.retry_delay * (2 ** attempt))
+
     def complete(self, stage, payload):
         body = {'model': self.model, 'messages': messages(stage, payload),
                 'response_format': {'type': 'json_object'}, **self.settings}
         encoded = json.dumps(body, ensure_ascii=False).encode()
         if self.max_input_chars and sum(len(m['content']) for m in body['messages']) > self.max_input_chars:
             raise ProviderError('Configured input limit exceeded; no content was truncated')
-        headers = {'Content-Type': 'application/json'}
+        # Cloudflare in front of OpenRouter answers 403 to the default Python-urllib User-Agent.
+        headers = {'Content-Type': 'application/json', 'User-Agent': 'AgentReroute/1.0',
+                   'HTTP-Referer': 'https://github.com/AgentReroute', 'X-Title': 'AgentReroute'}
         headers['api-key' if self.provider == 'azure' else 'Authorization'] = (
             self.api_key if self.provider == 'azure' else 'Bearer ' + self.api_key)
         opener = request.build_opener(NoRedirect())
         start = time.monotonic()
         self.last_raw = None
-        for attempt in range(self.retries + 1):
+        attempt = sent = 0
+        while True:
             try:
+                sent += 1
+                self.http_requests += 1
                 req = request.Request(self.url, data=encoded, headers=headers, method='POST')
                 with opener.open(req, timeout=self.timeout) as response:
                     content = response.read(20_000_001)
                     if len(content) > 20_000_000:
                         raise ProviderError('Model response exceeds size limit')
                     raw = json.loads(content)
+                    status = getattr(response, 'status', None)
                 self.last_raw = raw
                 self.last_telemetry = {'model': raw.get('model'), 'response_id': raw.get('id'),
                     'usage': raw.get('usage', {}), 'seconds': time.monotonic() - start,
-                    'attempts': attempt + 1, 'timestamp': datetime.now(timezone.utc).isoformat()}
+                    'attempts': sent, 'http_status': status, 'response_format': 'response_format' in body,
+                    'timestamp': datetime.now(timezone.utc).isoformat()}
                 choice = raw['choices'][0]
                 if choice.get('finish_reason') not in ('stop', None):
                     raise ProviderError(f"Incomplete model response: {choice.get('finish_reason')}")
                 message = choice['message']
                 if message.get('refusal'):
                     raise ProviderError('Model refused diagnostic request')
-                answer = json.loads(message['content'])
-                if not isinstance(answer, dict):
-                    raise ProviderError('Model must return a JSON object')
-                return answer
+                return _parse_json_object(message['content'])
             except error.HTTPError as exc:
+                retry_after = exc.headers.get('Retry-After') if exc.headers else None
                 exc.close()
+                if exc.code == 400 and self.provider == 'openai-compatible' and 'response_format' in body:
+                    # Some OpenRouter :free upstreams reject response_format; the prompt still demands JSON.
+                    del body['response_format']
+                    encoded = json.dumps(body, ensure_ascii=False).encode()
+                    continue
                 if exc.code not in (429, 500, 502, 503, 504) or attempt == self.retries:
                     raise ProviderError(f'Model HTTP {exc.code}; response body omitted to protect credentials') from None
+                delay = self._backoff(attempt, retry_after)
             except (error.URLError, TimeoutError, OSError):
                 if attempt == self.retries:
                     raise ProviderError('Model transport failed after retries') from None
+                delay = self._backoff(attempt)
             except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
                 raise ProviderError(f'Malformed model JSON response ({type(exc).__name__})') from None
-            time.sleep(min(10, self.retry_delay * 2**attempt))
-        raise ProviderError('Model retries exhausted')
+            time.sleep(delay)
+            attempt += 1
 
 
 class OllamaProvider:

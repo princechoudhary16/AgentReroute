@@ -68,7 +68,8 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(len(Handler.records), 2)
 
     def test_missing_credentials_fail_preflight(self):
-        with patch.dict('os.environ', {}, clear=True):
+        # sys.platform: no HKCU\Environment fallback, which would find a real user-level key on Windows.
+        with patch.dict('os.environ', {}, clear=True), patch('agentrx.providers.sys.platform', 'linux'):
             with self.assertRaisesRegex(ProviderError, 'OPENAI_API_KEY'):
                 HTTPProvider.from_config({'provider': 'openai', 'model': 'gpt-5'})
 
@@ -79,7 +80,7 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(Handler.records[0]['auth'], 'Bearer gem-key')
 
     def test_gemini_missing_credentials_fail(self):
-        with patch.dict('os.environ', {}, clear=True):
+        with patch.dict('os.environ', {}, clear=True), patch('agentrx.providers.sys.platform', 'linux'):
             with self.assertRaisesRegex(ProviderError, 'GEMINI_API_KEY'):
                 HTTPProvider.from_config({'provider': 'gemini'})
 
