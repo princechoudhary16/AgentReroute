@@ -1,7 +1,9 @@
 """Command-line reproduction, audit, diagnosis, evaluation, and offline smoke."""
 import argparse
 import copy
+import io
 import json
+import shutil
 import subprocess
 import sys
 from importlib.resources import files
@@ -12,6 +14,7 @@ from .experiments import (evaluate_run, import_predictions, run_experiment, run_
                           validate_experiment)
 from .io import digest, read_json, write_json
 from .pipeline import diagnose, validate_config
+from .metrics import emit
 from .providers import CachedProvider, HTTPProvider, ReplayProvider
 
 
@@ -72,8 +75,23 @@ def fetch_reference(destination):
     return destination
 
 
-def smoke(output, ranked=False):
+def _is_smoke_experiment(directory):
+    metadata=directory/'experiment.json'
+    try:
+        return read_json(metadata)['identity']['config']['name'] in ('offline-smoke','offline-track-b-smoke')
+    except (OSError,KeyError,TypeError,ValueError):
+        return False
+
+
+def smoke(output, ranked=False, keep=False):
     output=Path(output)
+    experiment=output/'experiment'
+    # Smoke is a throwaway fixture check. Its identity hash covers the source code, so a stale
+    # run from older code is discarded; only directories we can prove are smoke runs are touched.
+    if not keep and experiment.exists():
+        if not _is_smoke_experiment(experiment):
+            raise ValueError(f'{experiment} is not an offline-smoke run; choose another --out')
+        shutil.rmtree(experiment)
     demo=json.loads(files('agentrx').joinpath('resources/demo.json').read_text(encoding='utf-8'))
     trajectory=normalize(demo['trajectory'],'tau')
     case={'trajectory':trajectory,'gold':normalize_gold(demo['annotation']),'policy':'','tools':{}}
@@ -129,8 +147,16 @@ def parser():
     evaluate.add_argument('--run',type=Path,required=True)
     replay=commands.add_parser('smoke',help='Offline fixture test of generation/checking/judging/repetition plumbing')
     replay.add_argument('--out',type=Path,default=Path('runs/smoke'))
+    replay.add_argument('--keep',action='store_true',help='Resume a previous smoke run instead of starting fresh')
     ranked=commands.add_parser('smoke-track-b',help='Offline fixture test of divergence gating and ranked recovery payload')
     ranked.add_argument('--out',type=Path,default=Path('runs/smoke-track-b'))
+    test=commands.add_parser('test',help='Run the unit tests with a live progress view')
+    test.add_argument('--filter',dest='name_filter',help='Only run tests whose id contains this text')
+    test.add_argument('--failfast',action='store_true')
+    test.add_argument('--json',dest='json_path',type=Path,help='Write a machine-readable summary here')
+    test.add_argument('--quiet',action='store_true',help='Suppress output (used by `check`)')
+    check=commands.add_parser('check',help='Human-readable health summary of tests, smoke, audit, prevention')
+    check.add_argument('--quick',action='store_true',help='Skip the unit tests')
     external=commands.add_parser('import-predictions',help='Score external W&W or other baseline predictions')
     external.add_argument('--corpus',type=Path,default=Path('data/benchmark'))
     external.add_argument('--input',type=Path,required=True)
@@ -153,6 +179,14 @@ def _brief(summary, path):
 def main(argv=None):
     args=parser().parse_args(argv)
     try:
+        if args.command=='test':
+            from .testrunner import run_tests
+            code,_=run_tests(name_filter=args.name_filter,failfast=args.failfast,json_path=args.json_path,
+                             stream=io.StringIO() if args.quiet else None)
+            return code
+        if args.command=='check':
+            from .check import run_checks
+            return run_checks(quick=args.quick)[0]
         if args.command=='prepare':
             source=fetch_reference(args.reference_dir) if args.fetch else args.source
             manifest=prepare_corpus(source,args.out)
@@ -162,8 +196,10 @@ def main(argv=None):
         elif args.command=='audit':
             cases,manifest=load_corpus(args.corpus)
             value={'validated_pairs':len(cases),'corpus_hash':manifest['corpus_hash'],'domains':manifest['domains']}
+            emit('audit',validated_pairs=len(cases),corpus_hash=manifest['corpus_hash'])
         elif args.command=='smoke':
-            value=_brief(smoke(args.out),args.out/'experiment')
+            value=_brief(smoke(args.out,keep=args.keep),args.out/'experiment')
+            emit('smoke',measurement_kind=value['measurement_kind'],result_rows=value['result_rows'])
         elif args.command=='smoke-track-b':
             value=_brief(smoke(args.out,ranked=True),args.out/'experiment')
         elif args.command=='run':
@@ -179,6 +215,8 @@ def main(argv=None):
             else:
                 summary=run_experiment(args.corpus,config,args.out)
                 value=_brief(summary,args.out)
+                emit('run',output=value['output'],measurement_kind=value['measurement_kind'],
+                     result_rows=value['result_rows'])
                 print(json.dumps(value,indent=2))
                 if any(rep['failed_jobs'] or rep['invalid_predictions'] or rep['partial_checker_jobs']
                        for row in summary['results'] for rep in row['repetitions']):

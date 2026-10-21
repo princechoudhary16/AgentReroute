@@ -4,6 +4,7 @@ from .io import digest
 from .taxonomy import taxonomy, CATEGORIES
 
 PROMPT_VERSION = 'agentrx-reconstruction-v1'
+PHASE2_STAGES = ('perspective_global', 'perspective_dynamic', 'perspective_repair', 'tool_sandbox')
 CONSTRAINT_SCHEMA = {
     'assertion_name': 'unique_snake_case', 'taxonomy_targets': ['InvalidInvocation'],
     'constraint_type': 'SCHEMA|PROTOCOL|RELATIONAL_POST|PROVENANCE|TEMPORAL|CAPABILITY|ANY',
@@ -123,6 +124,54 @@ def messages(stage, payload):
                             'a nonempty custom_category; this is normalized to an Inconclusive abstention. ')
         elif stage == 'categorize':
             instruction += 'The first phase fixed selected_step. Assign its category without changing step or agent. '
+    elif stage in ('perspective_global', 'perspective_dynamic'):
+        p_name = payload.get('perspective_name', 'Perspective')
+        p_focus = payload.get('perspective_focus', '')
+        tax_subset = payload.get('taxonomy_subset', taxonomy(False))
+        instruction = (
+            GENERATION
+            + f'You are operating exclusively under {p_name}. Focus: {p_focus} '
+            + ('Synthesize GLOBAL obligations only from tool schemas and domain policy for this perspective. '
+               if stage == 'perspective_global' else
+               'Synthesize DYNAMIC obligations from task, global constraints, and supplied trajectory for this perspective. ')
+            + 'IMPORTANT: In event_trigger, prefer step_index="*" and broad role_name/tool_name patterns so guards do not SKIP all steps. '
+            + 'IR SCHEMA (exact keys): trajectory only has keys trajectory_id, domain, instruction, steps '
+              '(never trajectory["tools"]). Each step in trajectory["steps"] is {"index": int, "substeps": '
+              '[{"sub_index": int, "role": str, "content": str, "tool_calls": [{"id": str, "name": str, '
+              '"arguments": dict}]}]}; tool_calls may be absent. Do not copy placeholder names like '
+              'unique_snake_case or objective criterion. '
+            + (f"Observed autonomous agent roles in trajectory: {json.dumps(payload['observed_agent_roles'])}. "
+               if payload.get('observed_agent_roles') else '')
+            + 'Taxonomy subset for this perspective: ' + json.dumps(tax_subset)
+        )
+        if payload.get('memory_exemplars'):
+            instruction += ' Verified high-reward constraint exemplars to emulate: ' + json.dumps(payload['memory_exemplars'])
+        if payload.get('forbidden_patterns'):
+            instruction += ' KNOWN INVALID PATTERNS TO AVOID (never emit these): ' + json.dumps(payload['forbidden_patterns'])
+        if payload.get('retry_feedback'):
+            instruction += ' COMPILER REJECTION FEEDBACK FROM PREVIOUS ATTEMPT (MUST FIX): ' + json.dumps(payload['retry_feedback'])
+    elif stage == 'perspective_repair':
+        rung = payload.get('rung', 1)
+        instruction = (
+            'You are the MAS Recovery Generator repairing a single faulty agent step at the rollback point. '
+            'Return JSON: {"repaired_substep": {"sub_index": 1, "role": "<agent_role>", "content": "<fixed_content>", '
+            '"tool_calls": [<optional fixed tool call objects>]}, "repair_rationale": "<brief explanation>"}. '
+            'Preserve required action structure: if the original step required a tool call, emit a corrected tool_calls list '
+            'rather than deleting the tool call. '
+            f'Repair Rung: {rung}. '
+        )
+        if payload.get('forbidden_patterns'):
+            instruction += ' FORBIDDEN OUTPUTS (DO NOT REPEAT): ' + json.dumps(payload['forbidden_patterns'])
+        if payload.get('retry_feedback'):
+            instruction += ' LAYER 1 REJECTION FEEDBACK (DO NOT REPEAT REJECTED LINE): ' + json.dumps(payload['retry_feedback'])
+    elif stage == 'tool_sandbox':
+        instruction = (
+            'You are the Dynamic MAS Environment / Peer-Agent Sandbox. Given the trajectory prefix ending at the '
+            'newly repaired step, generate the immediate next step response (either the tool observation for the '
+            'repaired tool_calls or the next MAS peer agent response). '
+            'Return JSON: {"next_step": {"index": <int>, "substeps": [{"sub_index": 1, "role": "<tool_or_agent_role>", '
+            '"content": "<fresh_observation_or_response>", "name": "<optional_tool_name>"}]}}.'
+        )
     else:
         raise ValueError(f'Unknown model stage {stage}')
     return [{'role': 'system', 'content': COMMON + instruction},
@@ -133,4 +182,5 @@ def prompt_identity():
     # Include actual prompt constants and resource contents, not only a manual version.
     return digest({'version': PROMPT_VERSION, 'common': COMMON, 'generation': GENERATION,
                    'judge': JUDGING, 'ranked_judge': RANKED_JUDGING, 'schema': CONSTRAINT_SCHEMA, 'taxonomy': taxonomy(True),
-                   'semantic_template': messages('semantic', {})[0]['content']})
+                   'semantic_template': messages('semantic', {})[0]['content'],
+                   'phase2_templates': {stage: messages(stage, {})[0]['content'] for stage in PHASE2_STAGES}})

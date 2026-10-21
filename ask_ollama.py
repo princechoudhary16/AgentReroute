@@ -1,7 +1,7 @@
 """Minimal prompt -> Ollama reply, reusing agentrx's OllamaProvider. Edit PROMPT/MODEL, then: python ask_ollama.py"""
 from agentrx.providers import OllamaProvider
 
-PROMPT = "Explain in three sentences what fault attribution means for a multi-agent workflow."
+PROMPT = "What fault attribution is targetted in AgentRx?"
 MODEL = "qwen2.5-coder:7b"
 
 p = OllamaProvider(MODEL, num_ctx=4096, settings={"temperature": 0})

@@ -38,7 +38,7 @@ def experiment_variants(config):
         raise ValueError('variants must be a non-empty list')
     result, names = [], set()
     for variant in variants:
-        if set(variant) - {'name','evidence','checklist','generation','protocol','python_timeout','divergence_threshold','max_candidates'}:
+        if set(variant) - {'name','evidence','checklist','generation','protocol','python_timeout','divergence_threshold','max_candidates','recovery_loop','rl_state_path'}:
             raise ValueError('Unsupported variant field')
         name = variant.get('name','')
         if not isinstance(name,str) or not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_.-]*',name) or name in names:
@@ -114,7 +114,10 @@ def run_experiment(corpus_dir, config, output, provider_factory=None):
     if metadata_path.exists():
         metadata = read_json(metadata_path)
         if metadata['identity_hash'] != identity_hash:
-            raise ValueError('Experiment identity changed; choose a new output directory')
+            stored = metadata.get('identity', {})
+            changed = sorted(k for k in identity if stored.get(k) != identity[k])
+            detail = f" (changed: {', '.join(changed)})" if changed else ''
+            raise ValueError(f'Experiment identity changed{detail}; choose a new output directory')
     else:
         metadata = {'identity_hash':identity_hash,'identity':identity,
                     'measurement_kind':provider.measurement_kind,'created_at':datetime.now(timezone.utc).isoformat(),
