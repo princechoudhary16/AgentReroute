@@ -1,0 +1,176 @@
+{
+  "trajectory": {
+    "trajectory_id": "fixture-count-mismatch",
+    "domain": "tau",
+    "instruction": "How many options are available?",
+    "steps": [
+      {
+        "index": 1,
+        "substeps": [
+          {
+            "sub_index": 1,
+            "role": "user",
+            "content": "How many T-shirt options are available?"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "substeps": [
+          {
+            "sub_index": 1,
+            "role": "tool",
+            "name": "get_product_details",
+            "content": "{\"variants\": {\"a\": {\"available\": true}, \"b\": {\"available\": false}, \"c\": {\"available\": true}}}"
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "substeps": [
+          {
+            "sub_index": 1,
+            "role": "assistant",
+            "content": "There are 3 available T-shirt options."
+          }
+        ]
+      }
+    ]
+  },
+  "annotation": {
+    "trajectory_id": "fixture-count-mismatch",
+    "failures": [
+      {
+        "failure_id": 1,
+        "step_number": 3,
+        "failure_category": "Misinterpretation of Tool Output",
+        "failed_agent": "assistant"
+      }
+    ],
+    "root_cause": {
+      "failure_id": 1
+    }
+  },
+  "responses": {
+    "global": {
+      "constraints": [
+        {
+          "assertion_name": "count_claim_grounded",
+          "taxonomy_targets": [
+            "MisinterpretationOfToolOutput"
+          ],
+          "constraint_type": "RELATIONAL_POST",
+          "event_trigger": {
+            "step_index": 3,
+            "role_name": "assistant"
+          },
+          "check_hint": "Check that the available count agrees with the tool output.",
+          "check_type": "nl_check",
+          "nl_check": {
+            "judge_rubric": [
+              "The count agrees with the available flags in the product result."
+            ],
+            "judge_scope_notes": "Compare the current assistant message with preceding tool output."
+          }
+        }
+      ]
+    },
+    "dynamic": {
+      "constraints": [
+        {
+          "assertion_name": "available_count_matches",
+          "taxonomy_targets": [
+            "MisinterpretationOfToolOutput"
+          ],
+          "constraint_type": "RELATIONAL_POST",
+          "event_trigger": {
+            "step_index": 3,
+            "role_name": "assistant"
+          },
+          "check_hint": "Compare the claimed available count against true available flags in the preceding product output.",
+          "check_type": "python_check",
+          "python_check": {
+            "function_name": "available_count_matches",
+            "args": [
+              "trajectory",
+              "current_step_index"
+            ],
+            "code_lines": [
+              "import json",
+              "import re",
+              "def available_count_matches(trajectory, current_step_index):",
+              "    steps = trajectory[\"steps\"]",
+              "    current = steps[current_step_index][\"substeps\"][0][\"content\"]",
+              "    claim = re.search(r\"There are (\\d+) available\", current)",
+              "    if not claim:",
+              "        return True",
+              "    for step in reversed(steps[:current_step_index]):",
+              "        for event in step[\"substeps\"]:",
+              "            if event.get(\"name\") == \"get_product_details\":",
+              "                data = json.loads(event[\"content\"])",
+              "                actual = sum(v.get(\"available\") is True for v in data[\"variants\"].values())",
+              "                return int(claim.group(1)) == actual",
+              "    return True"
+            ]
+          }
+        }
+      ]
+    },
+    "semantic": {
+      "rubric_results": [
+        {
+          "criterion_index": 0,
+          "evaluation": "CLEAR_FAIL",
+          "reasoning": "Step 3 claims 3; step 2 has two true availability flags."
+        }
+      ]
+    },
+    "judge": {
+      "step_index": 3,
+      "agent": "assistant",
+      "category": "MisinterpretationOfToolOutput",
+      "rationale": "At step 3 the assistant says 3 available options, but the step 2 product output has only two available variants; no recovery follows.",
+      "evidence_refs": [
+        {
+          "step_index": 2,
+          "substep_index": 1
+        },
+        {
+          "step_index": 3,
+          "substep_index": 1
+        }
+      ]
+    },
+    "localize": {
+      "step_index": 3,
+      "agent": "assistant",
+      "rationale": "At step 3 the assistant says 3 available options, but the step 2 product output has only two available variants; no recovery follows.",
+      "evidence_refs": [
+        {
+          "step_index": 2,
+          "substep_index": 1
+        },
+        {
+          "step_index": 3,
+          "substep_index": 1
+        }
+      ]
+    },
+    "categorize": {
+      "step_index": 3,
+      "agent": "assistant",
+      "category": "MisinterpretationOfToolOutput",
+      "rationale": "At step 3 the assistant says 3 available options, but the step 2 product output has only two available variants; no recovery follows.",
+      "evidence_refs": [
+        {
+          "step_index": 2,
+          "substep_index": 1
+        },
+        {
+          "step_index": 3,
+          "substep_index": 1
+        }
+      ]
+    }
+  }
+}

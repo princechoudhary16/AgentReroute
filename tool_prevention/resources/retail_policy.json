@@ -1,0 +1,54 @@
+{
+  "version": "retail-v1",
+  "approval_ttl_seconds": 300,
+  "reads": [
+    "find_user_id_by_email",
+    "find_user_id_by_name_zip",
+    "list_all_product_types",
+    "get_product_details",
+    "get_user_details",
+    "get_order_details"
+  ],
+  "writes": {
+    "cancel_pending_order": {
+      "statuses": [
+        "pending"
+      ],
+      "once": false
+    },
+    "modify_pending_order_address": {
+      "statuses": [
+        "pending"
+      ],
+      "once": false
+    },
+    "modify_user_address": {
+      "statuses": [],
+      "once": false
+    },
+    "modify_pending_order_items": {
+      "statuses": [
+        "pending"
+      ],
+      "once": true
+    },
+    "modify_pending_order_payment": {
+      "statuses": [
+        "pending"
+      ],
+      "once": false
+    },
+    "return_delivered_order_items": {
+      "statuses": [
+        "delivered"
+      ],
+      "once": true
+    },
+    "exchange_delivered_order_items": {
+      "statuses": [
+        "delivered"
+      ],
+      "once": true
+    }
+  }
+}

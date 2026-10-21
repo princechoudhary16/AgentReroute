@@ -1,0 +1,1 @@
+{"name":"paper-o3","client":{"provider":"openai","model":"o3","settings":{"max_completion_tokens":12000}},"matrix":"paper","repetitions":3,"domains":["tau","magentic","flash","relwork"]}

@@ -1,0 +1,1 @@
+{"name":"dev-openai","client":{"provider":"openai","model":"gpt-4o","api_key_env":"OPENAI_API_KEY"},"repetitions":1,"domains":["tau"],"limit_per_domain":1,"variants":[{"name":"baseline","evidence":false,"checklist":false},{"name":"agentrx","evidence":true,"checklist":true,"generation":"stepwise"}]}

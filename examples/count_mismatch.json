@@ -1,0 +1,40 @@
+[
+  {
+    "trajectory_id": "fixture-count-mismatch",
+    "domain": "tau",
+    "instruction": "How many options are available?",
+    "steps": [
+      {
+        "index": 1,
+        "substeps": [
+          {
+            "sub_index": 1,
+            "role": "user",
+            "content": "How many T-shirt options are available?"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "substeps": [
+          {
+            "sub_index": 1,
+            "role": "tool",
+            "name": "get_product_details",
+            "content": "{\"variants\": {\"a\": {\"available\": true}, \"b\": {\"available\": false}, \"c\": {\"available\": true}}}"
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "substeps": [
+          {
+            "sub_index": 1,
+            "role": "assistant",
+            "content": "There are 3 available T-shirt options."
+          }
+        ]
+      }
+    ]
+  }
+]

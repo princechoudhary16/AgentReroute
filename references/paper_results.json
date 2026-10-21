@@ -1,0 +1,18 @@
+{
+  "source": "arXiv:2602.02475v2, supplied PDF, Tables 3 and 7",
+  "kind": "paper_reported_reference_only",
+  "units": "accuracy percentages; absolute step distance",
+  "note": "These are published values, never generated predictions. Table 3 selects different settings across domains; no best-setting search is performed by this rebuild.",
+  "table3_agentrx": {
+    "tau": {"n": 39, "agent_accuracy": 66.7, "step_accuracy": 42.7, "category_accuracy": 47.0},
+    "magentic": {"n": 44, "agent_accuracy": 71.2, "step_accuracy": 36.4, "category_accuracy": 46.2},
+    "flash": {"n": 42, "agent_accuracy": 82.5, "step_accuracy": 82.5, "category_accuracy": 65.9},
+    "relwork": {"n": 45, "agent_accuracy": 65.9, "step_accuracy": 61.5, "category_accuracy": 59.3}
+  },
+  "table7_agentrx": {
+    "tau": {"step_accuracy": 42.7, "acc_at_1": 48.7, "acc_at_3": 61.5, "acc_at_5": 68.4, "average_step_distance": 3.8, "critical_category_accuracy": 47.0},
+    "magentic": {"step_accuracy": 36.4, "acc_at_1": 47.0, "acc_at_3": 54.6, "acc_at_5": 59.8, "average_step_distance": 12.4, "critical_category_accuracy": 46.2},
+    "flash": {"step_accuracy": 82.5, "acc_at_1": 93.7, "acc_at_3": 97.6, "acc_at_5": 100.0, "average_step_distance": 0.2, "critical_category_accuracy": 65.9},
+    "relwork": {"step_accuracy": 61.5, "acc_at_1": 76.3, "acc_at_3": 92.6, "acc_at_5": 92.6, "average_step_distance": 1.2, "critical_category_accuracy": 59.3}
+  }
+}

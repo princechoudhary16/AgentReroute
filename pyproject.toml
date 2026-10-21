@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentrx-reproduction"
+version = "0.1.0"
+description = "Auditable reconstruction of AgentRx trajectory fault diagnosis"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = []
+
+[project.scripts]
+agentrx = "agentrx.cli:main"
+tool-prevention = "tool_prevention.cli:main"
+tool-middleware = "tool_middleware.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["agentrx*", "tool_prevention*", "tool_middleware*"]
+
+[tool.setuptools.package-data]
+agentrx = ["resources/*.json"]
+tool_prevention = ["resources/*.json"]

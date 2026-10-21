@@ -1,0 +1,15 @@
+{
+  "name": "offline-stress-fixture",
+  "client": {
+    "provider": "replay",
+    "replay_file": "examples/replay.json"
+  },
+  "repetitions": 1,
+  "variants": [
+    {
+      "name": "agentrx",
+      "evidence": true,
+      "checklist": true
+    }
+  ]
+}

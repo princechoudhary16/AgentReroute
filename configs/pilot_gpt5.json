@@ -1,0 +1,1 @@
+{"name":"pilot-gpt5","client":{"provider":"openai","model":"gpt-5","settings":{"max_completion_tokens":12000}},"repetitions":1,"domains":["tau"],"limit_per_domain":1,"variants":[{"name":"baseline","evidence":false,"checklist":false},{"name":"agentrx","evidence":true,"checklist":true,"generation":"stepwise"}]}

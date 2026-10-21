@@ -1,0 +1,299 @@
+{
+  "tau": {
+    "protocol": {
+      "event_types": [
+        "assistant",
+        "tool"
+      ],
+      "common_fields": [
+        "role",
+        "content"
+      ],
+      "call_pattern": "Assistant makes tool_calls, system returns tool results"
+    },
+    "tools": {
+      "find_user_id_by_email": {
+        "capability": "Locate user ID by email address for authentication",
+        "inputs": {
+          "email": "string"
+        },
+        "outputs": {
+          "user_id": "string"
+        }
+      },
+      "find_user_id_by_name_zip": {
+        "capability": "Locate user ID by first name, last name, and zip code for authentication",
+        "inputs": {
+          "first_name": "string",
+          "last_name": "string",
+          "zip": "string"
+        },
+        "outputs": {
+          "user_id": "string"
+        }
+      },
+      "list_all_product_types": {
+        "capability": "List all available product types and their IDs",
+        "inputs": {},
+        "outputs": {
+          "products": "dict mapping product names to IDs"
+        }
+      },
+      "get_order_details": {
+        "capability": "Retrieve detailed information about a specific order",
+        "inputs": {
+          "order_id": "string"
+        },
+        "outputs": {
+          "order_info": "dict with status, items, payment, address, dates"
+        }
+      },
+      "get_product_details": {
+        "capability": "Get details about a specific product including available items",
+        "inputs": {
+          "product_id": "string"
+        },
+        "outputs": {
+          "product_info": "dict with items, options, prices"
+        }
+      },
+      "get_user_details": {
+        "capability": "Retrieve user profile information",
+        "inputs": {
+          "user_id": "string"
+        },
+        "outputs": {
+          "user_info": "dict with email, address, payment methods"
+        }
+      },
+      "cancel_pending_order": {
+        "capability": "Cancel an order that is in pending status",
+        "inputs": {
+          "order_id": "string",
+          "reason": "string ('no longer needed' or 'ordered by mistake')"
+        },
+        "outputs": {
+          "confirmation": "dict with cancellation details"
+        }
+      },
+      "exchange_delivered_order_items": {
+        "capability": "Exchange items from a delivered order (can only be called once per order)",
+        "inputs": {
+          "order_id": "string",
+          "item_ids": "list of strings",
+          "new_item_ids": "list of strings",
+          "reason": "string"
+        },
+        "outputs": {
+          "confirmation": "dict with exchange details"
+        }
+      },
+      "modify_pending_order_address": {
+        "capability": "Modify delivery address for a pending order",
+        "inputs": {
+          "order_id": "string",
+          "new_address": "string"
+        },
+        "outputs": {
+          "confirmation": "dict with updated address"
+        }
+      },
+      "modify_pending_order_items": {
+        "capability": "Modify items in a pending order (can only be called once per order)",
+        "inputs": {
+          "order_id": "string",
+          "item_ids_to_remove": "list of strings",
+          "item_ids_to_add": "list of strings"
+        },
+        "outputs": {
+          "confirmation": "dict with updated items"
+        }
+      },
+      "modify_pending_order_payment": {
+        "capability": "Modify payment method for a pending order",
+        "inputs": {
+          "order_id": "string",
+          "new_payment_method": "string"
+        },
+        "outputs": {
+          "confirmation": "dict with updated payment"
+        }
+      },
+      "modify_user_address": {
+        "capability": "Update user's default address",
+        "inputs": {
+          "user_id": "string",
+          "new_address": "string"
+        },
+        "outputs": {
+          "confirmation": "dict with updated address"
+        }
+      },
+      "return_delivered_order_items": {
+        "capability": "Return items from a delivered order",
+        "inputs": {
+          "order_id": "string",
+          "item_ids": "list of strings",
+          "reason": "string"
+        },
+        "outputs": {
+          "confirmation": "dict with return details"
+        }
+      }
+    }
+  },
+  "flash": {
+    "protocol": {
+      "event_types": [
+        "OrchestrationEvent",
+        "LLMCallEvent"
+      ],
+      "common_fields": [
+        "timestamp",
+        "source",
+        "message",
+        "type"
+      ],
+      "call_pattern": "Orchestrator delegates via source like: 'Orchestrator (-> <AgentName>)'"
+    },
+    "agents": {
+      "KustoAgent": {
+        "capability": "Execute a provided Kusto query (must already exist in the plan).",
+        "inputs": {
+          "kusto_query": "string"
+        },
+        "outputs": {
+          "result": "pandas dataframe"
+        }
+      },
+      "IncidentAgent": {
+        "capability": "Query/return incident descriptions only (no extra troubleshooting).",
+        "inputs": {
+          "incident_id": "string"
+        },
+        "outputs": {
+          "incident_description": "string"
+        }
+      },
+      "Executor": {
+        "capability": "Run user-provided code blocks only (python/sh).",
+        "inputs": {
+          "python": "string",
+          "sh": "string"
+        },
+        "outputs": {
+          "stdout": "string",
+          "stderr": "string"
+        }
+      },
+      "GeneralAssistant": {
+        "capability": "Summarize, explain, and draft responses based on evidence in the trace.",
+        "inputs": {
+          "message": "string"
+        },
+        "outputs": {
+          "message": "string"
+        }
+      },
+      "Orchestrator": {
+        "capability": "Follow the plan steps; emit ledger JSON with required keys; pick next speaker.",
+        "ledger_schema": [
+          "is_step_finished{reason,answer}",
+          "next_step{reason,answer}",
+          "is_in_loop{reason,answer}",
+          "is_progress_being_made{reason,answer}",
+          "next_speaker{reason,answer}",
+          "instruction_or_question{reason,answer}"
+        ]
+      }
+    }
+  },
+  "magentic": {
+    "protocol": {
+      "event_types": [
+        "human",
+        "Assistant",
+        "Orchestrator",
+        "WebSurfer",
+        "ComputerTerminal",
+        "FileSurfer"
+      ],
+      "common_fields": [
+        "role",
+        "content"
+      ],
+      "call_pattern": "Events are a flat list of {role, content}. Orchestrator coordinates the run.\n- Planning/ledger typically appears as role like 'Orchestrator (thought)'.\n- Delegation appears as role like 'Orchestrator (-> WebSurfer)'.\n- Agent responses appear as role exactly 'WebSurfer', 'ComputerTerminal', etc.\n- Termination can appear as 'Orchestrator (termination condition)'.",
+      "notes": [
+        "The ledger is often embedded as JSON text inside content.",
+        "WebSurfer outputs may include 'I typed ...', 'I clicked ...', and 'Here is a screenshot of ...'."
+      ]
+    },
+    "agents": {
+      "Orchestrator": {
+        "capability": "Plans, emits ledger JSON, delegates tasks to other agents, and decides termination.",
+        "inputs": {
+          "request": "string",
+          "history": "list of {role, content}"
+        },
+        "outputs": {
+          "ledger_json": "string (JSON blob embedded in content)",
+          "delegation": "string"
+        },
+        "role_patterns": [
+          "Orchestrator (thought)",
+          "Orchestrator (-> <AgentName>)",
+          "Orchestrator (termination condition)"
+        ]
+      },
+      "WebSurfer": {
+        "capability": "Performs web search/browsing steps and reports evidence (snippets/screenshots/URLs).",
+        "inputs": {
+          "query_or_instruction": "string"
+        },
+        "outputs": {
+          "narration": "string",
+          "evidence": "string (may include screenshot descriptions, extracted text/OCR)"
+        },
+        "evidence_markers": [
+          "I typed",
+          "I clicked",
+          "Here is a screenshot of",
+          "The viewport shows",
+          "Automatic OCR",
+          "Search query:"
+        ]
+      },
+      "ComputerTerminal": {
+        "capability": "Runs user-provided code blocks only (python/sh).",
+        "inputs": {
+          "python": "string",
+          "sh": "string"
+        },
+        "outputs": {
+          "stdout": "string",
+          "stderr": "string"
+        }
+      },
+      "FileSurfer": {
+        "capability": "Reads/writes local files and summarizes file content.",
+        "inputs": {
+          "path": "string",
+          "operation": "read|list|write"
+        },
+        "outputs": {
+          "content": "string",
+          "metadata": "dict"
+        }
+      },
+      "Assistant": {
+        "capability": "General reasoning/summarization and final answer drafting based on evidence in the trace.",
+        "inputs": {
+          "message": "string"
+        },
+        "outputs": {
+          "message": "string"
+        }
+      }
+    }
+  }
+}

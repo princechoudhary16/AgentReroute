@@ -1,0 +1,1 @@
+{"name":"paper-deepseek-v3.2","client":{"provider":"openai-compatible","model":"deepseek-v3.2","model_env":"DEEPSEEK_MODEL","base_url_env":"DEEPSEEK_BASE_URL","api_key_env":"DEEPSEEK_API_KEY","settings":{"max_tokens":8192}},"matrix":"paper","repetitions":3,"domains":["tau","magentic","flash","relwork"]}

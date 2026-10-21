@@ -1,0 +1,27 @@
+{
+  "name": "track-b-ollama",
+  "client": {
+    "provider": "ollama",
+    "model": "qwen2.5-coder:7b",
+    "num_ctx": 16384,
+    "settings": {
+      "temperature": 0
+    }
+  },
+  "repetitions": 1,
+  "domains": [
+    "tau"
+  ],
+  "limit_per_domain": 1,
+  "variants": [
+    {
+      "name": "ranked",
+      "protocol": "ranked",
+      "evidence": true,
+      "checklist": true,
+      "generation": "stepwise",
+      "divergence_threshold": 0.3,
+      "max_candidates": 3
+    }
+  ]
+}

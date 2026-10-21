@@ -1,0 +1,1 @@
+{"name":"paper-gpt5","client":{"provider":"openai","model":"gpt-5","settings":{"max_completion_tokens":12000}},"matrix":"paper","repetitions":3,"domains":["tau","magentic","flash","relwork"]}
