@@ -4,10 +4,12 @@ Rewards come only from observable verifiers: repair_strategies acceptance plus r
 benchmark path, the orchestrator's fresh-context VerifierResult on the other. Nothing here reads
 runner.ledger, episode rewards, gold_state_hash or benchmark/corpus/gold.
 """
+import re
 import tempfile
 from pathlib import Path
 
 from benchmark.env.workflow import Directive
+from benchmark.scoring.baselines import heuristic_findings
 from benchmark.scoring.recovery import RecoveryPolicy, looks_ok, run_recovery
 from benchmark.taxonomy import from_agentrx
 from recovery_orchestrator.orchestrator import RECOVERED, Orchestrator
@@ -21,6 +23,7 @@ from repair_strategies.context import Hypothesis, TaskSpec
 from repair_strategies.engine import RepairEngine
 from repair_strategies.taxonomy import UnknownCategory
 from .io import read_json
+from .perspectives import STUCK_TOOL
 from .pipeline import diagnose_mp_rl
 from .providers import ProviderError
 from .rl_policy import DualLoopRLJudge
@@ -41,13 +44,33 @@ def trace_tools_and_policy(task_view: dict) -> tuple[str, dict]:
     return task_view.get('policy', '') or '', tools
 
 
-def candidates_to_benchmark_hypotheses(ranked_candidates: list[dict]) -> list[dict]:
-    """diagnose_mp_rl ranked_candidates -> benchmark hypotheses with both 'category' (AgentRx) and 'mode'."""
+def _fault_label(c, steps):
+    """(category, mode) for a candidate. The AgentRx category alone loses two refinements that pick the repair
+    ladder: a grounding violation on a handoff is context_propagation, and a stuck/repeated tool loop is a Cycle."""
+    names = {(v['assertion_name'], v['step_index']) for v in c.get('violated_checks', ())}
+    step = steps.get(c['step_index'])
+    if step and any(n == 'p3_seed_handoff_and_fact_grounding' for n, _ in names) \
+            and any(e.get('name') == 'handoff' for e in step['substeps']):
+        return 'MisinterpretationOfToolOutput', 'context_propagation'
+    for name, index in names:
+        events = steps[index]['substeps'] if index in steps else []
+        if (name == 'p2_seed_valid_tool_invocation' and any(
+                e.get('role') == 'tool' and re.search(STUCK_TOOL, str(e.get('content', ''))) for e in events)) or (
+                name == 'p1_seed_specialist_routing_alignment' and any(e.get('tool_calls') for e in events)):
+            return 'Cycle', 'cycles'    # the routing seed fires on a tool-call step only for a 3rd identical call
+    return c['category'], from_agentrx(c['category'])[0]
+
+
+def candidates_to_benchmark_hypotheses(ranked_candidates: list[dict], trace: dict | None = None) -> list[dict]:
+    """diagnose_mp_rl ranked_candidates -> benchmark hypotheses with both 'category' and 'mode'.
+
+    With the trace, handoff-grounding and tool-loop violations refine the label (see _fault_label)."""
+    steps = {s['index']: s for s in (trace or {}).get('steps', [])}
     hypotheses = []
     for c in ranked_candidates:
-        mode, _ = from_agentrx(c['category'])
+        category, mode = _fault_label(c, steps) if steps else (c['category'], from_agentrx(c['category'])[0])
         hypotheses.append({'step_index': int(c['step_index']), 'agent': c.get('raw_agent') or c['agent'],
-                           'mode': mode, 'category': c['category'],
+                           'mode': mode, 'category': category,
                            'confidence': round(float(c.get('probability', c.get('confidence', 0.5))), 4),
                            'rationale': c.get('rationale', '')})
     return hypotheses
@@ -64,13 +87,20 @@ def _repairable(hypothesis):
 
 
 class _CreditEngine(RepairEngine):
-    """Remembers the hypothesis of the latest proposal: RepairStrategyPolicy returns right after an
-    accepted replay, so on acceptance it names the candidate that earned the reward."""
+    """Remembers the hypothesis of each proposal: RepairStrategyPolicy replays every non-terminal plan and returns
+    right after an accepted replay, so `current` earned the reward and `replayed` lists the steps tried before it."""
     current = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.replayed = []
 
     def propose(self, trace, hypothesis, history=()):
         self.current = hypothesis
-        return super().propose(trace, hypothesis, history)
+        plan = super().propose(trace, hypothesis, history)
+        if plan is not None and not plan.terminal:
+            self.replayed.append(hypothesis.step_index)
+        return plan
 
 
 def _diagnose(trajectory, policy, tools, provider, rl_judge, evidence, explore):
@@ -110,8 +140,14 @@ class MPRLRecoveryPolicy(RepairStrategyPolicy, RecoveryPolicy):
         policy, tools = trace_tools_and_policy(env.task_view)
         result, _ = _diagnose(env.trace, policy, tools, self.provider, self.rl_judge,
                               self.use_llm_synthesis, explore=self.learn)
-        hypotheses = candidates_to_benchmark_hypotheses(result['ranked_candidates'])[:self.max_hypotheses]
-        self.hypotheses[str(env.trajectory_id)] = hypotheses
+        tid = str(env.trajectory_id)
+        if not any(c.get('violated_checks') for c in result['ranked_candidates']) and not heuristic_findings(env.trace):
+            # Nothing observable is wrong: abstain on what looks like a healthy run (no action, no RL update).
+            self.rl_judge.pending.pop(tid, None)
+            self.hypotheses[tid] = []
+            return []
+        hypotheses = candidates_to_benchmark_hypotheses(result['ranked_candidates'], env.trace)[:self.max_hypotheses]
+        self.hypotheses[tid] = hypotheses
         return hypotheses
 
     def recover(self, env):
@@ -132,10 +168,13 @@ class MPRLRecoveryPolicy(RepairStrategyPolicy, RecoveryPolicy):
         after = 1.0 if verified else max((0.5 if looks_ok(r) else 0.0 for r in rollouts), default=0.0)
         stopped = bool(rollouts) and not verified and rollouts[-1].termination != 'user_stop'
         step = self.engine.current.step_index if verified else None
+        failed = [s for s in self.engine.replayed if s != step] if verified else []
         telemetry = self.rl_judge.record_recovery_outcome(tid, step, verified=verified, verifier_score_before=0.0,
-                                                          verifier_score_after=after, stopped_early=stopped)
+                                                          verifier_score_after=after, stopped_early=stopped,
+                                                          failed_steps=failed)
         self.rl_log[tid] = {'verified': verified, 'score_after': after, 'stopped_early': stopped,
-                            'credited_step': step, 'reward': telemetry['reward']}
+                            'credited_step': step, 'failed_steps': telemetry['pairwise_steps'],
+                            'reward': telemetry['reward']}
         if self.rl_state_path:
             self.rl_judge.save(self.rl_state_path)
         return decision
@@ -174,8 +213,10 @@ class MPRLOrchestratorSession:
         # Credit the candidate whose rationale fed the verified repair (detector candidates fall back to top-1).
         step = outcome.attempts[-1].option['primary']['step_index'] if verified else None
         step = step if step in {c['step_index'] for c in result['ranked_candidates']} else None
+        failed = [a.option['primary']['step_index'] for a in outcome.attempts[:-1]] if verified else []
         telemetry = self.rl_judge.record_recovery_outcome(tid, step, verified=verified, verifier_score_before=before,
-                                                          verifier_score_after=after, stopped_early=stopped)
+                                                          verifier_score_after=after, stopped_early=stopped,
+                                                          failed_steps=failed)
         if self.rl_state_path:
             self.rl_judge.save(self.rl_state_path)
         return result, outcome, telemetry['reward']

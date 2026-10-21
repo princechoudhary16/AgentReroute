@@ -129,12 +129,12 @@ class DualLoopRLJudge:
     """[C2] linear-softmax policy pi_theta(k, t) over candidate features h_{k,t}, plus prompt memory M_i."""
 
     def __init__(self, weights=None, learning_rate=0.05, temperature=0.5, ucb_alpha=0.1,
-                 baseline_reward=0.0, action_counts=None, memory=None, episodes=0):
+                 baseline_reward=0.0, action_counts=None, memory=None, episodes=0, pairwise_lr=0.15):
         self.weights = list(weights or THETA0)
         if len(self.weights) != FEATURES:
             raise ValueError(f'RL weights must have {FEATURES} entries')
         self.learning_rate, self.temperature, self.ucb_alpha = learning_rate, temperature, ucb_alpha
-        self.baseline_reward, self.episodes = baseline_reward, episodes
+        self.baseline_reward, self.episodes, self.pairwise_lr = baseline_reward, episodes, pairwise_lr
         self.action_counts = dict(action_counts or {})
         self.memory = memory or PromptMemoryBank()
         # ponytail: in-process only, not serialized; persist if record_recovery_outcome must survive restarts.
@@ -182,11 +182,13 @@ class DualLoopRLJudge:
 
     def record_recovery_outcome(self, trajectory_id, chosen_step=None, chosen_agent=None, accepted=None,
                                 verifier_score=None, rollout_trace=None, *, verified=None, verifier_score_before=0.0,
-                                verifier_score_after=None, stopped_early=False):
+                                verifier_score_after=None, stopped_early=False, failed_steps=()):
         """Cross-branch hook: observable verifier/acceptance outcome (never ScoreLedger gold) closes the loop.
 
         Feedback is either (accepted, verifier_score) or the verifier deltas (verified, verifier_score_before/after,
         stopped_early). chosen_step/chosen_agent name the repaired candidate; omitted, the top-1 action is credited.
+        failed_steps are candidates tried and rejected before a rewarded one: each gets a pairwise ranking update
+        theta += pairwise_lr * (h_chosen - h_failed), so the order in which hypotheses are tried is learned directly.
         rollout_trace is accepted for the orchestrator/RecoveryEnv contract; standalone mode does not inspect it.
         """
         if accepted is None and verified is None:
@@ -205,6 +207,14 @@ class DualLoopRLJudge:
         reward = (verifier_reward(verified, verifier_score_before, verifier_score_after, stopped_early)
                   if verified is not None else outcome_reward(accepted, verifier_score))
         telemetry = self.update_policy(index, candidates, probs, reward)
+        telemetry['pairwise_steps'] = []
+        for step in dict.fromkeys(failed_steps) if reward > 0 else ():
+            j = next((i for i, c in enumerate(candidates) if c['step_index'] == step and i != index), None)
+            if j is not None:
+                self.weights = [w + self.pairwise_lr * (a - b) for w, a, b in
+                                zip(self.weights, candidates[index]['features'], candidates[j]['features'])]
+                telemetry['pairwise_steps'].append(step)
+        telemetry['updated_weights'] = list(self.weights)
         telemetry['memory_scores'] = self.memory.record_episode_feedback(
             candidates[index]['dominant_perspective'], decision['constraints_used'], reward)
         return telemetry
@@ -213,13 +223,14 @@ class DualLoopRLJudge:
         return {'version': 1, 'weights': list(self.weights), 'learning_rate': self.learning_rate,
                 'temperature': self.temperature, 'ucb_alpha': self.ucb_alpha,
                 'baseline_reward': self.baseline_reward, 'action_counts': dict(self.action_counts),
-                'episodes': self.episodes, 'memory': self.memory.to_dict()}
+                'episodes': self.episodes, 'pairwise_lr': self.pairwise_lr, 'memory': self.memory.to_dict()}
 
     @classmethod
     def from_dict(cls, data):
         return cls(data['weights'], data.get('learning_rate', 0.05), data.get('temperature', 0.5),
                    data.get('ucb_alpha', 0.1), data.get('baseline_reward', 0.0), data.get('action_counts'),
-                   PromptMemoryBank.from_dict(data.get('memory', {})), data.get('episodes', 0))
+                   PromptMemoryBank.from_dict(data.get('memory', {})), data.get('episodes', 0),
+                   data.get('pairwise_lr', 0.15))
 
     def save(self, path):
         write_json(path, self.to_dict())

@@ -37,11 +37,28 @@ ERROR_MARKERS = r'error:|exception|\binvalid\b'
 # ponytail: keyword/ID heuristics, negations ("not successful") can false-positive; LLM constraints cover nuance.
 SUCCESS_CLAIM = r'\b(success(ful(ly)?)?|confirmed|has been (processed|completed|cancell?ed|updated|placed|modified|exchanged|returned|refunded))\b'
 ID_TOKEN = r'#?\b[A-Z0-9]*[0-9][A-Z0-9]{4,}\b'
-WRITE_CLAIM = r'\bhas been (cancell?ed|modified|exchanged|returned|refunded)\b'
+WRITE_CLAIM = (  # every completion claim in benchmark/faults/operators.py:CLAIMS
+    r'\b(?:'
+    r'has been (?:cancell?ed|modified|exchanged|returned|refunded|requested|submitted|updated)'
+    r'|return submitted for order'
+    r'|exchange requested for order'
+    r'|i (?:cancell?ed|modified|updated) (?:order|the items|the user\'s default address)'
+    r'|shipping address of order \S+ is now'
+    r'|will ship to the new address'
+    r'|is now paid with'
+    r'|payment method for order \S+ updated'
+    r'|default address for \S+ is now'
+    r')\b')
 WRITE_TOOLS = ('cancel_', 'modify_', 'exchange_', 'return_')
 ROUTING_DRIFT = r'cannot handle|cannot proceed|wrong specialist'
 STUCK_TOOL = r'"status"\s*:\s*"processing"'
 HANDOFF_ID = r'#W\d+|\buser_\w+'
+# Misroute rules per handoff target (retail MAS specialists): work the target cannot own.
+PRODUCT_MISROUTE = r'#w\d+|cancel|return|exchange|modify|address|payment|refund'
+ORDER_ID_FIELD = r'"order_id"\s*:'
+RETURNS_WORK = r'\b(return|exchange|refund)\b'
+ORDER_WORK = r'\b(cancel|modify|address|payment)\b'
+PRODUCT_QUESTION = r'\bvariants?\b|\bavailab|\bproduct types?\b'
 MONEY_FIELD = r'"[a-z_]*(total|price|refund|amount)[a-z_]*"\s*:\s*-?\d'
 NUMBER = r'\d+(?:\.\d+)?'
 DOLLARS = r'\$\s?(\d+(?:\.\d+)?)'  # ponytail: "$1,234" reads as 1; add comma grouping if amounts reach thousands
@@ -89,10 +106,17 @@ def seed_constraints_for_perspective(perspective_id, tools):
             "        content = str(event.get('content', '')).strip()",
             "        if not content:",
             "            return False",
-            f"        if re.search({WRITE_CLAIM!r}, content, re.I) and not any(",
-            f"                str(call.get('name', '')).startswith({WRITE_TOOLS!r}) for s in steps[:current_step_index]",
-            "                for e in s['substeps'] for call in e.get('tool_calls') or [] if isinstance(call, dict)):",
-            "            return False",
+            "        handoff_here = any(e.get('name') == 'handoff' for e in steps[current_step_index]['substeps'])",
+            f"        if not handoff_here and re.search({WRITE_CLAIM!r}, content, re.I):",
+            "            # Only writes since the latest handoff excuse a specialist's claim; a planner relaying a",
+            "            # specialist's result is excused by any write in the episode.",
+            "            handoffs = [o for o, s in enumerate(steps[:current_step_index])",
+            "                        if any(e.get('name') == 'handoff' for e in s['substeps'])]",
+            "            since = 0 if role.lower() == 'planner' or not handoffs else handoffs[-1]",
+            f"            if not any(str(call.get('name', '')).startswith({WRITE_TOOLS!r})",
+            "                       for s in steps[since:current_step_index] for e in s['substeps']",
+            "                       for call in e.get('tool_calls') or [] if isinstance(call, dict)):",
+            "                return False",
             "        for earlier in reversed(steps[:current_step_index]):",
             "            same = [e for e in earlier['substeps'] if e.get('role') == role]",
             "            if same:",
@@ -101,23 +125,47 @@ def seed_constraints_for_perspective(perspective_id, tools):
             "                break",
             "    return True"]),
                 _seed('p1_seed_specialist_routing_alignment', ['IntentPlanMisalignment'], 'PROTOCOL',
-                      'Agents must not drift into refusal/wrong-specialist replies or repeat an identical tool call a 3rd time.', [
+                      'Handoffs must go to a specialist that owns the work; agents must not drift into refusal/'
+                      'wrong-specialist replies or repeat an identical tool call a 3rd time.', [
             "    import json",
             "    import re",
             "    steps = trajectory['steps']",
+            "    earlier = ' '.join(str(e.get('content', '')) for s in steps[:current_step_index] for e in s['substeps'])",
             "    seen = [(e.get('role'), call.get('name'), json.dumps(call.get('arguments'), sort_keys=True))",
             "            for s in steps[:current_step_index + 1] for e in s['substeps']",
             "            for call in e.get('tool_calls') or [] if isinstance(call, dict)]",
             "    for event in steps[current_step_index]['substeps']:",
             "        if str(event.get('role', '')).lower() in ('user', 'human', 'system', 'tool'):",
             "            continue",
-            f"        if re.search({ROUTING_DRIFT!r}, str(event.get('content', '')), re.I):",
+            "        if event.get('name') == 'handoff':",
+            "            try:",
+            "                data = json.loads(str(event.get('content', '')))",
+            "            except ValueError:",
+            "                continue",
+            "            if not isinstance(data, dict):",
+            "                continue",
+            "            target = data.get('handoff_to')",
+            "            msg = (str(data.get('message', '')) + ' ' + json.dumps(data.get('context', {}))).lower()",
+            f"            if target == 'product_agent' and (re.search({PRODUCT_MISROUTE!r}, msg)",
+            f"                                              or re.search({ORDER_ID_FIELD!r}, earlier)):",
+            "                return False",
+            f"            if target == 'order_agent' and 'delivered' in earlier.lower() and re.search({RETURNS_WORK!r}, msg):",
+            "                return False",
+            f"            if target == 'returns_agent' and 'pending' in earlier.lower() and re.search({ORDER_WORK!r}, msg):",
+            "                return False",
+            f"            if target in ('order_agent', 'returns_agent') and re.search({PRODUCT_QUESTION!r}, msg) \\",
+            f"                    and not re.search({PRODUCT_MISROUTE!r}, msg):",
+            "                return False",
+            "            continue",
+            "        # A specialist's refusal is the drift signal; the planner relaying it is an echo of that symptom.",
+            f"        if str(event.get('role', '')).lower() != 'planner' and re.search({ROUTING_DRIFT!r},",
+            "                                                                     str(event.get('content', '')), re.I):",
             "            return False",
             "        for call in event.get('tool_calls') or []:",
             "            if isinstance(call, dict) and seen.count((event.get('role'), call.get('name'),",
             "                                                      json.dumps(call.get('arguments'), sort_keys=True))) >= 3:",
             "                return False",
-            "    return True"], content_regex=f'(?i){ROUTING_DRIFT}|"arguments"')]
+            "    return True"], content_regex=f'(?i){ROUTING_DRIFT}|"arguments"|"handoff_to"')]
     if perspective_id == 'P2_TOOL_EXECUTION':
         return [_seed('p2_seed_valid_tool_invocation', ['InvalidInvocation', 'SystemFailure'], 'SCHEMA',
                       'Tool calls need object arguments and known tool names; tool outputs must not report errors '
@@ -174,7 +222,11 @@ def seed_constraints_for_perspective(perspective_id, tools):
             "            data = json.loads(str(event.get('content', '')))",
             "        except ValueError:",
             "            continue",
-            "        context = data.get('context') if isinstance(data, dict) else None",
+            "        if not isinstance(data, dict):",
+            "            continue",
+            "        context = data.get('context')",
+            "        if not context or '[omitted]' in str(data.get('message', '')):",
+            "            return False",
             f"        if isinstance(context, dict) and re.search({HANDOFF_ID!r}, earlier) and not any(",
             "                context.get(k) for k in ('order_id', 'user_id', 'item_ids')):",
             "            return False",
@@ -191,7 +243,7 @@ def seed_constraints_for_perspective(perspective_id, tools):
             f"        for amount in re.findall({DOLLARS!r}, str(event.get('content', ''))):",
             "            if float(amount) not in known:",
             "                return False",
-            "    return True"], content_regex=r'"context"\s*:|\$\s?\d')]
+            "    return True"], content_regex=r'"context"\s*:|"handoff_to"|\$\s?\d')]
     raise ValueError(f'Unknown perspective {perspective_id}')
 
 

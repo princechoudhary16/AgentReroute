@@ -5,11 +5,13 @@ from pathlib import Path
 
 from agentrx.io import read_json
 from agentrx.pipeline import diagnose_mp_rl
-from agentrx.rl_cross_branch import (MPRLOrchestratorSession, MPRLRecoveryPolicy, candidates_to_benchmark_hypotheses,
-                                     train_and_evaluate_benchmark, trace_tools_and_policy)
+from agentrx.rl_cross_branch import (MPRLOrchestratorSession, MPRLRecoveryPolicy, _repairable,
+                                     candidates_to_benchmark_hypotheses, train_and_evaluate_benchmark,
+                                     trace_tools_and_policy)
 from agentrx.rl_policy import THETA0, DualLoopRLJudge, verifier_reward
 from benchmark.env.scripted import scripted_llm
 from benchmark.scoring.baselines import from_agentrx_run
+from benchmark.corpus import load_gold, load_public
 from benchmark.scoring.recovery import POLICIES, run_recovery
 from benchmark.tests.helpers import corpus
 from recovery_orchestrator.orchestrator import RECOVERED
@@ -20,6 +22,7 @@ from recovery_orchestrator.tau_retail import WRITE_TOOLS
 from recovery_orchestrator.tests import helpers
 from recovery_orchestrator.trace import Trace
 from repair_strategies.adapters.orchestrator import export_registry
+from repair_strategies.context import Hypothesis
 from tests.test_constraints import python_constraint
 from tests.test_mp_rl import FakeProvider
 
@@ -191,6 +194,54 @@ class CrossBranchRLTests(unittest.TestCase):
         self.assertEqual((saved.weights, saved.episodes), (out['learned_weights'], 4))
         self.assertEqual(out['test_report']['split'], 'test')
         self.assertEqual(len(out['test_report']['per_episode']), 2)
+
+
+class FaultLabelAndLearningTests(unittest.TestCase):
+    def test_handoff_and_loop_violations_refine_the_repair_label(self):
+        from tests.test_mp_rl import retail_mas_trace
+        trace = retail_mas_trace()
+        def cand(step, category, *checks):
+            return {'step_index': step, 'agent': 'x', 'category': category, 'probability': 0.5,
+                    'violated_checks': [{'assertion_name': n, 'step_index': s} for n, s in checks]}
+        ranked = [cand(4, 'MisinterpretationOfToolOutput', ('p3_seed_handoff_and_fact_grounding', 4)),
+                  cand(6, 'InvalidInvocation', ('p2_seed_valid_tool_invocation', 7)),           # stuck "processing"
+                  cand(10, 'IntentPlanMisalignment', ('p1_seed_specialist_routing_alignment', 10)),  # 3rd call
+                  cand(5, 'IntentPlanMisalignment', ('p1_seed_specialist_routing_alignment', 5)),   # refusal
+                  cand(12, 'MisinterpretationOfToolOutput', ('p3_seed_handoff_and_fact_grounding', 12))]  # amount
+        labels = [(h['category'], h['mode']) for h in candidates_to_benchmark_hypotheses(ranked, trace)]
+        self.assertEqual(labels, [('MisinterpretationOfToolOutput', 'context_propagation'), ('Cycle', 'cycles'),
+                                  ('Cycle', 'cycles'), ('IntentPlanMisalignment', 'drift'),
+                                  ('MisinterpretationOfToolOutput', 'misinterpretation_of_tool_output')])
+        for h in candidates_to_benchmark_hypotheses(ranked, trace):
+            self.assertEqual(_repairable(h), h)                     # every refined pair is a valid Hypothesis
+            self.assertEqual(Hypothesis.from_mapping(h).category, h['category'])
+
+    def test_pairwise_update_moves_theta_from_rejected_to_accepted_candidate(self):
+        judge = DualLoopRLJudge()
+        first = {'step_index': 5, 'agent': 'a', 'offset': 4, 'features': [0.0, 0.0, 1.0] + [0.0] * 7}
+        second = {'step_index': 4, 'agent': 'p', 'offset': 3, 'features': [1.0] + [0.0] * 9}
+        for c in (first, second):
+            c['dominant_perspective'] = P3
+        top1, _, probs = judge.select_action([first, second], trajectory_id='t')
+        self.assertEqual(top1['step_index'], 5)
+        telemetry = judge.record_recovery_outcome('t', 4, verified=True, failed_steps=[5, 4])
+        self.assertEqual(telemetry['pairwise_steps'], [5])
+        expected = [w + 0.05 * 1.0 * (b - (probs[0] * a + probs[1] * b)) for w, a, b in
+                    zip(THETA0, first['features'], second['features'])]
+        expected = [w + 0.15 * (b - a) for w, a, b in zip(expected, first['features'], second['features'])]
+        for got, want in zip(judge.weights, expected):
+            self.assertAlmostEqual(got, want, places=12)
+        self.assertEqual(judge.select_action([first, second])[0]['step_index'], 4)   # re-ranked
+        self.assertEqual(DualLoopRLJudge.from_dict(judge.to_dict()).pairwise_lr, 0.15)
+
+    def test_abstains_on_a_clean_control_run(self):
+        gold, traces = load_gold(corpus(), 'test'), load_public(corpus(), 'test', 'full')
+        tid = next(t for t, g in sorted(gold.items()) if g['status'] == 'clean')
+        env = type('Env', (), {'trajectory_id': tid, 'trace': traces[tid], 'hypotheses': [],
+                               'task_view': {'policy': '', 'tools': {}}})()
+        policy = MPRLRecoveryPolicy()
+        self.assertEqual(policy.recover(env)['status'], 'abstained')
+        self.assertEqual((policy.hypotheses[tid], policy.rl_judge.pending, policy.rl_judge.episodes), ([], {}, 0))
 
 
 def scored_candidates(result):

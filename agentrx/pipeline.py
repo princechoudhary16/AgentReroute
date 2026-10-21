@@ -148,7 +148,8 @@ def diagnose(trajectory, policy, tools, config, provider, artifacts):
 def _compact(c):
     return {'agent': c['agent'], 'raw_agent': c['raw_agent'], 'step_index': c['step_index'],
             'category': c['dominant_category'], 'perspective': c['dominant_perspective'],
-            'probability': c['probability'], 'logit': c['logit'], 'features': c['features']}
+            'probability': c['probability'], 'logit': c['logit'], 'features': c['features'],
+            'violated_checks': c['violated_checks']}
 
 
 def _rca_payload(trajectory, result, ranked, violations):

@@ -225,6 +225,62 @@ class RetailSeedTests(unittest.TestCase):
                                  check_constraint(c, trajectory, offset, None, context), (c['assertion_name'], offset))
 
 
+def handoff_trace(target, message, context, after):
+    """user -> planner handoff (step 2) -> specialist/planner replies (steps 3..)."""
+    steps = [{'substeps': [{'role': 'user', 'content': 'Return the headphones from delivered order #W1000002.'}]},
+             {'substeps': [{'role': 'planner', 'content': '{"action": "handoff"}'},
+                           {'role': 'planner', 'name': 'handoff', 'content': json.dumps(
+                               {'handoff_to': target, 'message': message, 'context': context})}]}]
+    steps += [{'substeps': [{'role': role, 'content': text}]} for role, text in after]
+    return normalize({'trajectory_id': 'handoff', 'steps': [{'index': i, **x} for i, x in enumerate(steps, 1)]}, 'tau')
+
+
+def viol(trajectory, tools=MAS_TOOLS):
+    checks = []
+    for pid in ORDER:
+        checks += run_perspective_checks(pid, seed_constraints_for_perspective(pid, tools), trajectory, None,
+                                         {**CONTEXT, 'tools': tools})[0]
+    assert not [r for r in checks if r['verdict'] == 'ERROR'], checks
+    return sorted((r['assertion_name'], r['step_index']) for r in checks if r['verdict'] == 'VIOL')
+
+
+class HandoffSeedTests(unittest.TestCase):
+    def test_misroute_is_flagged_at_the_planner_handoff_not_its_relay(self):
+        ids = {'order_id': '#W1000002', 'user_id': 'mia_garcia_4516'}
+        refusal = 'I cannot handle this request.'
+        found = viol(handoff_trace('product_agent', 'Return items for order #W1000002.', ids,
+                                   [('product_agent', refusal), ('planner', refusal)]))
+        self.assertEqual(found, [('p1_seed_specialist_routing_alignment', 2),      # order work sent to product_agent
+                                 ('p1_seed_specialist_routing_alignment', 3)])     # the specialist's refusal; relay at 4 is not
+        question = viol(handoff_trace('order_agent', 'Ask how many T-shirt variants are available.',
+                                      {'user_id': 'ava_lee_2203'}, []))
+        self.assertEqual(question, [('p1_seed_specialist_routing_alignment', 2)])
+        routed = viol(handoff_trace('returns_agent', 'Return items for order #W1000002.', ids, []))
+        self.assertEqual(routed, [])                                               # correct routing stays clean
+
+    def test_dropped_handoff_context_is_flagged(self):
+        for message, context in (('Return items for order [omitted].', {'action': 'return'}),
+                                 ('Return items.', {})):
+            self.assertEqual(viol(handoff_trace('returns_agent', message, context, [])),
+                             [('p3_seed_handoff_and_fact_grounding', 2)])
+
+    def test_write_claims_need_a_write_since_the_latest_handoff(self):
+        write = {'id': 'w', 'name': 'exchange_delivered_order_items', 'arguments': {'order_id': '#W1000002'}}
+        steps = [{'substeps': [{'role': 'user', 'content': 'Exchange then return, order #W1000002.'}]},
+                 {'substeps': [{'role': 'returns_agent', 'content': '', 'tool_calls': [write]}]},
+                 {'substeps': [{'role': 'planner', 'name': 'handoff', 'content': json.dumps(
+                     {'handoff_to': 'returns_agent', 'message': 'Now the return for #W1000002.',
+                      'context': {'order_id': '#W1000002'}})}]},
+                 {'substeps': [{'role': 'returns_agent', 'content': 'Return submitted for order #W1000002.'}]},
+                 {'substeps': [{'role': 'planner', 'content': 'The return for order #W1000002 has been requested.'}]}]
+        trajectory = normalize({'trajectory_id': 'w', 'steps': [{'index': i, **x} for i, x in enumerate(steps, 1)]},
+                               'tau')
+        tools = {'tools': {'exchange_delivered_order_items': {}}}
+        # The earlier exchange does not excuse the specialist's later claim; the planner relay is excused.
+        self.assertEqual([v for v in viol(trajectory, tools) if v[0] == 'p1_seed_nonempty_progress'],
+                         [('p1_seed_nonempty_progress', 4)])
+
+
 class LiveLLMRegressionTests(unittest.TestCase):
     """Failures seen live with qwen2.5-coder:7b on tau trace 2."""
 
