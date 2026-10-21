@@ -112,6 +112,19 @@ def outcome_reward(accepted, verifier_score=None):
     return max(0.25, value) if accepted else min(-0.25, value)
 
 
+def verifier_reward(verified, score_before=0.0, score_after=None, stopped_early=False):
+    """Cross-branch verifier deltas -> R in [-1, 1]: +1 verified, -1 stopped early, else ΔV-scaled penalty.
+
+    Unverified repairs stay negative (at most -0.1, the spec's step penalty) but rank by score_after - score_before.
+    """
+    if verified:
+        return 1.0
+    if stopped_early:
+        return -1.0
+    delta = max(-1.0, min(1.0, float(score_before if score_after is None else score_after) - float(score_before)))
+    return min(-0.1, 0.5 * delta - 0.5)
+
+
 class DualLoopRLJudge:
     """[C2] linear-softmax policy pi_theta(k, t) over candidate features h_{k,t}, plus prompt memory M_i."""
 
@@ -149,7 +162,8 @@ class DualLoopRLJudge:
         ranked = [{**candidates[i], 'probability': probs[i], 'logit': logits[i], 'rank': rank + 1,
                    'candidate_index': i} for rank, i in enumerate(order)]
         if trajectory_id is not None:
-            self.pending[str(trajectory_id)] = {'candidates': candidates, 'probs': probs, 'constraints_used': []}
+            self.pending[str(trajectory_id)] = {'candidates': candidates, 'probs': probs, 'top1': order[0],
+                                               'constraints_used': []}
         return ranked[0], ranked, probs
 
     def update_policy(self, chosen_idx, candidates, probs, reward):
@@ -166,21 +180,30 @@ class DualLoopRLJudge:
         self.episodes += 1
         return {'reward': reward, 'Advantage': advantage, 'gradient': gradient, 'updated_weights': list(self.weights)}
 
-    def record_recovery_outcome(self, trajectory_id, chosen_step, chosen_agent, accepted, verifier_score=None,
-                                rollout_trace=None):
+    def record_recovery_outcome(self, trajectory_id, chosen_step=None, chosen_agent=None, accepted=None,
+                                verifier_score=None, rollout_trace=None, *, verified=None, verifier_score_before=0.0,
+                                verifier_score_after=None, stopped_early=False):
         """Cross-branch hook: observable verifier/acceptance outcome (never ScoreLedger gold) closes the loop.
 
+        Feedback is either (accepted, verifier_score) or the verifier deltas (verified, verifier_score_before/after,
+        stopped_early). chosen_step/chosen_agent name the repaired candidate; omitted, the top-1 action is credited.
         rollout_trace is accepted for the orchestrator/RecoveryEnv contract; standalone mode does not inspect it.
         """
+        if accepted is None and verified is None:
+            raise ValueError('Pass accepted or verified')
         decision = self.pending.pop(str(trajectory_id), None)
         if decision is None:
             raise KeyError(f'No pending decision for trajectory {trajectory_id!r}; call select_action with trajectory_id')
         candidates, probs = decision['candidates'], decision['probs']
-        index = next((i for i, c in enumerate(candidates) if c['step_index'] == chosen_step
-                      and agent(c['agent']) == agent(chosen_agent)), None)
+        if chosen_step is None:
+            index = decision['top1']
+        else:
+            index = next((i for i, c in enumerate(candidates) if c['step_index'] == chosen_step
+                          and (chosen_agent is None or agent(c['agent']) == agent(chosen_agent))), None)
         if index is None:
             raise ValueError('Recovery outcome does not match a ranked candidate')
-        reward = outcome_reward(accepted, verifier_score)
+        reward = (verifier_reward(verified, verifier_score_before, verifier_score_after, stopped_early)
+                  if verified is not None else outcome_reward(accepted, verifier_score))
         telemetry = self.update_policy(index, candidates, probs, reward)
         telemetry['memory_scores'] = self.memory.record_episode_feedback(
             candidates[index]['dominant_perspective'], decision['constraints_used'], reward)

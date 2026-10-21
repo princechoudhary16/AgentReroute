@@ -1,11 +1,13 @@
 """Phase 2 multi-perspective tracing: [B1] split, [B2] seeded+synthesized checks, [B3] blame, [B4] features."""
+import builtins
 import copy
 import json
 from collections import Counter
-from .constraints import _python, check_constraint, prefix, validate_constraint
+from functools import lru_cache
+from .constraints import _python, check_constraint, constraint_fingerprint, guard_matches, prefix, validate_constraint
 from .io import digest
 from .taxonomy import CATEGORIES, agent, taxonomy
-from .worker import check_source
+from .worker import SAFE_BUILTINS, check_source, safe_import
 
 PERSPECTIVES = {
     'P1_INTENT_PLAN': {
@@ -35,6 +37,14 @@ ERROR_MARKERS = r'error:|exception|\binvalid\b'
 # ponytail: keyword/ID heuristics, negations ("not successful") can false-positive; LLM constraints cover nuance.
 SUCCESS_CLAIM = r'\b(success(ful(ly)?)?|confirmed|has been (processed|completed|cancell?ed|updated|placed|modified|exchanged|returned|refunded))\b'
 ID_TOKEN = r'#?\b[A-Z0-9]*[0-9][A-Z0-9]{4,}\b'
+WRITE_CLAIM = r'\bhas been (cancell?ed|modified|exchanged|returned|refunded)\b'
+WRITE_TOOLS = ('cancel_', 'modify_', 'exchange_', 'return_')
+ROUTING_DRIFT = r'cannot handle|cannot proceed|wrong specialist'
+STUCK_TOOL = r'"status"\s*:\s*"processing"'
+HANDOFF_ID = r'#W\d+|\buser_\w+'
+MONEY_FIELD = r'"[a-z_]*(total|price|refund|amount)[a-z_]*"\s*:\s*-?\d'
+NUMBER = r'\d+(?:\.\d+)?'
+DOLLARS = r'\$\s?(\d+(?:\.\d+)?)'  # ponytail: "$1,234" reads as 1; add comma grouping if amounts reach thousands
 
 
 def taxonomy_subset(perspective_id):
@@ -52,10 +62,10 @@ def tool_names(tools):
     return []
 
 
-def _seed(name, targets, kind, hint, body):
+def _seed(name, targets, kind, hint, body, content_regex='*'):
     c = validate_constraint({
         'assertion_name': name, 'taxonomy_targets': list(targets), 'constraint_type': kind,
-        'event_trigger': dict(ANY_EVENT), 'check_hint': hint, 'check_type': 'python_check',
+        'event_trigger': {**ANY_EVENT, 'content_regex': content_regex}, 'check_hint': hint, 'check_type': 'python_check',
         'python_check': {'function_name': name, 'args': ['trajectory', 'current_step_index'],
                          'code_lines': [f'def {name}(trajectory, current_step_index):'] + body}})
     c['origin'] = 'seed'
@@ -63,10 +73,13 @@ def _seed(name, targets, kind, hint, body):
 
 
 def seed_constraints_for_perspective(perspective_id, tools):
-    """D-10: deterministic python seeds with wildcard guards, so a perspective never collapses to all-SKIP."""
+    """D-10: one wildcard-guarded floor seed per perspective, so it never collapses to all-SKIP, plus guarded
+    specialist seeds that judge only the steps their rule applies to (vacuous SATs would dilute V/(V+S))."""
     if perspective_id == 'P1_INTENT_PLAN':
         return [_seed('p1_seed_nonempty_progress', ['Instruction/PlanAdherenceFailure'], 'PROTOCOL',
-                      'Non-tool agent messages must be non-empty and must not repeat the same role\'s previous message verbatim.', [
+                      'Non-tool agent messages must be non-empty, must not repeat the same role\'s previous message '
+                      'verbatim, and must not claim a write that no earlier write tool call performed.', [
+            "    import re",
             "    passive = ('user', 'human', 'system', 'tool')",
             "    steps = trajectory['steps']",
             "    for event in steps[current_step_index]['substeps']:",
@@ -76,16 +89,39 @@ def seed_constraints_for_perspective(perspective_id, tools):
             "        content = str(event.get('content', '')).strip()",
             "        if not content:",
             "            return False",
+            f"        if re.search({WRITE_CLAIM!r}, content, re.I) and not any(",
+            f"                str(call.get('name', '')).startswith({WRITE_TOOLS!r}) for s in steps[:current_step_index]",
+            "                for e in s['substeps'] for call in e.get('tool_calls') or [] if isinstance(call, dict)):",
+            "            return False",
             "        for earlier in reversed(steps[:current_step_index]):",
             "            same = [e for e in earlier['substeps'] if e.get('role') == role]",
             "            if same:",
             "                if str(same[-1].get('content', '')).strip() == content:",
             "                    return False",
             "                break",
-            "    return True"])]
+            "    return True"]),
+                _seed('p1_seed_specialist_routing_alignment', ['IntentPlanMisalignment'], 'PROTOCOL',
+                      'Agents must not drift into refusal/wrong-specialist replies or repeat an identical tool call a 3rd time.', [
+            "    import json",
+            "    import re",
+            "    steps = trajectory['steps']",
+            "    seen = [(e.get('role'), call.get('name'), json.dumps(call.get('arguments'), sort_keys=True))",
+            "            for s in steps[:current_step_index + 1] for e in s['substeps']",
+            "            for call in e.get('tool_calls') or [] if isinstance(call, dict)]",
+            "    for event in steps[current_step_index]['substeps']:",
+            "        if str(event.get('role', '')).lower() in ('user', 'human', 'system', 'tool'):",
+            "            continue",
+            f"        if re.search({ROUTING_DRIFT!r}, str(event.get('content', '')), re.I):",
+            "            return False",
+            "        for call in event.get('tool_calls') or []:",
+            "            if isinstance(call, dict) and seen.count((event.get('role'), call.get('name'),",
+            "                                                      json.dumps(call.get('arguments'), sort_keys=True))) >= 3:",
+            "                return False",
+            "    return True"], content_regex=f'(?i){ROUTING_DRIFT}|"arguments"')]
     if perspective_id == 'P2_TOOL_EXECUTION':
         return [_seed('p2_seed_valid_tool_invocation', ['InvalidInvocation', 'SystemFailure'], 'SCHEMA',
-                      'Tool calls need object arguments and known tool names; tool outputs must not report errors.', [
+                      'Tool calls need object arguments and known tool names; tool outputs must not report errors '
+                      'or a stuck "processing" status.', [
             "    import re",
             f"    known = {tool_names(tools)!r}",
             "    for event in trajectory['steps'][current_step_index]['substeps']:",
@@ -94,8 +130,9 @@ def seed_constraints_for_perspective(perspective_id, tools):
             "                return False",
             "            if known and call.get('name') not in known:",
             "                return False",
-            "        if str(event.get('role', '')).lower() == 'tool' and re.search("
-            f"{ERROR_MARKERS!r}, str(event.get('content', '')), re.I):",
+            "        text = str(event.get('content', ''))",
+            f"        if str(event.get('role', '')).lower() == 'tool' and (re.search({ERROR_MARKERS!r}, text, re.I)",
+            f"                or re.search({STUCK_TOOL!r}, text) or text.lstrip().startswith('Error')):",
             "            return False",
             "    return True"])]
     if perspective_id == 'P3_HANDOFF_GROUNDING':
@@ -122,7 +159,39 @@ def seed_constraints_for_perspective(perspective_id, tools):
             f"        for found in re.findall({ID_TOKEN!r}, text):",
             "            if found.lstrip('#') not in seen:",
             "                return False",
-            "    return True"])]
+            "    return True"]),
+                _seed('p3_seed_handoff_and_fact_grounding', ['MisinterpretationOfToolOutput'], 'RELATIONAL_POST',
+                      'Handoffs must carry the order/user ids seen so far; dollar amounts after a priced tool output '
+                      'must appear in the observed prefix.', [
+            "    import json",
+            "    import re",
+            "    steps = trajectory['steps']",
+            "    earlier = ' '.join(str(e.get('content', '')) for s in steps[:current_step_index] for e in s['substeps'])",
+            "    for event in steps[current_step_index]['substeps']:",
+            "        if event.get('name') != 'handoff':",
+            "            continue",
+            "        try:",
+            "            data = json.loads(str(event.get('content', '')))",
+            "        except ValueError:",
+            "            continue",
+            "        context = data.get('context') if isinstance(data, dict) else None",
+            f"        if isinstance(context, dict) and re.search({HANDOFF_ID!r}, earlier) and not any(",
+            "                context.get(k) for k in ('order_id', 'user_id', 'item_ids')):",
+            "            return False",
+            "    if current_step_index == 0:",
+            "        return True",
+            "    tool_text = ' '.join(str(e.get('content', '')) for e in steps[current_step_index - 1]['substeps']",
+            "                         if str(e.get('role', '')).lower() == 'tool')",
+            f"    if not re.search({MONEY_FIELD!r}, tool_text):",
+            "        return True",
+            f"    known = {{float(n) for n in re.findall({NUMBER!r}, earlier)}}",
+            "    for event in steps[current_step_index]['substeps']:",
+            "        if str(event.get('role', '')).lower() in ('user', 'human', 'system', 'tool'):",
+            "            continue",
+            f"        for amount in re.findall({DOLLARS!r}, str(event.get('content', ''))):",
+            "            if float(amount) not in known:",
+            "                return False",
+            "    return True"], content_regex=r'"context"\s*:|\$\s?\d')]
     raise ValueError(f'Unknown perspective {perspective_id}')
 
 
@@ -209,10 +278,44 @@ def synthesize_perspective_constraints(perspective_id, trajectory, policy, tools
     return accepted + seed_constraints_for_perspective(perspective_id, tools), log
 
 
+@lru_cache(maxsize=None)
+def _seed_function(code, function_name):
+    env = {'__builtins__': {**{n: getattr(builtins, n) for n in SAFE_BUILTINS}, '__import__': safe_import}}
+    exec(compile(check_source(code), '<seed-check>', 'exec'), env)
+    return env[function_name]
+
+
+def _check_seed_inprocess(raw, trajectory, offset):
+    """check_constraint() for built-in seeds without the per-call worker subprocess: same row schema and verdicts.
+
+    ponytail: no timeout or rlimits, so only seeds authored in this file may run here; LLM code stays sandboxed.
+    """
+    step = trajectory['steps'][offset]
+    c = validate_constraint(raw)
+    result = {'step_index': step['index'], 'assertion_name': c['assertion_name'], 'verdict': 'ERROR',
+              'rule_fingerprint': constraint_fingerprint(c), 'taxonomy_targets': c['taxonomy_targets'],
+              'constraint_type': c['constraint_type'], 'check_type': c['check_type'], 'check_hint': c['check_hint']}
+    if not guard_matches(c, step):
+        result['verdict'] = 'SKIP'
+        return result
+    observed = prefix(trajectory, offset)
+    result['evidence'] = observed['steps'][max(0, offset-3):offset+1]
+    try:
+        value = _seed_function('\n'.join(c['python_check']['code_lines']),
+                               c['python_check']['function_name'])(observed, offset)
+        if type(value) is not bool:
+            raise ValueError('Python check must return a boolean')
+        result['verdict'] = 'SAT' if value else 'VIOL'
+    except Exception as exc:  # same text as check_constraint wrapping a worker error
+        result['error'] = f'ValueError: {type(exc).__name__}: {str(exc)[:1000]}'
+    return result
+
+
 def _check_all(c, trajectory, provider, context):
     rows = []
     for offset in range(len(trajectory['steps'])):
-        row = check_constraint(c, trajectory, offset, provider, context)
+        row = (_check_seed_inprocess(c, trajectory, offset) if c.get('origin') == 'seed' else
+               check_constraint(c, trajectory, offset, provider, context))
         row['offset'] = offset
         rows.append(row)
     return rows

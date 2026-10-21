@@ -227,7 +227,14 @@ class FixedRules(RecoveryPolicy):
                 'notes': 'no rollout passed the check'}
 
 
+def mp_rl_recovery(**kwargs):
+    """agentrx's closed-loop MP-RL policy; imported lazily because agentrx.rl_cross_branch imports this module."""
+    from agentrx.rl_cross_branch import MPRLRecoveryPolicy
+    return MPRLRecoveryPolicy(**kwargs)
+
+
 POLICIES = {cls.name: cls for cls in (NoRecovery, FullRestart, RetryLastStep, GenericReflection, FixedRules)}
+POLICIES['mp_rl_recovery'] = mp_rl_recovery
 
 
 # ============================================================================== harness

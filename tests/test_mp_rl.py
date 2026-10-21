@@ -3,11 +3,11 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from agentrx.constraints import guard_matches, validate_constraint
+from agentrx.constraints import check_constraint, guard_matches, validate_constraint
 from agentrx.data import normalize
 from agentrx.experiments import experiment_variants, validate_experiment
 from agentrx.io import digest, read_json
-from agentrx.perspectives import (ANY_EVENT, ORDER, PERSPECTIVES, _reject_reason, compute_blame_matrix, encode_candidates,
+from agentrx.perspectives import (ANY_EVENT, ORDER, PERSPECTIVES, _check_seed_inprocess, _reject_reason, compute_blame_matrix, encode_candidates,
                                   run_perspective_checks, seed_constraints_for_perspective,
                                   synthesize_perspective_constraints)
 from agentrx.pipeline import diagnose, diagnose_mp_rl, validate_prediction
@@ -99,14 +99,18 @@ class PerspectiveTests(unittest.TestCase):
         trajectory = tau_trace()
         for provider in (FakeProvider(perspective_global={'constraints': []}, perspective_dynamic={'constraints': []}),
                          ReplayProvider_empty()):
-            checks, constraints_by_pid = [], {}
+            checks, floor, seeds = [], set(), 0
             for pid in ORDER:
                 constraints, _ = synthesize_perspective_constraints(pid, trajectory, '', TOOLS, provider)
-                self.assertEqual([c['origin'] for c in constraints], ['seed'])
+                self.assertEqual({c['origin'] for c in constraints}, {'seed'})
+                floor |= {c['assertion_name'] for c in constraints if c['event_trigger'] == ANY_EVENT}
+                seeds += len(constraints)
                 rows, _ = run_perspective_checks(pid, constraints, trajectory, provider, CONTEXT)
                 checks.extend(rows)
-            self.assertEqual(len(checks), 3 * len(trajectory['steps']))
-            self.assertFalse([r for r in checks if r['verdict'] in ('SKIP', 'ERROR')])
+            self.assertEqual(len(floor), 3)  # one wildcard floor seed per perspective; specialists may SKIP
+            self.assertEqual(len(checks), seeds * len(trajectory['steps']))
+            self.assertFalse([r for r in checks if r['verdict'] == 'ERROR' or
+                              (r['verdict'] == 'SKIP' and r['assertion_name'] in floor)])
             self.assertEqual(sorted((r['perspective'], r['step_index']) for r in checks if r['verdict'] == 'VIOL'),
                              [('P2_TOOL_EXECUTION', 2), ('P2_TOOL_EXECUTION', 3), ('P3_HANDOFF_GROUNDING', 4)])
             matrix = compute_blame_matrix(trajectory, checks)
@@ -160,6 +164,65 @@ class PerspectiveTests(unittest.TestCase):
         self.assertEqual({(c['agent'], c['step_index'], c['dominant_category']) for c in candidates}, {
             ('websurfer', 3, 'InventionOfNewInformation'), ('coder', 4, 'Instruction/PlanAdherenceFailure'),
             ('orchestrator', 5, 'Instruction/PlanAdherenceFailure')})
+
+
+MAS_TOOLS = {'tools': {n: {} for n in ('find_user_id_by_email', 'get_order_details', 'exchange_delivered_order_items')}}
+LOOKUP = {'id': 'c', 'name': 'get_order_details', 'arguments': {'order_id': '#W1000003'}}
+
+
+def retail_mas_trace():
+    """4-agent retail shapes from benchmark/corpus: dropped handoff ids, refusal, stuck tool loop, unbacked write/amount."""
+    def say(role, content, **extra):
+        return {'substeps': [{'role': role, 'content': content, **extra}]}
+    steps = [say('user', 'My email is a@b.c. Exchange the T-shirt in order #W1000003.'),
+             say('planner', '', tool_calls=[{'id': 'a', 'name': 'find_user_id_by_email', 'arguments': {'email': 'a@b.c'}}]),
+             say('tool', 'noah_brown_6181', name='find_user_id_by_email'),
+             {'substeps': [{'role': 'planner', 'content': '{"action": "handoff", "to": "returns_agent"}'},
+                           {'role': 'planner', 'name': 'handoff', 'content': json.dumps(
+                               {'handoff_to': 'returns_agent', 'message': 'Exchange it.', 'context': {'action': 'exchange'}})}]},
+             say('returns_agent', 'The handoff did not include an order id, so I cannot proceed.'),
+             say('returns_agent', '', tool_calls=[LOOKUP]),
+             say('tool', '{"status": "processing"}', name='get_order_details'),
+             say('returns_agent', '', tool_calls=[LOOKUP]),
+             say('tool', '{"status": "processing"}', name='get_order_details'),
+             say('returns_agent', '', tool_calls=[LOOKUP]),
+             say('tool', '{"order_id": "#W1000003", "items": [{"price": 50.0}], "total": 50.0}', name='get_order_details'),
+             say('returns_agent', 'Your T-shirt has been exchanged; you owe $45.00.')]
+    return normalize({'trajectory_id': 'retail-mas', 'steps': [{'index': i, **s} for i, s in enumerate(steps, 1)]},
+                     'tau')
+
+
+class RetailSeedTests(unittest.TestCase):
+    def test_seeds_fire_on_retail_mas_fault_shapes(self):
+        trajectory = retail_mas_trace()
+        context = {**CONTEXT, 'tools': MAS_TOOLS}
+        checks = []
+        for pid in ORDER:
+            checks += run_perspective_checks(pid, seed_constraints_for_perspective(pid, MAS_TOOLS), trajectory,
+                                             None, context)[0]
+        self.assertFalse([r for r in checks if r['verdict'] == 'ERROR'])
+        self.assertEqual(sorted((r['assertion_name'], r['step_index']) for r in checks if r['verdict'] == 'VIOL'), [
+            ('p1_seed_nonempty_progress', 12),                      # "has been exchanged" with no exchange_ call
+            ('p1_seed_specialist_routing_alignment', 5),            # "cannot proceed"
+            ('p1_seed_specialist_routing_alignment', 10),           # 3rd identical get_order_details call
+            ('p2_seed_valid_tool_invocation', 7), ('p2_seed_valid_tool_invocation', 9),   # stuck "processing"
+            ('p3_seed_handoff_and_fact_grounding', 4),              # handoff context drops #W1000003
+            ('p3_seed_handoff_and_fact_grounding', 12)])            # $45.00 never observed
+        matrix = compute_blame_matrix(trajectory, checks)
+        self.assertTrue(all(matrix[pid]['returnsagent'] > 0 for pid in ORDER))   # all 3 lenses blame the specialist
+
+    def test_inprocess_seed_rows_match_the_sandboxed_worker(self):
+        trajectory = retail_mas_trace()
+        context = {**CONTEXT, 'tools': MAS_TOOLS}
+        broken = [{**validate_constraint({**python_constraint(body), 'assertion_name': name,
+                                          'python_check': {'function_name': name, 'code_lines': [
+                                              f'def {name}(trajectory, current_step_index):', f'    {body[0]}']}}),
+                   'origin': 'seed'} for name, body in (('raises', ['return missing_name']), ('not_bool', ['return 1']))]
+        seeds = [c for pid in ORDER for c in seed_constraints_for_perspective(pid, MAS_TOOLS)] + broken
+        for c in seeds:
+            for offset in range(len(trajectory['steps'])):
+                self.assertEqual(_check_seed_inprocess(c, trajectory, offset),
+                                 check_constraint(c, trajectory, offset, None, context), (c['assertion_name'], offset))
 
 
 class LiveLLMRegressionTests(unittest.TestCase):

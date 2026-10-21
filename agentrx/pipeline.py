@@ -207,7 +207,8 @@ def diagnose_mp_rl(trajectory, policy, tools, config, provider, artifacts, rl_ju
         write_json(artifacts/'validation_log.json', violations)
         blame = compute_blame_matrix(trajectory, checks)
         candidates = encode_candidates(trajectory, checks, blame)
-        top1, ranked, probs = rl_judge.select_action(candidates, trajectory_id=trajectory['trajectory_id'])
+        top1, ranked, probs = rl_judge.select_action(candidates, explore=bool(config.get('rl_explore', False)),
+                                                     trajectory_id=trajectory['trajectory_id'])
         names = {v['assertion_name'] for v in top1['violated_checks'] if v['perspective'] == top1['dominant_perspective']}
         rl_judge.pending[str(trajectory['trajectory_id'])]['constraints_used'] = [
             c for c in effective[top1['dominant_perspective']] if c.get('origin') == 'llm' and c['assertion_name'] in names]
