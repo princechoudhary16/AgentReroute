@@ -39,6 +39,6 @@ Files: demo/comparison_page.py, demo/visualizer.py, demo/tests/test_comparison.p
 
 ### Task 3: Live local verification and review
 
-- [ ] Run real installed-model comparison and verify request artifacts, recovery/error handling and UI states.
-- [ ] Fresh whole-change review; important fixes reproduced RED→GREEN; final suite.
-- [ ] Restart 8765 on finished code, open comparison page and leave UI running; report limitations and local branch.
+- [x] Run real installed-model comparison and verify request artifacts, recovery/error handling and UI states.
+- [x] Fresh whole-change review; important fixes reproduced RED→GREEN; final suite.
+- [x] Restart 8765 on finished code, open comparison page and leave UI running; report limitations and local branch.
