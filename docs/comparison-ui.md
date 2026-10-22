@@ -12,8 +12,11 @@ an already installed model. No API key, model download or trained checkpoint is
 required by this page.
 
 The two panels show actual `diagnose` / `diagnose_mp_rl` calls, generated checks,
-attribution, repair attempts and measured model usage. Select a model request to
-inspect its response, or a shared trace step to see the original input. Use the
+attribution, repair attempts and measured model usage. Outcomes, stages and key
+numbers stay visible. Expand **Checks & model requests** for all requests; selecting
+one opens its response in the event inspector. Full metrics and the shared input
+trace are expandable below the panels. Validation warnings remain visible even
+when details are closed. Use the
 shared timeline to pause, step backward or forward, and return to live events.
 Historical playback does not start additional inference or reveal future results
 as current. Completed runs can be revisited through the `?run=<id>` URL, including
