@@ -114,7 +114,10 @@ recovery_orchestrator/
 │
 ├── evaluation.py       [5] gold loading, oracle/mis-attribution, decision eval,
 │                           calibration, recovery metrics
+├── adapters/
+│   └── benchmark.py        OrchestratorPolicy for benchmark's recovery harness (duck-typed, no import)
 ├── integration/
+│   ├── e2e_benchmark.py    all recovery conditions on one benchmark corpus, same harness and scoring
 │   ├── cross_branch_check.py  orchestrator × repair-strategies × faultattribution check
 │   └── REPORT.md           latest cross-branch results and open questions
 └── tests/
@@ -174,6 +177,18 @@ Tier B fields computed by the adapter:
 
 Tier C fields (`ranked_probabilities`, `all_failures`, `causal_chain`) are optional
 and only read from an official `rca_payload.json`.
+
+**Track B (`recovery_handoff.json`, schema `agentrx-recovery-v1`)** is read
+automatically when every pooled run has one (`rca.aggregate_handoffs`). A run gives
+candidates only if FA's own gate allows it: `decision=repair_required`,
+`attribution_status=ranked`, and `status` not `error`. A step's share is the mean
+confidence over all runs, counting 0 where a run didn't list it. The majority
+`decision` is kept as `fa_decision`, and `within_boundary` makes the policy abstain.
+Shares are then uncalibrated model estimates (`confidence_kind`).
+
+**Benchmark hypotheses** (7 modes) are mapped by `taxonomy.MODE_TO_CATEGORY`. This
+mirrors `benchmark/resources/seven_modes.json`, except that `cycles` maps to the local
+`Cycle` label instead of plan adherence.
 
 **Ask for the FA team:** emit `rca_payload.json` per trace with the Tier A
 `prediction` plus `confidence`, `top_k` (max 3), `n_runs`, `total_runs`,

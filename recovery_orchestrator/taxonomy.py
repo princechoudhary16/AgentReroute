@@ -74,3 +74,26 @@ HANDLING = {
 
 def handling(category: str) -> str:
     return HANDLING.get(category, REPAIR)
+
+
+# The benchmark's 7 failure modes (benchmark/resources/seven_modes.json), mirrored
+# locally. Same as its ``to_agentrx`` table except ``cycles``: AgentRx folds cycles
+# into plan adherence, but the orchestrator and the Repair team handle loops
+# separately, so they map to the local ``Cycle`` label.
+MODE_TO_CATEGORY = {
+    'instruction_adherence': 'Instruction/PlanAdherenceFailure',
+    'drift': 'IntentPlanMisalignment',
+    'cycles': CYCLE,
+    'tool_failure': 'SystemFailure',
+    'misinterpretation_of_tool_output': 'MisinterpretationOfToolOutput',
+    'context_propagation': 'MisinterpretationOfToolOutput',
+    'missing_details': 'InventionOfNewInformation',
+    'inconclusive': INCONCLUSIVE,
+}
+
+
+def category_from_mode(mode) -> str:
+    """Benchmark mode id -> category; AgentRx category names pass through."""
+    if mode in MODE_TO_CATEGORY:
+        return MODE_TO_CATEGORY[mode]
+    return normalize_category(mode)

@@ -92,6 +92,8 @@ def detector_candidates(trace: Trace, existing: list[Candidate], weight: float,
 def _gate(payload: RCAPayload, config: EVConfig) -> Decision | None:
     """Category/abstention rules that apply before any option is scored."""
     top = payload.top
+    if payload.fa_decision == 'within_boundary':
+        return Decision(ABSTAINED, 'FA divergence gate: within boundary (no repair required)')
     if top is None:
         return Decision(ABSTAINED, 'inconclusive: FA localized no step')
     if payload.inconclusive_share >= config.abstain_inconclusive_share:

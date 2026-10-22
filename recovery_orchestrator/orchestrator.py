@@ -123,6 +123,10 @@ class Orchestrator:
             log('attempt', number=budget.attempts, rollout_id=rollout.rollout_id,
                 applied_strategy=directive.strategy_id, stopped_early=rollout.stopped_early,
                 verifier=_vdict(result))
+            if rollout.stopped_early == 'budget':
+                stop_reason = 'budget: environment refused the replay'
+                log('budget_stop', reason='environment', **budget.summary())
+                break
             if result.passed:
                 outcome.status, outcome.reason = RECOVERED, 'verifier passed'
                 outcome.final_rollout_id, outcome.gaps = rollout.rollout_id, result.gaps
@@ -140,7 +144,8 @@ class Orchestrator:
                 break
 
         # Fallbacks. Success is never declared without verification.
-        if best is not None and (reference is None or best[0] > reference):
+        improved = best is not None and (best[0] > reference if reference is not None else best[0] > 0)
+        if improved:
             outcome.status, outcome.reason = PARTIAL, 'best repair improved but did not pass verification'
             outcome.final_rollout_id, outcome.gaps = best[1].rollout_id, best[2].gaps
         elif outcome.intervened:

@@ -46,6 +46,8 @@ class RCAPayload:
     total_runs: int              # all pooled result files, including errors
     inconclusive_share: float
     violations_by_step: dict[int, dict] = field(default_factory=dict)
+    fa_decision: str | None = None   # Track B gate (majority): repair_required | within_boundary | inconclusive
+    confidence_kind: str = 'run_agreement'   # or 'uncalibrated_model_estimate' (Track B), 'oracle'
     prediction: dict | None = None   # Tier A prediction of a run agreeing with the top candidate
     experiment_identities: tuple = ()
     variants: tuple = ()
@@ -128,10 +130,14 @@ def _jobs_root(run_dir) -> Path:
     return run_dir / 'jobs' if (run_dir / 'jobs').is_dir() else run_dir
 
 
+HANDOFF_SCHEMA = 'agentrx-recovery-v1'
+
+
 def is_full_agentrx(config: dict) -> bool:
-    """Default pooling filter: variants that use both violations and the checklist."""
+    """Default pooling filter: variants that use both violations and the checklist
+    (the joint judge, or the Track B ranked judge)."""
     return bool(config.get('evidence')) and bool(config.get('checklist')) \
-        and config.get('protocol', 'joint') == 'joint'
+        and config.get('protocol', 'joint') in ('joint', 'ranked')
 
 
 def find_runs(run_dir, trajectory_id, domain: str, variants=None) -> list[dict]:
@@ -174,6 +180,11 @@ def load_payload(run_dir, trajectory_id, domain: str, variants=None,
     official = runs[0]['dir'] / 'rca_payload.json'
     if official.is_file() and variants is None:
         return RCAPayload.from_dict(_read(official))
+    handoffs = [run['dir'] / 'recovery_handoff.json' for run in runs]
+    if all(h.is_file() for h in handoffs):
+        payload = aggregate_handoffs([_read(h) for h in handoffs], top_k=top_k)
+        payload.variants = tuple(sorted({r['variant'] for r in runs}))
+        return payload
     logs = []
     for run in runs:
         path = run['dir'] / 'validation_log.json'
@@ -264,3 +275,64 @@ def violations_by_step(logs: list[list[dict]]) -> dict[int, dict]:
     for entry in table.values():
         entry['categories'].sort()
     return dict(sorted(table.items()))
+
+
+def aggregate_handoffs(handoffs: list[dict], top_k: int = MAX_TOP_K) -> RCAPayload:
+    """Track B ``recovery_handoff.json`` files of pooled runs -> RCAPayload.
+
+    A run contributes candidates only if FA's own gate says act on it: decision
+    ``repair_required``, attribution ``ranked``, status not ``error``. Every other
+    run counts as inconclusive. A step's share is the mean of its confidence over
+    all runs (0 where a run did not list it), so with one run it is the model's
+    confidence. These are uncalibrated model estimates, not probabilities.
+    """
+    if not handoffs:
+        raise ValueError('aggregate_handoffs needs at least one handoff')
+    for h in handoffs:
+        if h.get('schema_version') != HANDOFF_SCHEMA:
+            raise ValueError(f'Unsupported handoff schema {h.get("schema_version")!r}')
+    total = len(handoffs)
+    usable = [h for h in handoffs if h.get('decision') == 'repair_required'
+              and h.get('attribution_status') == 'ranked' and h.get('status') != 'error'
+              and h.get('candidates')]
+    weight, votes, members, first = Counter(), Counter(), {}, {}
+    for h in usable:
+        for c in h['candidates']:
+            step = int(c['step_index'])
+            conf = float(c.get('confidence', 0.0))
+            weight[step] += conf
+            votes[step] += 1
+            members.setdefault(step, []).append({**c, 'category': normalize_category(c['category'])})
+            first.setdefault(step, (int(c.get('rank', 99)), len(first)))
+    ranked = sorted(weight, key=lambda s: (-weight[s], s))[:top_k]
+    candidates = []
+    for step in ranked:
+        group = members[step]
+        by_cat, by_agent = Counter(), Counter()
+        for c in group:
+            by_cat[c['category']] += float(c.get('confidence', 0.0))
+            by_agent[normalize_agent(c.get('agent'))] += float(c.get('confidence', 0.0))
+        category = max(by_cat, key=lambda k: (by_cat[k], -[c['category'] for c in group].index(k)))
+        agent = max(by_agent, key=lambda k: (by_agent[k], -[normalize_agent(c.get('agent')) for c in group].index(k)))
+        exemplar = max((c for c in group if c['category'] == category), key=lambda c: float(c.get('confidence', 0)))
+        candidates.append(Candidate(
+            step_index=step, agent=agent, category=category, votes=votes[step],
+            share=weight[step] / total, rationale=exemplar.get('rationale', ''),
+            evidence_refs=tuple(_ref(r) for r in exemplar.get('evidence_refs', ()))))
+    decisions = Counter(h.get('decision') for h in handoffs)
+    decision = max(decisions, key=lambda d: (decisions[d], d == 'repair_required'))
+    statuses = {h.get('status', 'error') for h in handoffs}
+    status = 'error' if statuses == {'error'} else 'ok' if statuses == {'ok'} else 'partial_checker_errors'
+    top = candidates[0] if candidates else None
+    prediction = None
+    if top is not None:
+        prediction = {'step_index': top.step_index, 'agent': top.agent, 'category': top.category,
+                      'rationale': top.rationale, 'evidence_refs': [
+                          {'step_index': a, 'substep_index': b} for a, b in top.evidence_refs]}
+    return RCAPayload(
+        trajectory_id=str(handoffs[0]['trajectory_id']), domain=handoffs[0].get('domain', ''),
+        status=status, candidates=candidates, n_runs=len(usable), total_runs=total,
+        inconclusive_share=(total - len(usable)) / total, prediction=prediction,
+        ranked_probabilities=[{'run': i, 'decision': h.get('decision'), 'candidates': h.get('candidates', [])}
+                              for i, h in enumerate(handoffs)],
+        fa_decision=decision, confidence_kind='uncalibrated_model_estimate')

@@ -42,9 +42,12 @@ class NoLedger:
 
 class LeakageTest(unittest.TestCase):
     def test_decision_path_never_imports_evaluation_or_agentrx(self):
-        for path in PACKAGE.glob('*.py'):
+        paths = [p for p in PACKAGE.rglob('*.py') if not {'tests', 'integration'} & set(p.relative_to(PACKAGE).parts)]
+        self.assertIn('benchmark.py', {p.name for p in paths})
+        for path in paths:
             names = imported_modules(path)
-            self.assertFalse(any(n.startswith('agentrx') for n in names), path.name)
+            for other in ('agentrx', 'benchmark', 'repair_strategies'):
+                self.assertFalse(any(n == other or n.startswith(other + '.') for n in names), f'{path.name}: {other}')
             if path.name not in GOLD_READERS:
                 self.assertFalse({'evaluation', 'recovery_orchestrator.evaluation'} & names, path.name)
 
