@@ -35,6 +35,17 @@ python3 -m agentrx check    # one-screen health summary (tests, smoke, audit, pr
 The demo runs offline with prerecorded model responses. It verifies the pipeline,
 not model accuracy. Reports are saved under `runs/smoke/experiment/`.
 
+## Compare AgentRx and AgentReroute
+
+```bash
+python3 -m demo --serve --port 8765
+```
+
+Open [localhost:8765/compare](http://localhost:8765/compare) for actual Ollama
+execution, shared input, request logs, event playback and observed results.
+See [comparison setup and limits](docs/comparison-ui.md).
+
+
 ## Benchmark data
 
 ```bash

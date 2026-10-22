@@ -125,8 +125,11 @@ def build_demo_html(out_path, scenario_ids=None):
 
 
 # ------------------------------------------------------------------------------ live server
-def make_server(host='127.0.0.1', port=8765, delay=0.9):
+def make_server(host='127.0.0.1', port=8765, delay=0.9, comparison_service=None):
     """ThreadingHTTPServer serving the page, /api/scenarios and /api/stream (SSE). ``delay``: seconds per frame."""
+    from .comparison import ComparisonService
+    from .comparison_page import PAGE as COMPARISON_PAGE
+    comparisons = comparison_service or ComparisonService()
     page = build_html(live=True).encode('utf-8')
 
     class Handler(BaseHTTPRequestHandler):
@@ -140,8 +143,64 @@ def make_server(host='127.0.0.1', port=8765, delay=0.9):
             self.end_headers()
             self.wfile.write(body)
 
+        def _json(self, code, value):
+            return self._send(code, json.dumps(value, allow_nan=False).encode('utf-8'), 'application/json')
+
+        def do_POST(self):
+            origin = self.headers.get('Origin')
+            if origin:
+                parsed = urlparse(origin)
+                if parsed.scheme != 'http' or parsed.netloc != self.headers.get('Host') or parsed.path not in ('', '/'):
+                    return self._json(403, {'error': 'Cross-origin comparison requests are not allowed.'})
+            elif self.headers.get('Sec-Fetch-Site') == 'cross-site':
+                return self._json(403, {'error': 'Cross-origin comparison requests are not allowed.'})
+            if self.headers.get('Content-Type', '').split(';')[0].strip() != 'application/json':
+                return self._json(415, {'error': 'Send an application/json request.'})
+            try:
+                length = int(self.headers.get('Content-Length', '0'))
+                if not 0 < length <= 4096:
+                    raise ValueError('Request body must be between 1 and 4096 bytes.')
+                body = json.loads(self.rfile.read(length))
+                if not isinstance(body, dict):
+                    raise ValueError('Request must be a JSON object.')
+                path = urlparse(self.path).path
+                if path == '/api/comparisons':
+                    if set(body) != {'scenario', 'model'}:
+                        raise ValueError('Supply scenario and model only.')
+                    return self._json(202, comparisons.start(body['scenario'], body['model']))
+                parts = path.strip('/').split('/')
+                if len(parts) == 4 and parts[:2] == ['api', 'comparisons'] and parts[3] == 'cancel':
+                    if body:
+                        raise ValueError('Cancel body must be empty.')
+                    return self._json(200, comparisons.cancel(parts[2]))
+                return self._json(404, {'error': 'Unknown comparison route.'})
+            except KeyError:
+                return self._json(404, {'error': 'Comparison not found; it may have expired or the server restarted.'})
+            except (ValueError, TypeError, UnicodeError) as exc:
+                return self._json(400, {'error': str(exc)})
+            except RuntimeError as exc:
+                return self._json(409, {'error': str(exc)})
+            except OSError as exc:
+                return self._json(503, {'error': 'Local Ollama is unavailable: ' + str(exc)})
+
         def do_GET(self):
             url = urlparse(self.path)
+            if url.path == '/compare':
+                return self._send(200, COMPARISON_PAGE.encode('utf-8'), 'text/html; charset=utf-8')
+            if url.path == '/api/models':
+                try:
+                    return self._json(200, {'models': comparisons.model_catalog()})
+                except (ValueError, KeyError, TypeError, OSError) as exc:
+                    return self._json(503, {'error': 'Cannot read the local Ollama model catalog: ' + str(exc)})
+            if url.path.startswith('/api/comparisons/'):
+                job_id = url.path[len('/api/comparisons/'):]
+                try:
+                    cursor = int(parse_qs(url.query).get('after', ['0'])[0])
+                    return self._json(200, comparisons.snapshot(job_id, cursor))
+                except KeyError:
+                    return self._json(404, {'error': 'Comparison not found; it may have expired or the server restarted.'})
+                except ValueError as exc:
+                    return self._json(400, {'error': str(exc)})
             if url.path in ('/', '/index.html'):
                 return self._send(200, page, 'text/html; charset=utf-8')
             if url.path == '/api/scenarios':
@@ -181,7 +240,12 @@ def make_server(host='127.0.0.1', port=8765, delay=0.9):
                 pass                           # viewer switched scenario or closed the tab
             self.close_connection = True
 
-    server = ThreadingHTTPServer((host, port), Handler)
+    class DemoServer(ThreadingHTTPServer):
+        def server_close(self):
+            comparisons.close()
+            super().server_close()
+
+    server = DemoServer((host, port), Handler)
     server.daemon_threads = True
     return server
 
@@ -356,6 +420,7 @@ footer{margin-top:16px;color:var(--muted);font-size:12px;font-family:var(--serif
 </head>
 <body>
 <div class="page">
+  <nav aria-label="Main navigation" style="display:flex;gap:22px;margin-bottom:18px;font-size:13px"><a href="/" aria-current="page" style="color:var(--royal)">Execution view</a><a href="/compare" style="color:var(--muted)">Compare systems →</a></nav>
   <header class="masthead">
     <div class="brand">
       <h1><span class="fleur">⚜</span> AgentReroute · Live MAS Control Propagation &amp; Recovery</h1>

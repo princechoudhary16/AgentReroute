@@ -7,7 +7,7 @@ import uuid
 from pathlib import Path
 from urllib.request import urlopen
 
-from agentrx.io import digest, write_json
+from agentrx.io import digest, write_json, read_json
 from agentrx.pipeline import diagnose, diagnose_mp_rl
 from agentrx.providers import OllamaProvider
 from agentrx.rl_policy import DualLoopRLJudge
@@ -314,17 +314,41 @@ class ComparisonService:
         if type(after) is not int or after < 0:
             raise ValueError('Event cursor must be a nonnegative integer.')
         with self.lock:
-            job = self.jobs[job_id]
+            job = self._lookup(job_id)
             return copy.deepcopy({k: job[k] for k in ('id','scenario','model','status','results')}) | {
                 'cancel_requested': job['cancel'].is_set(), 'events': copy.deepcopy(job['events'][after:]),
                 'artifact_dir': str((self.output/job_id).resolve())}
 
     def cancel(self, job_id):
         with self.lock:
-            job = self.jobs[job_id]
+            job = self._lookup(job_id)
             if job['status'] not in TERMINAL:
                 job['cancel'].set()
             return {'id': job_id, 'cancel_requested': job['cancel'].is_set()}
+
+    def _lookup(self, job_id):
+        if job_id in self.jobs:
+            return self.jobs[job_id]
+        if not isinstance(job_id, str) or len(job_id) != 32 or any(c not in '0123456789abcdef' for c in job_id):
+            raise KeyError(job_id)
+        path = self.output/job_id/'comparison.json'
+        try:
+            if path.stat().st_size > 16_000_000:
+                raise KeyError(job_id)
+            saved = read_json(path)
+            if saved['id'] != job_id or saved['status'] not in TERMINAL or not isinstance(saved['events'], list):
+                raise KeyError(job_id)
+            job = {k: saved[k] for k in ('id','scenario','model','status','events','results')}
+        except (OSError, ValueError, TypeError):
+            raise KeyError(job_id) from None
+        while len(self.jobs) >= self.max_jobs:
+            old = next((k for k, v in self.jobs.items() if v['status'] in TERMINAL), None)
+            if old is None:
+                raise KeyError(job_id)
+            self.jobs.pop(old)
+        job.update(cancel=threading.Event(), created=path.stat().st_mtime)
+        self.jobs[job_id] = job
+        return job
 
     def close(self):
         with self.lock:

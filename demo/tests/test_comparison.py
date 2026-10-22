@@ -140,9 +140,24 @@ class ComparisonExecutionTests(unittest.TestCase):
             ids=[]
             for _ in range(3):
                 job=service.start('clean_control_flow','fixture-model');ids.append(job['id']);wait_done(service,job['id'])
-            with self.assertRaises(KeyError):service.snapshot(ids[0])
+            self.assertNotIn(ids[0],service.jobs)
+            self.assertEqual(len(service.jobs),2)
             self.assertEqual(service.snapshot(ids[-1])['status'],'completed')
+            self.assertEqual(service.snapshot(ids[0])['status'],'completed')
+            self.assertEqual(len(service.jobs),2)
             service.close()
+
+    def test_finished_comparison_survives_server_restart_without_new_inference(self):
+        with tempfile.TemporaryDirectory() as d:
+            service=ComparisonService(d,provider_factory=lambda _:TransportFixture(),model_catalog=lambda:['fixture-model'])
+            job=service.start('handoff_drop_context','fixture-model');original=wait_done(service,job['id']);service.close()
+            def forbidden(_): raise AssertionError('Restoring a run must not invoke a model')
+            restored=ComparisonService(d,provider_factory=forbidden,model_catalog=lambda:[])
+            snapshot=restored.snapshot(job['id'])
+            self.assertEqual(snapshot['results'],original['results'])
+            self.assertEqual(snapshot['events'],original['events'])
+            with self.assertRaises(KeyError):restored.snapshot('../escape')
+            restored.close()
 
     def test_model_budget_is_enforced_before_sending_an_extra_request(self):
         events=[]
@@ -151,3 +166,58 @@ class ComparisonExecutionTests(unittest.TestCase):
             p.complete('global',{})
             with self.assertRaisesRegex(RuntimeError,'budget'):p.complete('dynamic',{})
             self.assertEqual(p.metrics()['model_calls'],1)
+
+
+class ComparisonHTTPTests(unittest.TestCase):
+    def setUp(self):
+        from demo.visualizer import make_server
+        self.temp=tempfile.TemporaryDirectory()
+        self.service=ComparisonService(self.temp.name,provider_factory=lambda _:TransportFixture(),model_catalog=lambda:['fixture-model'])
+        self.server=make_server(port=0,delay=0,comparison_service=self.service)
+        self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start()
+        self.base=f'http://127.0.0.1:{self.server.server_address[1]}'
+
+    def tearDown(self):
+        if hasattr(self,'server'):
+            self.server.shutdown();self.server.server_close();self.thread.join()
+        self.service.close();self.temp.cleanup()
+
+    def fetch(self,path,data=None,origin=None,raw=None):
+        from urllib.request import Request,urlopen
+        headers={'Content-Type':'application/json'} if data is not None or raw is not None else {}
+        if origin:headers['Origin']=origin
+        body=raw if raw is not None else json.dumps(data).encode() if data is not None else None
+        req=Request(self.base+path,data=body,headers=headers)
+        with urlopen(req,timeout=10) as response:return response.status,response.read().decode()
+
+    def test_navigation_models_and_full_comparison_round_trip(self):
+        status,body=self.fetch('/compare')
+        self.assertEqual(status,200)
+        self.assertIn('id="comparison-app"',body)
+        self.assertIn('href="/compare"',self.fetch('/')[1])
+        self.assertEqual(json.loads(self.fetch('/api/models')[1])['models'],['fixture-model'])
+        status,body=self.fetch('/api/comparisons',{'scenario':'handoff_drop_context','model':'fixture-model'},origin=self.base)
+        self.assertEqual(status,202)
+        jid=json.loads(body)['id'];wait_done(self.service,jid)
+        state=json.loads(self.fetch('/api/comparisons/'+jid+'?after=0')[1])
+        self.assertEqual(set(state['results']),{'agentrx','agentreroute'})
+        self.assertEqual(state['status'],'completed')
+        status,body=self.fetch('/api/comparisons/'+jid+'/cancel',{})
+        self.assertEqual(status,200)
+
+    def test_cross_origin_invalid_bodies_and_cursors_are_rejected(self):
+        from urllib.error import HTTPError
+        payload={'scenario':'handoff_drop_context','model':'fixture-model'}
+        with self.assertRaises(HTTPError) as raised:self.fetch('/api/comparisons',payload,origin='https://untrusted.example')
+        self.assertEqual(raised.exception.code,403);raised.exception.close()
+        for value in ([],{},dict(payload,endpoint='http://elsewhere'),dict(payload,scenario='../escape'),dict(payload,model='missing')):
+            with self.subTest(value=value),self.assertRaises(HTTPError) as raised:self.fetch('/api/comparisons',value)
+            self.assertEqual(raised.exception.code,400);raised.exception.close()
+        with self.assertRaises(HTTPError) as raised:self.fetch('/api/comparisons',raw=b'{broken')
+        self.assertEqual(raised.exception.code,400);raised.exception.close()
+        job=self.service.start(**payload);wait_done(self.service,job['id'])
+        for cursor in ('-1','abc','1.5'):
+            with self.assertRaises(HTTPError) as raised:self.fetch('/api/comparisons/'+job['id']+'?after='+cursor)
+            self.assertEqual(raised.exception.code,400);raised.exception.close()
+        with self.assertRaises(HTTPError) as raised:self.fetch('/api/comparisons/unknown')
+        self.assertEqual(raised.exception.code,404);raised.exception.close()

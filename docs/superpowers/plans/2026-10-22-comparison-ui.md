@@ -33,9 +33,9 @@ Files: demo/comparison.py, demo/tests/test_comparison.py.
 ### Task 2: Comparison routes and interactive page
 
 Files: demo/comparison_page.py, demo/visualizer.py, demo/tests/test_comparison.py, README.md.
-- [ ] Write RED tests for page/models/job/cancel routes, strict input and origin checks.
-- [ ] Add page navigation, two pipeline panels, shared trace and event playback, measured metrics/errors, model selection and responsive layout.
-- [ ] Verify interactive behavior with browser automation; run suite; commit and ledger.
+- [x] Write RED tests for page/models/job/cancel routes, strict input and origin checks.
+- [x] Add page navigation, two pipeline panels, shared trace and event playback, measured metrics/errors, model selection and responsive layout.
+- [x] Verify interactive behavior with browser automation; run suite; commit and ledger.
 
 ### Task 3: Live local verification and review
 
