@@ -245,8 +245,8 @@ The test corpus systematically stresses all 7 retail multi-agent failure modes:
 ### 4. Reproducibility & Output Artifacts
 
 All model checkpoints, attribution traces, and raw JSON evaluation metrics are saved locally:
-- **Trained RL Model Checkpoint**: [`runs/rl/rl_state.json`](file:///e:/Projects/AgentReroute/runs/rl/rl_state.json)
-- **Ollama Benchmark Summary**: [`runs/rl/ollama_test_summary.json`](file:///e:/Projects/AgentReroute/runs/rl/ollama_test_summary.json)
-- **Ollama Per-Episode Attribution Log**: [`runs/rl/ollama_test_attribution.json`](file:///e:/Projects/AgentReroute/runs/rl/ollama_test_attribution.json)
-- **OpenRouter Benchmark Summary**: [`runs/rl/openrouter_test_summary.json`](file:///e:/Projects/AgentReroute/runs/rl/openrouter_test_summary.json)
-- **OpenRouter Per-Episode Attribution Log**: [`runs/rl/openrouter_test_attribution.json`](file:///e:/Projects/AgentReroute/runs/rl/openrouter_test_attribution.json)
+- **Trained RL Model Checkpoint**: [`checkpoints/rl_state.json`](../checkpoints/rl_state.json)
+- **Ollama Benchmark Summary**: [`checkpoints/results/benchmark_35case/ollama_test_summary.json`](../checkpoints/results/benchmark_35case/ollama_test_summary.json)
+- **Ollama Per-Episode Attribution Log**: [`checkpoints/results/benchmark_35case/ollama_test_attribution.json`](../checkpoints/results/benchmark_35case/ollama_test_attribution.json)
+- **OpenRouter Benchmark Summary**: [`checkpoints/results/benchmark_35case/openrouter_test_summary.json`](../checkpoints/results/benchmark_35case/openrouter_test_summary.json)
+- **OpenRouter Per-Episode Attribution Log**: [`checkpoints/results/benchmark_35case/openrouter_test_attribution.json`](../checkpoints/results/benchmark_35case/openrouter_test_attribution.json)

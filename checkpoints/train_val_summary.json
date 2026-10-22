@@ -26,5 +26,5 @@
   ],
   "total_training_episodes": 76,
   "baseline_reward": 0.7073520158694924,
-  "rl_state_path": "E:\\Projects\\AgentReroute\\runs\\rl\\rl_state.json"
+  "rl_state_path": "checkpoints/rl_state.json"
 }

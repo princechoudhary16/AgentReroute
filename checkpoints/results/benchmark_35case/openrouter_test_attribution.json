@@ -1,0 +1,1101 @@
+[
+  {
+    "tid": "tr-05b84c612d004596",
+    "mode": "tool_failure",
+    "gold_step": 9,
+    "acceptable_steps": [
+      8,
+      9
+    ],
+    "gold_category": "SystemFailure",
+    "agentrx": {
+      "step": 11,
+      "agent": "returns_agent",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 39.98,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 2,
+      "agent": "planner",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.277,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 48.328
+    }
+  },
+  {
+    "tid": "tr-07f0b1c2e27f2126",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 118.71,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.112,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 88.53
+    }
+  },
+  {
+    "tid": "tr-081b57dacedd8cae",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 4,
+      "agent": "planner",
+      "category": "InventionOfNewInformation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 54.06,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.63,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 34.541
+    }
+  },
+  {
+    "tid": "tr-08823fbce1724514",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 64.13,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.111,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 149.328
+    }
+  },
+  {
+    "tid": "tr-17d7ca90804a8d58",
+    "mode": "drift",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 4,
+      "agent": "planner",
+      "category": "InventionOfNewInformation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 166.16,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "IntentPlanMisalignment",
+      "pred_mode": "drift",
+      "confidence": 0.508,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 50.393
+    }
+  },
+  {
+    "tid": "tr-1d40c3ec359672b9",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 4,
+      "agent": "planner",
+      "category": "InventionOfNewInformation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 48.01,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.628,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 59.233
+    }
+  },
+  {
+    "tid": "tr-23249e61d29e5b2c",
+    "mode": "missing_details",
+    "gold_step": 12,
+    "acceptable_steps": [
+      12
+    ],
+    "gold_category": "InventionOfNewInformation",
+    "agentrx": {
+      "step": 12,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "latency_s": 31.13,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 2,
+      "agent": "planner",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.275,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 27.354
+    }
+  },
+  {
+    "tid": "tr-2da308539ceedfc6",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 193.42,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.627,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 73.248
+    }
+  },
+  {
+    "tid": "tr-3088d1faa63bdd1b",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 56.41,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.11,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 78.296
+    }
+  },
+  {
+    "tid": "tr-3c2c8ec6c65e00b9",
+    "mode": "drift",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 4,
+      "agent": "planner",
+      "category": "InventionOfNewInformation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 96.84,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "IntentPlanMisalignment",
+      "pred_mode": "drift",
+      "confidence": 0.508,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 46.001
+    }
+  },
+  {
+    "tid": "tr-41510179ef499732",
+    "mode": "tool_failure",
+    "gold_step": 9,
+    "acceptable_steps": [
+      8,
+      9
+    ],
+    "gold_category": "SystemFailure",
+    "agentrx": {
+      "step": 4,
+      "agent": "planner",
+      "category": "InventionOfNewInformation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 107.32,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 7,
+      "agent": "order_agent",
+      "category": "InvalidInvocation",
+      "pred_mode": "tool_failure",
+      "confidence": 0.572,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": true,
+      "latency_s": 108.78
+    }
+  },
+  {
+    "tid": "tr-43e6d44999b9da2b",
+    "mode": "cycles",
+    "gold_step": 11,
+    "acceptable_steps": [
+      8,
+      9,
+      11,
+      13
+    ],
+    "gold_category": "Instruction/PlanAdherenceFailure",
+    "agentrx": {
+      "step": 4,
+      "agent": "planner",
+      "category": "InventionOfNewInformation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 60.75,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 11,
+      "agent": "order_agent",
+      "category": "Cycle",
+      "pred_mode": "cycles",
+      "confidence": 0.186,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "mode_match": true,
+      "latency_s": 150.223
+    }
+  },
+  {
+    "tid": "tr-4ace849be402a518",
+    "mode": "misinterpretation_of_tool_output",
+    "gold_step": 9,
+    "acceptable_steps": [
+      9
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 9,
+      "agent": "order_agent",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 22.35,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 9,
+      "agent": "order_agent",
+      "category": "InvalidInvocation",
+      "pred_mode": "tool_failure",
+      "confidence": 1.0,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 25.211
+    }
+  },
+  {
+    "tid": "tr-56b582e59d00134d",
+    "mode": "drift",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 6,
+      "agent": "planner",
+      "category": "Instruction/PlanAdherenceFailure",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "latency_s": 85.59,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "IntentPlanMisalignment",
+      "pred_mode": "drift",
+      "confidence": 0.508,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 79.415
+    }
+  },
+  {
+    "tid": "tr-5fe27833d0c972f5",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 6,
+      "agent": "planner",
+      "category": "Instruction/PlanAdherenceFailure",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "latency_s": 66.59,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.11,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 55.98
+    }
+  },
+  {
+    "tid": "tr-64e5ed85f61e59cb",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 135.25,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.626,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 69.335
+    }
+  },
+  {
+    "tid": "tr-6c55fc8fe187259d",
+    "mode": "drift",
+    "gold_step": 7,
+    "acceptable_steps": [
+      7
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 4,
+      "agent": "planner",
+      "category": "InventionOfNewInformation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 60.19,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 11,
+      "agent": "returns_agent",
+      "category": "Cycle",
+      "pred_mode": "cycles",
+      "confidence": 0.186,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 52.284
+    }
+  },
+  {
+    "tid": "tr-6fda8274ace46dae",
+    "mode": "tool_failure",
+    "gold_step": 9,
+    "acceptable_steps": [
+      8,
+      9
+    ],
+    "gold_category": "SystemFailure",
+    "agentrx": {
+      "step": 8,
+      "agent": "returns_agent",
+      "category": "SystemFailure",
+      "exact_step": false,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 104.89,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "InvalidInvocation",
+      "pred_mode": "tool_failure",
+      "confidence": 0.572,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": true,
+      "latency_s": 29.284
+    }
+  },
+  {
+    "tid": "tr-723e713b407998d7",
+    "mode": "drift",
+    "gold_step": 7,
+    "acceptable_steps": [
+      7
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "Instruction/PlanAdherenceFailure",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "latency_s": 225.8,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 11,
+      "agent": "returns_agent",
+      "category": "Cycle",
+      "pred_mode": "cycles",
+      "confidence": 0.186,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 51.825
+    }
+  },
+  {
+    "tid": "tr-77e82ce4345388f6",
+    "mode": "drift",
+    "gold_step": 7,
+    "acceptable_steps": [
+      7
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 7,
+      "agent": "order_agent",
+      "category": "InvalidInvocation",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "latency_s": 122.59,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 11,
+      "agent": "order_agent",
+      "category": "Cycle",
+      "pred_mode": "cycles",
+      "confidence": 0.186,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 56.035
+    }
+  },
+  {
+    "tid": "tr-805cf7a2029a2a47",
+    "mode": "cycles",
+    "gold_step": 11,
+    "acceptable_steps": [
+      8,
+      9,
+      11,
+      13
+    ],
+    "gold_category": "Instruction/PlanAdherenceFailure",
+    "agentrx": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "SystemFailure",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 187.58,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 11,
+      "agent": "returns_agent",
+      "category": "Cycle",
+      "pred_mode": "cycles",
+      "confidence": 0.186,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "mode_match": true,
+      "latency_s": 219.493
+    }
+  },
+  {
+    "tid": "tr-835483478036e352",
+    "mode": "instruction_adherence",
+    "gold_step": 9,
+    "acceptable_steps": [
+      9
+    ],
+    "gold_category": "Instruction/PlanAdherenceFailure",
+    "agentrx": {
+      "step": 9,
+      "agent": "returns_agent",
+      "category": "Instruction/PlanAdherenceFailure",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 11.56,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 9,
+      "agent": "returns_agent",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.56,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 86.607
+    }
+  },
+  {
+    "tid": "tr-89272b4432e12b78",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 176.5,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.109,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 70.874
+    }
+  },
+  {
+    "tid": "tr-8d02b71fbc37ffd2",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 4,
+      "agent": "planner",
+      "category": "InventionOfNewInformation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 29.66,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.624,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 76.492
+    }
+  },
+  {
+    "tid": "tr-9203fc06dfe236ae",
+    "mode": "drift",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 4,
+      "agent": "planner",
+      "category": "InventionOfNewInformation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 93.17,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "IntentPlanMisalignment",
+      "pred_mode": "drift",
+      "confidence": 0.507,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 48.171
+    }
+  },
+  {
+    "tid": "tr-95bc1044a36800be",
+    "mode": "misinterpretation_of_tool_output",
+    "gold_step": 11,
+    "acceptable_steps": [
+      11
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 11,
+      "agent": "returns_agent",
+      "category": "InventionOfNewInformation",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "latency_s": 17.32,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 2,
+      "agent": "planner",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.273,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 93.469
+    }
+  },
+  {
+    "tid": "tr-9a96ed968d933421",
+    "mode": "drift",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "latency_s": 154.16,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "IntentPlanMisalignment",
+      "pred_mode": "drift",
+      "confidence": 0.507,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 92.777
+    }
+  },
+  {
+    "tid": "tr-a46fab29e2f70c72",
+    "mode": "instruction_adherence",
+    "gold_step": 9,
+    "acceptable_steps": [
+      9
+    ],
+    "gold_category": "Instruction/PlanAdherenceFailure",
+    "agentrx": {
+      "step": 4,
+      "agent": "planner",
+      "category": "InventionOfNewInformation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 89.64,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 9,
+      "agent": "returns_agent",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.559,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 126.918
+    }
+  },
+  {
+    "tid": "tr-ab018bcc84ad6113",
+    "mode": "tool_failure",
+    "gold_step": 9,
+    "acceptable_steps": [
+      8,
+      9
+    ],
+    "gold_category": "SystemFailure",
+    "agentrx": {
+      "step": 9,
+      "agent": "returns_agent",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "latency_s": 206.8,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 2,
+      "agent": "planner",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.271,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 100.127
+    }
+  },
+  {
+    "tid": "tr-bc1bc943a42cd722",
+    "mode": "instruction_adherence",
+    "gold_step": 9,
+    "acceptable_steps": [
+      9
+    ],
+    "gold_category": "Instruction/PlanAdherenceFailure",
+    "agentrx": {
+      "step": 9,
+      "agent": "order_agent",
+      "category": "Instruction/PlanAdherenceFailure",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 212.91,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 9,
+      "agent": "order_agent",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.559,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 50.101
+    }
+  },
+  {
+    "tid": "tr-c2cd26a8c3885abb",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 102.72,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.107,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 78.96
+    }
+  },
+  {
+    "tid": "tr-c7eeaf58b01978ae",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 4,
+      "agent": "planner",
+      "category": "InventionOfNewInformation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 14.77,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.622,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 27.791
+    }
+  },
+  {
+    "tid": "tr-dc89b5011b58c895",
+    "mode": "cycles",
+    "gold_step": 11,
+    "acceptable_steps": [
+      8,
+      9,
+      11,
+      13
+    ],
+    "gold_category": "Instruction/PlanAdherenceFailure",
+    "agentrx": {
+      "step": 8,
+      "agent": "returns_agent",
+      "category": "SystemFailure",
+      "exact_step": false,
+      "acceptable_step": true,
+      "cat_match": false,
+      "latency_s": 78.6,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 11,
+      "agent": "returns_agent",
+      "category": "Cycle",
+      "pred_mode": "cycles",
+      "confidence": 0.185,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "mode_match": true,
+      "latency_s": 105.422
+    }
+  },
+  {
+    "tid": "tr-e273b84eed35d177",
+    "mode": "tool_failure",
+    "gold_step": 9,
+    "acceptable_steps": [
+      8,
+      9
+    ],
+    "gold_category": "SystemFailure",
+    "agentrx": {
+      "step": 4,
+      "agent": "planner",
+      "category": "InventionOfNewInformation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 77.57,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "InvalidInvocation",
+      "pred_mode": "tool_failure",
+      "confidence": 0.57,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": true,
+      "latency_s": 172.52
+    }
+  },
+  {
+    "tid": "tr-e8ca93f51486d235",
+    "mode": "drift",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 6,
+      "agent": "planner",
+      "category": "Instruction/PlanAdherenceFailure",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "latency_s": 250.82,
+      "error": null
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "IntentPlanMisalignment",
+      "pred_mode": "drift",
+      "confidence": 0.506,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 126.187
+    }
+  }
+]

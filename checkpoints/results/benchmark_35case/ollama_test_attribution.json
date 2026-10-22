@@ -1,0 +1,1066 @@
+[
+  {
+    "tid": "tr-05b84c612d004596",
+    "mode": "tool_failure",
+    "gold_step": 9,
+    "acceptable_steps": [
+      8,
+      9
+    ],
+    "gold_category": "SystemFailure",
+    "agentrx": {
+      "step": null,
+      "agent": null,
+      "category": null,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 17.66
+    },
+    "mp_rl": {
+      "step": 2,
+      "agent": "planner",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.277,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 14.818
+    }
+  },
+  {
+    "tid": "tr-07f0b1c2e27f2126",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "IntentPlanMisalignment",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 9.7
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.112,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 16.559
+    }
+  },
+  {
+    "tid": "tr-081b57dacedd8cae",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "GuardrailsTriggered",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 8.31
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.63,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 20.787
+    }
+  },
+  {
+    "tid": "tr-08823fbce1724514",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "IntentNotSupported",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 9.5
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.111,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 18.309
+    }
+  },
+  {
+    "tid": "tr-17d7ca90804a8d58",
+    "mode": "drift",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 7,
+      "agent": "product_agent",
+      "category": "IntentPlanMisalignment",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": true,
+      "latency_s": 8.99
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "IntentPlanMisalignment",
+      "pred_mode": "drift",
+      "confidence": 0.508,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 16.974
+    }
+  },
+  {
+    "tid": "tr-1d40c3ec359672b9",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "InvalidInvocation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 7.5
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.628,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 19.463
+    }
+  },
+  {
+    "tid": "tr-23249e61d29e5b2c",
+    "mode": "missing_details",
+    "gold_step": 12,
+    "acceptable_steps": [
+      12
+    ],
+    "gold_category": "InventionOfNewInformation",
+    "agentrx": {
+      "step": null,
+      "agent": null,
+      "category": "Inconclusive",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 7.83
+    },
+    "mp_rl": {
+      "step": 2,
+      "agent": "planner",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.275,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 17.659
+    }
+  },
+  {
+    "tid": "tr-2da308539ceedfc6",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "IntentNotSupported",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 7.4
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.626,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 16.509
+    }
+  },
+  {
+    "tid": "tr-3088d1faa63bdd1b",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 37,
+      "agent": "order_agent",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": true,
+      "latency_s": 10.86
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.109,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 17.227
+    }
+  },
+  {
+    "tid": "tr-3c2c8ec6c65e00b9",
+    "mode": "drift",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 7,
+      "agent": "product_agent",
+      "category": "GuardrailsTriggered",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 9.15
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "IntentPlanMisalignment",
+      "pred_mode": "drift",
+      "confidence": 0.507,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 16.966
+    }
+  },
+  {
+    "tid": "tr-41510179ef499732",
+    "mode": "tool_failure",
+    "gold_step": 9,
+    "acceptable_steps": [
+      8,
+      9
+    ],
+    "gold_category": "SystemFailure",
+    "agentrx": {
+      "step": 7,
+      "agent": "order_agent",
+      "category": "SystemFailure",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": true,
+      "latency_s": 9.49
+    },
+    "mp_rl": {
+      "step": 7,
+      "agent": "order_agent",
+      "category": "InvalidInvocation",
+      "pred_mode": "tool_failure",
+      "confidence": 0.571,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": true,
+      "latency_s": 8.604
+    }
+  },
+  {
+    "tid": "tr-43e6d44999b9da2b",
+    "mode": "cycles",
+    "gold_step": 11,
+    "acceptable_steps": [
+      8,
+      9,
+      11,
+      13
+    ],
+    "gold_category": "Instruction/PlanAdherenceFailure",
+    "agentrx": {
+      "step": 27,
+      "agent": "order_agent",
+      "category": "SystemFailure",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 9.83
+    },
+    "mp_rl": {
+      "step": 11,
+      "agent": "order_agent",
+      "category": "Cycle",
+      "pred_mode": "cycles",
+      "confidence": 0.185,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "mode_match": true,
+      "latency_s": 19.151
+    }
+  },
+  {
+    "tid": "tr-4ace849be402a518",
+    "mode": "misinterpretation_of_tool_output",
+    "gold_step": 9,
+    "acceptable_steps": [
+      9
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 9,
+      "agent": "order_agent",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 9.62
+    },
+    "mp_rl": {
+      "step": 9,
+      "agent": "order_agent",
+      "category": "InvalidInvocation",
+      "pred_mode": "tool_failure",
+      "confidence": 1.0,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 26.342
+    }
+  },
+  {
+    "tid": "tr-56b582e59d00134d",
+    "mode": "drift",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 7,
+      "agent": "product_agent",
+      "category": "GuardrailsTriggered",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 7.37
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "IntentPlanMisalignment",
+      "pred_mode": "drift",
+      "confidence": 0.507,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 17.967
+    }
+  },
+  {
+    "tid": "tr-5fe27833d0c972f5",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": null,
+      "agent": null,
+      "category": "Inconclusive",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 13.25
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.11,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 16.248
+    }
+  },
+  {
+    "tid": "tr-64e5ed85f61e59cb",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 7,
+      "agent": "order_agent",
+      "category": "IntentNotSupported",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 8.85
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.628,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 16.502
+    }
+  },
+  {
+    "tid": "tr-6c55fc8fe187259d",
+    "mode": "drift",
+    "gold_step": 7,
+    "acceptable_steps": [
+      7
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 8,
+      "agent": "returns_agent",
+      "category": "InvalidInvocation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 10.33
+    },
+    "mp_rl": {
+      "step": 11,
+      "agent": "returns_agent",
+      "category": "Cycle",
+      "pred_mode": "cycles",
+      "confidence": 0.185,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 18.083
+    }
+  },
+  {
+    "tid": "tr-6fda8274ace46dae",
+    "mode": "tool_failure",
+    "gold_step": 9,
+    "acceptable_steps": [
+      8,
+      9
+    ],
+    "gold_category": "SystemFailure",
+    "agentrx": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "SystemFailure",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": true,
+      "latency_s": 9.32
+    },
+    "mp_rl": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "InvalidInvocation",
+      "pred_mode": "tool_failure",
+      "confidence": 0.571,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": true,
+      "latency_s": 18.304
+    }
+  },
+  {
+    "tid": "tr-723e713b407998d7",
+    "mode": "drift",
+    "gold_step": 7,
+    "acceptable_steps": [
+      7
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 8,
+      "agent": "returns_agent",
+      "category": "InvalidInvocation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 16.74
+    },
+    "mp_rl": {
+      "step": 11,
+      "agent": "returns_agent",
+      "category": "Cycle",
+      "pred_mode": "cycles",
+      "confidence": 0.186,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 18.031
+    }
+  },
+  {
+    "tid": "tr-77e82ce4345388f6",
+    "mode": "drift",
+    "gold_step": 7,
+    "acceptable_steps": [
+      7
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 8,
+      "agent": "order_agent",
+      "category": "InvalidInvocation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 9.18
+    },
+    "mp_rl": {
+      "step": 11,
+      "agent": "order_agent",
+      "category": "Cycle",
+      "pred_mode": "cycles",
+      "confidence": 0.186,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 18.641
+    }
+  },
+  {
+    "tid": "tr-805cf7a2029a2a47",
+    "mode": "cycles",
+    "gold_step": 11,
+    "acceptable_steps": [
+      8,
+      9,
+      11,
+      13
+    ],
+    "gold_category": "Instruction/PlanAdherenceFailure",
+    "agentrx": {
+      "step": 27,
+      "agent": "returns_agent",
+      "category": "Instruction/PlanAdherenceFailure",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": true,
+      "latency_s": 9.44
+    },
+    "mp_rl": {
+      "step": 11,
+      "agent": "returns_agent",
+      "category": "Cycle",
+      "pred_mode": "cycles",
+      "confidence": 0.186,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "mode_match": true,
+      "latency_s": 18.295
+    }
+  },
+  {
+    "tid": "tr-835483478036e352",
+    "mode": "instruction_adherence",
+    "gold_step": 9,
+    "acceptable_steps": [
+      9
+    ],
+    "gold_category": "Instruction/PlanAdherenceFailure",
+    "agentrx": {
+      "step": 9,
+      "agent": "returns_agent",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "latency_s": 10.06
+    },
+    "mp_rl": {
+      "step": 9,
+      "agent": "returns_agent",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.559,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 19.434
+    }
+  },
+  {
+    "tid": "tr-89272b4432e12b78",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "IntentPlanMisalignment",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 10.89
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.11,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 17.906
+    }
+  },
+  {
+    "tid": "tr-8d02b71fbc37ffd2",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 7,
+      "agent": "order_agent",
+      "category": "InvalidInvocation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 9.26
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.63,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 18.28
+    }
+  },
+  {
+    "tid": "tr-9203fc06dfe236ae",
+    "mode": "drift",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 7,
+      "agent": "product_agent",
+      "category": "InvalidInvocation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 8.3
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "IntentPlanMisalignment",
+      "pred_mode": "drift",
+      "confidence": 0.507,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 19.823
+    }
+  },
+  {
+    "tid": "tr-95bc1044a36800be",
+    "mode": "misinterpretation_of_tool_output",
+    "gold_step": 11,
+    "acceptable_steps": [
+      11
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 11,
+      "agent": "returns_agent",
+      "category": "MisinterpretationOfToolOutput",
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 9.69
+    },
+    "mp_rl": {
+      "step": 2,
+      "agent": "planner",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.271,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 20.121
+    }
+  },
+  {
+    "tid": "tr-9a96ed968d933421",
+    "mode": "drift",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 7,
+      "agent": "product_agent",
+      "category": "IntentNotSupported",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 7.82
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "IntentPlanMisalignment",
+      "pred_mode": "drift",
+      "confidence": 0.506,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 18.216
+    }
+  },
+  {
+    "tid": "tr-a46fab29e2f70c72",
+    "mode": "instruction_adherence",
+    "gold_step": 9,
+    "acceptable_steps": [
+      9
+    ],
+    "gold_category": "Instruction/PlanAdherenceFailure",
+    "agentrx": {
+      "step": null,
+      "agent": null,
+      "category": "Inconclusive",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 9.48
+    },
+    "mp_rl": {
+      "step": 9,
+      "agent": "returns_agent",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.558,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 20.74
+    }
+  },
+  {
+    "tid": "tr-ab018bcc84ad6113",
+    "mode": "tool_failure",
+    "gold_step": 9,
+    "acceptable_steps": [
+      8,
+      9
+    ],
+    "gold_category": "SystemFailure",
+    "agentrx": {
+      "step": null,
+      "agent": null,
+      "category": "Inconclusive",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 11.81
+    },
+    "mp_rl": {
+      "step": 2,
+      "agent": "planner",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.268,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": false,
+      "latency_s": 17.277
+    }
+  },
+  {
+    "tid": "tr-bc1bc943a42cd722",
+    "mode": "instruction_adherence",
+    "gold_step": 9,
+    "acceptable_steps": [
+      9
+    ],
+    "gold_category": "Instruction/PlanAdherenceFailure",
+    "agentrx": {
+      "step": 10,
+      "agent": "order_agent",
+      "category": "Instruction/PlanAdherenceFailure",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": true,
+      "latency_s": 8.7
+    },
+    "mp_rl": {
+      "step": 9,
+      "agent": "order_agent",
+      "category": "Instruction/PlanAdherenceFailure",
+      "pred_mode": "instruction_adherence",
+      "confidence": 0.558,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 21.207
+    }
+  },
+  {
+    "tid": "tr-c2cd26a8c3885abb",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 57,
+      "agent": "returns_agent",
+      "category": "InvalidInvocation",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 9.98
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.11,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 18.667
+    }
+  },
+  {
+    "tid": "tr-c7eeaf58b01978ae",
+    "mode": "context_propagation",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "MisinterpretationOfToolOutput",
+    "agentrx": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "GuardrailsTriggered",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 9.68
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "MisinterpretationOfToolOutput",
+      "pred_mode": "context_propagation",
+      "confidence": 0.632,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 19.319
+    }
+  },
+  {
+    "tid": "tr-dc89b5011b58c895",
+    "mode": "cycles",
+    "gold_step": 11,
+    "acceptable_steps": [
+      8,
+      9,
+      11,
+      13
+    ],
+    "gold_category": "Instruction/PlanAdherenceFailure",
+    "agentrx": {
+      "step": null,
+      "agent": null,
+      "category": "Inconclusive",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 11.06
+    },
+    "mp_rl": {
+      "step": 11,
+      "agent": "returns_agent",
+      "category": "Cycle",
+      "pred_mode": "cycles",
+      "confidence": 0.184,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": false,
+      "mode_match": true,
+      "latency_s": 10.953
+    }
+  },
+  {
+    "tid": "tr-e273b84eed35d177",
+    "mode": "tool_failure",
+    "gold_step": 9,
+    "acceptable_steps": [
+      8,
+      9
+    ],
+    "gold_category": "SystemFailure",
+    "agentrx": {
+      "step": 8,
+      "agent": "returns_agent",
+      "category": "SystemFailure",
+      "exact_step": false,
+      "acceptable_step": true,
+      "cat_match": true,
+      "latency_s": 8.14
+    },
+    "mp_rl": {
+      "step": 7,
+      "agent": "returns_agent",
+      "category": "InvalidInvocation",
+      "pred_mode": "tool_failure",
+      "confidence": 0.569,
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "mode_match": true,
+      "latency_s": 19.443
+    }
+  },
+  {
+    "tid": "tr-e8ca93f51486d235",
+    "mode": "drift",
+    "gold_step": 6,
+    "acceptable_steps": [
+      6
+    ],
+    "gold_category": "IntentPlanMisalignment",
+    "agentrx": {
+      "step": 7,
+      "agent": "product_agent",
+      "category": "GuardrailsTriggered",
+      "exact_step": false,
+      "acceptable_step": false,
+      "cat_match": false,
+      "latency_s": 8.45
+    },
+    "mp_rl": {
+      "step": 6,
+      "agent": "planner",
+      "category": "IntentPlanMisalignment",
+      "pred_mode": "drift",
+      "confidence": 0.506,
+      "exact_step": true,
+      "acceptable_step": true,
+      "cat_match": true,
+      "mode_match": true,
+      "latency_s": 21.529
+    }
+  }
+]
