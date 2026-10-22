@@ -37,7 +37,8 @@ the page, even when attribution found the injected step.
 
 Systems execute sequentially to avoid competing for the local GPU. Timings include
 model loading and queueing. Token counts come from native Ollama telemetry;
-unavailable measurements stay blank. One run is an observation, not benchmark
+unavailable measurements stay blank. Known usage from failed requests is included;
+if any finished request has unknown usage, its token totals stay blank. One run is an observation, not benchmark
 accuracy, and a policy-selection score is not a calibrated failure probability.
 Initial weights and benchmark-tuned seed checks limit generalization claims.
 
@@ -45,7 +46,9 @@ Ollama generation can take several minutes. **Stop** prevents further inference
 after the current request finishes (up to its 180-second transport timeout).
 There is a 64-request cap per system and a separate three-attempt recovery budget.
 If model generation fails, its errors remain in the log; partial seed fallback is
-not presented as an error-free model result. The server permits one active
+not presented as an error-free model result. Rejected model rules and exhausted
+validation retries show a partial-result warning; valid empty rule lists are
+labeled separately as seed-only checks. The server permits one active
 comparison, retains eight jobs in memory, and saves completed runs on disk.
 
 Artifacts are under `runs/ui-comparisons/<id>/`: shared input, per-system request
@@ -71,7 +74,8 @@ local Chrome executable when needed. The script starts its own isolated fixture
 server on a free port, exercises the actual page and real pipelines with only
 the external model transport replaced, and shuts it down. It checks historical
 counters, stage completion, future-result isolation, model/scenario restoration,
-trace inspection, cancellation, mobile layout and browser errors. Screenshots go
+trace inspection, cancellation, invalid-synthesis warnings, mobile layout and
+browser errors. Screenshots go
 to `runs/ui-comparison-qa/`. This fixture never replaces the real 8765 server.
 
 A real local Qwen3-VL 8B pilot on the unbacked-write scenario completed on both

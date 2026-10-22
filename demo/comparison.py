@@ -11,7 +11,7 @@ from agentrx.io import digest, write_json, read_json
 from agentrx.pipeline import diagnose, diagnose_mp_rl
 from agentrx.providers import OllamaProvider
 from agentrx.rl_policy import DualLoopRLJudge
-from agentrx.rl_cross_branch import candidates_to_benchmark_hypotheses, _repairable
+from agentrx.rl_cross_branch import candidates_to_benchmark_hypotheses, _repairable, _CreditEngine
 from benchmark.env.llm import Completion
 from benchmark.env.retail import gold_state_hash
 from benchmark.env.scripted import scripted_llm
@@ -65,6 +65,8 @@ class MeasuredProvider:
                    'perspective': payload.get('perspective') if isinstance(payload, dict) else None,
                    'steps': len(payload.get('trajectory', {}).get('steps', [])) if isinstance(payload, dict) else None})
         started = time.monotonic()
+        self.provider.last_telemetry = {}
+        self.last_telemetry = {}
         try:
             answer = self.provider.complete_messages(payload) if messages else self.provider.complete(stage, payload)
             self.last_telemetry = copy.deepcopy(getattr(self.provider, 'last_telemetry', {}))
@@ -77,7 +79,9 @@ class MeasuredProvider:
                        'response': text[:16000], 'response_truncated': len(text) > 16000,
                        'metrics': self.metrics()})
         except Exception as exc:
-            row.update(status='error', seconds=round(time.monotonic() - started, 3), error=f'{type(exc).__name__}: {exc}')
+            self.last_telemetry = copy.deepcopy(getattr(self.provider, 'last_telemetry', {}))
+            row.update(status='error', seconds=round(time.monotonic() - started, 3),
+                       telemetry=self.last_telemetry, error=f'{type(exc).__name__}: {exc}')
             write_json(self.output/'requests'/f'{row["id"]:03d}.json', {'stage': stage, 'input': payload, **row})
             self.emit({'kind': 'request_failed', **row, 'metrics': self.metrics()})
             raise
@@ -93,13 +97,42 @@ class MeasuredProvider:
 
     def metrics(self):
         completed = [r for r in self.calls if r['status'] == 'completed']
+        finished = [r for r in self.calls if r['status'] in ('completed', 'error')]
         result = {'model_calls': len(self.calls), 'completed_calls': len(completed),
                   'failed_calls': sum(r['status'] == 'error' for r in self.calls),
                   'model_seconds': round(sum(r.get('seconds', 0) for r in self.calls), 3)}
         for field, key in (('prompt_tokens', 'prompt_tokens'), ('completion_tokens', 'completion_tokens')):
-            values = [r['telemetry'].get('usage', {}).get(key) for r in completed]
-            result[field] = sum(values) if values and all(type(v) is int for v in values) else None
+            values = [r['telemetry'].get('usage', {}).get(key) for r in finished]
+            result[field] = sum(values) if values and all(type(v) is int and v >= 0 for v in values) else None
         return result
+
+
+def synthesis_summary(path, checks):
+    """Expose validation fallback separately from successful but empty model synthesis."""
+    views = read_json(path)
+    summary = {'llm_constraints': 0, 'seed_constraints': 0, 'rejected_constraints': 0,
+               'failed_stages': 0, 'failed_perspectives': [], 'issues': []}
+    for perspective, view in views.items():
+        for constraint in view['constraints']:
+            summary['seed_constraints' if constraint.get('origin') == 'seed' else 'llm_constraints'] += 1
+        latest = {}
+        for entry in view['synthesis_log']:
+            latest[entry['stage']] = entry
+            summary['rejected_constraints'] += len(entry['rejected'])
+            for reason in ([entry['error']] if entry.get('error') else []) + [r['reason'] for r in entry['rejected']]:
+                summary['issues'].append({'perspective': perspective, 'stage': entry['stage'],
+                                          'attempt': entry['attempt'], 'reason': reason})
+        failed = sum(bool(e.get('error') or e['rejected']) for e in latest.values())
+        summary['failed_stages'] += failed
+        if failed:
+            summary['failed_perspectives'].append(perspective)
+    model_checks = [c for c in checks if c.get('origin') == 'llm']
+    summary['llm_check_evaluations'] = len(model_checks)
+    summary['llm_conclusive_checks'] = sum(c['verdict'] == 'VIOL' or
+        (c['verdict'] == 'SAT' and not c.get('unclear_count')) for c in model_checks)
+    summary['state'] = ('invalid_synthesis_fallback' if not summary['llm_constraints'] else 'partial_synthesis') \
+        if summary['failed_stages'] else ('model_and_seeds' if summary['llm_constraints'] else 'valid_empty_synthesis')
+    return summary
 
 
 class ScenarioInput:
@@ -127,10 +160,16 @@ class ScenarioInput:
                         user_llm=scripted, faults=faults, directive=directive, max_steps=MAX_STEPS).run()
 
     def recover(self, hypotheses, provider, emit):
-        runs = {}
+        runs, credits, engines = {}, {}, []
+        def engine_factory(task):
+            engine = _CreditEngine(task)
+            engines.append(engine)
+            return engine
         def runner(rid, directive):
             if provider.cancel.is_set():
                 raise ComparisonCancelled('Comparison canceled.')
+            hypothesis = engines[-1].current
+            credits[rid] = {'hypothesis_step': hypothesis.step_index, 'hypothesis_agent': hypothesis.agent}
             emit({'kind': 'repair_started', 'rollout': rid, 'directive': directive.__dict__.copy()})
             run = self.execute(directive, provider)
             runs[rid] = run
@@ -140,9 +179,11 @@ class ScenarioInput:
             return run, trace
         env = RecoveryEnv(self.tid, copy.deepcopy(self.trace), copy.deepcopy(self.view), runner,
                           BudgetCaps(tokens=100000, attempts=3, seconds=600), hypotheses=hypotheses)
-        policy = RepairStrategyPolicy(max_hypotheses=3, learn=False)
+        policy = RepairStrategyPolicy(max_hypotheses=3, learn=False, engine_factory=engine_factory)
         decision = policy.recover(env)
         attempts = policy.log[self.tid].attempts
+        for attempt in attempts:
+            attempt.update(credits.get(attempt.get('rollout'), {}))
         delivered = decision.get('delivered')
         selected = runs.get(delivered, self.original)
         # Evaluation only, after the policy returned. Neither gold actions nor scores enter model inputs.
@@ -195,6 +236,9 @@ def run_system(system, case, raw_provider, output, emit, cancel):
         result['prediction'] = diagnosed['prediction']
         checks = diagnosed['checks']
         counts = {v: sum(c['verdict'] == v for c in checks) for v in ('SAT', 'VIOL', 'SKIP', 'ERROR')}
+        if judge:
+            result['synthesis'] = synthesis_summary(output/'diagnosis'/'perspectives.json', checks)
+            emit({'kind': 'synthesis_summary', 'summary': result['synthesis']})
         result['checks'] = counts
         result['seed_checks'] = sum(c.get('origin') == 'seed' for c in checks)
         emit({'kind': 'checks_completed', 'counts': counts, 'seed_checks': result['seed_checks'],
@@ -224,17 +268,21 @@ def run_system(system, case, raw_provider, output, emit, cancel):
                                     'source': 'shared repair acceptance and actual retail-state scoring'})
         if judge and case.tid in judge.pending:
             accepted = next((a for a in reversed(attempts) if a.get('accepted')), None)
-            step = accepted['rollback_step'] if accepted else None
-            failed = [a['rollback_step'] for a in attempts if not a.get('accepted')] if accepted else []
+            step = accepted['hypothesis_step'] if accepted else None
+            failed = [a['hypothesis_step'] for a in attempts
+                      if not a.get('accepted') and 'hypothesis_step' in a] if accepted else []
             before = list(judge.weights)
-            telemetry = judge.record_recovery_outcome(case.tid, step, verified=bool(accepted),
+            telemetry = judge.record_recovery_outcome(case.tid, step,
+                chosen_agent=accepted['hypothesis_agent'] if accepted else None, verified=bool(accepted),
                 verifier_score_before=0.0, verifier_score_after=1.0 if accepted else max(
                     (0.5 if looks_ok(r) else 0.0 for r in env.rollouts.values()), default=0.0),
                 stopped_early=bool(env.rollouts) and not accepted and list(env.rollouts.values())[-1].termination != 'user_stop',
                 failed_steps=failed)
-            result['policy_update'] = {'before': before, 'after': list(judge.weights), 'reward': telemetry['reward']}
+            result['policy_update'] = {'before': before, 'after': list(judge.weights), 'reward': telemetry['reward'],
+                                       'credited_step': step, 'failed_hypothesis_steps': failed}
             judge.save(output/'policy_after.json')
-        result['status'] = 'partial' if diagnosed['status'] != 'ok' or provider.metrics()['failed_calls'] else 'completed'
+        result['status'] = 'partial' if (diagnosed['status'] != 'ok' or provider.metrics()['failed_calls']
+                                         or result.get('synthesis', {}).get('failed_stages')) else 'completed'
         emit({'kind': 'verification_completed', **{k: result[k] for k in ('decision','task_outcome','verification')},
               'policy_update': result.get('policy_update')})
     except ComparisonCancelled as exc:

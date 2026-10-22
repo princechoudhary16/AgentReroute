@@ -221,3 +221,64 @@ class ComparisonHTTPTests(unittest.TestCase):
             self.assertEqual(raised.exception.code,400);raised.exception.close()
         with self.assertRaises(HTTPError) as raised:self.fetch('/api/comparisons/unknown')
         self.assertEqual(raised.exception.code,404);raised.exception.close()
+
+
+class ComparisonReviewRegressions(unittest.TestCase):
+    def test_rejected_synthesis_is_visible_and_distinct_from_valid_empty_output(self):
+        from demo.comparison import ScenarioInput,run_system
+        class Invalid(TransportFixture):
+            def complete(self,stage,payload):
+                answer=super().complete(stage,payload)
+                return {'constraints':[{'invalid':'constraint'}]} if stage.startswith('perspective_') else answer
+        with tempfile.TemporaryDirectory() as d:
+            case=ScenarioInput('handoff_drop_context')
+            for name,transport in [('invalid',Invalid()),('empty',TransportFixture())]:
+                events=[]
+                result=run_system('agentreroute',case,transport,Path(d)/name,events.append,threading.Event())
+                if name=='invalid':
+                    self.assertEqual(result['status'],'partial')
+                    self.assertGreater(result['synthesis']['rejected_constraints'],0)
+                    self.assertEqual(result['synthesis']['state'],'invalid_synthesis_fallback')
+                    self.assertTrue(any(e['kind']=='synthesis_summary' and e['summary']['issues'] for e in events))
+                else:
+                    self.assertEqual(result['synthesis']['state'],'valid_empty_synthesis')
+                    self.assertEqual(result['synthesis']['rejected_constraints'],0)
+                self.assertEqual(result['synthesis']['llm_constraints'],0)
+                self.assertEqual(result['synthesis']['llm_conclusive_checks'],0)
+
+    def test_feedback_credits_accepted_hypothesis_independently_of_rollback_boundary(self):
+        from demo.comparison import ScenarioInput,run_system
+        class ScriptedReplay(ScenarioInput):
+            # Only replace the model-driven replay with the existing scripted transport.
+            def execute(self,directive=None,provider=None):return super().execute(directive,None)
+        with tempfile.TemporaryDirectory() as d:
+            result=run_system('agentreroute',ScriptedReplay('handoff_drop_context'),TransportFixture(),d,
+                              lambda e:None,threading.Event())
+            self.assertEqual(result['status'],'completed',result.get('error'))
+            accepted=next(a for a in result['attempts'] if a['accepted'])
+            self.assertEqual(accepted['rollback_step'],7)
+            self.assertEqual(accepted['hypothesis_step'],6)
+            self.assertEqual(result['policy_update']['credited_step'],6)
+            self.assertEqual(result['policy_update']['reward'],1)
+            self.assertTrue(result['task_outcome']['after']['state_ok'])
+
+    def test_failed_call_usage_is_included_or_marked_unknown_without_stale_telemetry(self):
+        class FailSecond(TransportFixture):
+            def __init__(self,known):super().__init__();self.known=known;self.calls=0
+            def complete(self,stage,payload):
+                self.calls+=1
+                if self.calls==1:return super().complete(stage,payload)
+                if self.known:self.last_telemetry={'usage':{'prompt_tokens':30,'completion_tokens':20}}
+                raise RuntimeError('Incomplete or timed-out response')
+        with tempfile.TemporaryDirectory() as d:
+            for known in (True,False):
+                events=[]
+                p=MeasuredProvider(FailSecond(known),events.append,Path(d)/str(known),threading.Event())
+                p.complete('global',{})
+                with self.assertRaises(RuntimeError):p.complete('dynamic',{})
+                stats=p.metrics()
+                self.assertEqual(stats['model_calls'],2)
+                self.assertEqual(stats['prompt_tokens'],40 if known else None)
+                self.assertEqual(stats['completion_tokens'],24 if known else None)
+                error=next(e for e in events if e['kind']=='request_failed')
+                self.assertEqual(error['telemetry'].get('usage',{}).get('prompt_tokens'),30 if known else None)
