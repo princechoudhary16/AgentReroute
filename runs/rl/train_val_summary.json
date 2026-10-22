@@ -1,0 +1,30 @@
+{
+  "train": {
+    "recovery_rate": 0.8125,
+    "conditional_recovery_rate": 0.8666666666666667,
+    "intervention_rate": 0.9375,
+    "n_episodes": 16
+  },
+  "val_calibration": {
+    "recovery_rate": 0.7391304347826086,
+    "conditional_recovery_rate": 0.8095238095238095,
+    "intervention_rate": 0.9130434782608695,
+    "cost_vs_original": 0.9098086956521739,
+    "n_episodes": 23
+  },
+  "learned_weights": [
+    0.8051652103122272,
+    0.9,
+    0.8561237902928543,
+    0.9162569775493059,
+    1.3,
+    1.3811484433775219,
+    1.497405420926828,
+    0.9694807413912275,
+    0.6982702806178849,
+    1.2
+  ],
+  "total_training_episodes": 76,
+  "baseline_reward": 0.7073520158694924,
+  "rl_state_path": "E:\\Projects\\AgentReroute\\runs\\rl\\rl_state.json"
+}
