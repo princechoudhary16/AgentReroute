@@ -296,3 +296,66 @@ class OpenRouterHardeningTests(unittest.TestCase):
                     self.assertRaisesRegex(ProviderError, 'Model HTTP 400'):
                 provider.complete('judge', {'checklist': False})
             self.assertEqual(len(opener.requests), len(outcomes), kind)
+
+
+class GeminiMessageTests(unittest.TestCase):
+    def test_replay_messages_use_the_same_authenticated_json_transport_as_diagnosis(self):
+        opener = FakeOpener([completion('{"action":"reply","content":"Done."}')])
+        provider = HTTPProvider('gemini-3.8-flash', 'https://generativelanguage.googleapis.com/v1beta/openai/',
+                                'fixture-key', provider='gemini', retries=0)
+        chat = [{'role': 'system', 'content': 'Return an action JSON object.'},
+                {'role': 'user', 'content': 'Check the order.'}]
+        with patch.object(request, 'build_opener', return_value=opener):
+            answer = provider.complete_messages(chat)
+        self.assertEqual(answer, {'action': 'reply', 'content': 'Done.'})
+        self.assertEqual(opener.requests[0].full_url,
+                         'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions')
+        self.assertEqual(opener.requests[0].get_header('Authorization'), 'Bearer fixture-key')
+        self.assertEqual(json.loads(opener.requests[0].data)['messages'], chat)
+        self.assertEqual(json.loads(opener.requests[0].data)['response_format'], {'type': 'json_object'})
+        self.assertNotIn('fixture-key', json.dumps(provider.identity))
+
+    def test_quota_failure_counts_all_attempts_and_discards_previous_usage(self):
+        opener = FakeOpener([completion('{}'), http_error(429, '1000'), http_error(429)])
+        provider = HTTPProvider('gemini-3.8-flash', 'https://example.com/v1', 'fixture-key',
+                                provider='gemini', retries=1)
+        with patch.object(request, 'build_opener', return_value=opener), patch('agentrx.providers.time.sleep') as sleep:
+            provider.complete('global', {'policy': '', 'tools': {}})
+            with self.assertRaisesRegex(ProviderError, '[Qq]uota|rate limit'):
+                provider.complete('global', {'policy': '', 'tools': {}})
+        self.assertEqual(provider.http_requests, 3)
+        self.assertEqual(provider.last_telemetry['attempts'], 2)
+        self.assertEqual(provider.last_telemetry['http_status'], 429)
+        self.assertEqual(provider.last_telemetry['usage'], {})
+        self.assertIsNone(provider.last_raw)
+        self.assertLessEqual(sleep.call_args.args[0], 60)
+
+    def test_failure_details_cannot_echo_credentials_or_remote_response_text(self):
+        secret = 'fixture-secret-must-stay-private'
+        failures = [error.HTTPError('https://example.com/v1', 401, secret, Message(), io.BytesIO(secret.encode())),
+                    error.URLError(secret),
+                    io.BytesIO(json.dumps({'choices': [{'finish_reason': secret, 'message': {'content': '{}'}}]}).encode()),
+                    io.BytesIO(b'[]')]
+        for failure in failures:
+            with self.subTest(failure=type(failure).__name__):
+                provider = HTTPProvider('gemini-3.8-flash', 'https://example.com/v1', secret,
+                                        provider='gemini', retries=0)
+                with patch.object(request, 'build_opener', return_value=FakeOpener([failure])):
+                    with self.assertRaises(ProviderError) as raised:
+                        provider.complete('global', {'policy': '', 'tools': {}})
+                self.assertNotIn(secret, str(raised.exception))
+                self.assertNotIn(secret, json.dumps(provider.last_telemetry))
+
+    def test_replay_input_limit_is_checked_before_sending(self):
+        provider = HTTPProvider('gemini-3.8-flash', 'https://example.com/v1', 'fixture-key',
+                                provider='gemini', max_input_chars=5)
+        with self.assertRaisesRegex(ProviderError, 'input limit'):
+            provider.complete_messages([{'role': 'user', 'content': 'too long'}])
+        self.assertEqual(provider.http_requests, 0)
+
+    def test_invalid_header_credential_is_rejected_without_echoing_its_value(self):
+        for key in ('fixture-private\nsecond-line', 'fixture-private\x00', 'fixture-private\N{SNOWMAN}'):
+            with self.subTest(key_type=repr(key[-1])):
+                with self.assertRaises(ProviderError) as raised:
+                    HTTPProvider('gemini-3.8-flash', 'https://example.com/v1', key, provider='gemini')
+                self.assertNotIn('fixture-private', str(raised.exception))

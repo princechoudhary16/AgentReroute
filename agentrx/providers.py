@@ -72,6 +72,8 @@ class HTTPProvider:
             raise ProviderError('Remote model endpoints must use HTTPS')
         if not api_key:
             raise ProviderError('Missing model API credential')
+        if not isinstance(api_key, str) or any(ord(c) < 32 or ord(c) > 126 for c in api_key):
+            raise ProviderError('Invalid model API credential; use a single-line ASCII key')
         self.model, self.api_key = model, api_key
         self.provider, self.settings = provider, dict(settings or {})
         allowed = {'temperature', 'top_p', 'seed', 'max_completion_tokens', 'max_tokens', 'reasoning_effort'}
@@ -117,7 +119,7 @@ class HTTPProvider:
                 or os.environ.get('AZURE_OPENAI_ENDPOINT' if kind == 'azure'
                                   else ('GEMINI_BASE_URL' if kind == 'gemini' else 'OPENAI_BASE_URL'),
                                   default_base))
-        default_model = 'gemini-3.5-flash' if kind == 'gemini' else 'gpt-5'
+        default_model = 'gemini-3.8-flash' if kind == 'gemini' else 'gpt-5'
         model = os.environ.get(config.get('model_env', '')) or config.get('model') or default_model
         return cls(model, base, key, provider=kind,
                    deployment=config.get('deployment') or os.environ.get('AZURE_OPENAI_DEPLOYMENT'),
@@ -133,7 +135,13 @@ class HTTPProvider:
             return min(60, self.retry_delay * (2 ** attempt))
 
     def complete(self, stage, payload):
-        body = {'model': self.model, 'messages': messages(stage, payload),
+        return self.complete_messages(messages(stage, payload))
+
+    def complete_messages(self, chat_messages):
+        """Run diagnosis or replay messages through the same authenticated JSON transport."""
+        self.last_raw = None
+        self.last_telemetry = {}
+        body = {'model': self.model, 'messages': chat_messages,
                 'response_format': {'type': 'json_object'}, **self.settings}
         encoded = json.dumps(body, ensure_ascii=False).encode()
         if self.max_input_chars and sum(len(m['content']) for m in body['messages']) > self.max_input_chars:
@@ -145,12 +153,14 @@ class HTTPProvider:
             self.api_key if self.provider == 'azure' else 'Bearer ' + self.api_key)
         opener = request.build_opener(NoRedirect())
         start = time.monotonic()
-        self.last_raw = None
         attempt = sent = 0
         while True:
             try:
                 sent += 1
                 self.http_requests += 1
+                self.last_telemetry = {'model': self.model, 'usage': {}, 'attempts': sent,
+                    'http_status': None, 'response_format': 'response_format' in body,
+                    'seconds': time.monotonic() - start, 'timestamp': datetime.now(timezone.utc).isoformat()}
                 req = request.Request(self.url, data=encoded, headers=headers, method='POST')
                 with opener.open(req, timeout=self.timeout) as response:
                     content = response.read(20_000_001)
@@ -159,18 +169,28 @@ class HTTPProvider:
                     raw = json.loads(content)
                     status = getattr(response, 'status', None)
                 self.last_raw = raw
+                if not isinstance(raw, dict):
+                    raise ProviderError('Malformed model JSON response: expected an object')
                 self.last_telemetry = {'model': raw.get('model'), 'response_id': raw.get('id'),
                     'usage': raw.get('usage', {}), 'seconds': time.monotonic() - start,
                     'attempts': sent, 'http_status': status, 'response_format': 'response_format' in body,
                     'timestamp': datetime.now(timezone.utc).isoformat()}
                 choice = raw['choices'][0]
+                if not isinstance(choice, dict):
+                    raise ProviderError('Malformed model JSON response: invalid choice')
                 if choice.get('finish_reason') not in ('stop', None):
-                    raise ProviderError(f"Incomplete model response: {choice.get('finish_reason')}")
+                    reason = choice.get('finish_reason')
+                    if reason not in ('length', 'content_filter', 'tool_calls', 'function_call'):
+                        reason = 'unexpected finish reason'
+                    raise ProviderError(f'Incomplete model response: {reason}')
                 message = choice['message']
+                if not isinstance(message, dict):
+                    raise ProviderError('Malformed model JSON response: invalid message')
                 if message.get('refusal'):
                     raise ProviderError('Model refused diagnostic request')
                 return _parse_json_object(message['content'])
             except error.HTTPError as exc:
+                self.last_telemetry.update(http_status=exc.code, seconds=time.monotonic() - start)
                 retry_after = exc.headers.get('Retry-After') if exc.headers else None
                 exc.close()
                 if exc.code == 400 and self.provider == 'openai-compatible' and 'response_format' in body:
@@ -180,15 +200,24 @@ class HTTPProvider:
                     body.pop('reasoning_effort', None)
                     encoded = json.dumps(body, ensure_ascii=False).encode()
                     continue
-                if exc.code not in (429, 500, 502, 503, 504) or attempt == self.retries:
+                if exc.code not in (429, 500, 502, 503, 504) or attempt >= self.retries:
+                    if exc.code == 429:
+                        raise ProviderError('Model quota or rate limit reached (HTTP 429). Wait and retry, '
+                                            'or check your provider project quota.') from None
+                    if self.provider == 'gemini' and exc.code in (401, 403):
+                        raise ProviderError(f'Gemini authentication or access failed (HTTP {exc.code}). '
+                                            'Check GEMINI_API_KEY and your Google project access.') from None
                     raise ProviderError(f'Model HTTP {exc.code}; response body omitted to protect credentials') from None
                 delay = self._backoff(attempt, retry_after)
             except (error.URLError, TimeoutError, OSError):
-                if attempt == self.retries:
+                self.last_telemetry.update(seconds=time.monotonic() - start)
+                if attempt >= self.retries:
                     raise ProviderError('Model transport failed after retries') from None
                 delay = self._backoff(attempt)
             except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
                 raise ProviderError(f'Malformed model JSON response ({type(exc).__name__})') from None
+            finally:
+                self.last_telemetry['seconds'] = time.monotonic() - start
             time.sleep(delay)
             attempt += 1
 

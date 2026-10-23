@@ -6,7 +6,7 @@ from .scenarios import SCENARIOS
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog='python -m demo', description='Versailles MAS propagation & recovery demo')
+    parser = argparse.ArgumentParser(prog='python -m demo', description='AgentReroute reliability studio and recovery demo')
     parser.add_argument('--serve', action='store_true', help='run the live HTTP + SSE server instead of exporting')
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--host', default='127.0.0.1')

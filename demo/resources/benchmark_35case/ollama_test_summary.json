@@ -1,0 +1,126 @@
+{
+  "n_failed_cases": 35,
+  "agentrx_attribution": {
+    "exact_step_acc": 0.08571428571428572,
+    "acceptable_step_acc": 0.11428571428571428,
+    "category_acc": 0.2571428571428571,
+    "joint_exact_acc": 0.05714285714285714,
+    "mean_latency_s": 9.82
+  },
+  "mprl_attribution": {
+    "exact_step_acc": 0.7142857142857143,
+    "acceptable_step_acc": 0.7142857142857143,
+    "category_acc": 0.6,
+    "mode_acc": 0.7714285714285715,
+    "joint_exact_acc": 0.6,
+    "mean_latency_s": 18.1244
+  },
+  "agentrx_recovery": {
+    "recovery_rate": {
+      "value": 0.2571428571428571,
+      "ci95": [
+        0.11428571428571428,
+        0.42857142857142855
+      ],
+      "n": 35,
+      "denominator": 35
+    },
+    "conditional_recovery_rate": {
+      "value": 0.6923076923076923,
+      "ci95": [
+        0.46153846153846156,
+        0.9230769230769231
+      ],
+      "n": 13,
+      "denominator": 13
+    },
+    "intervention_rate": {
+      "value": 0.37142857142857144,
+      "ci95": [
+        0.22857142857142856,
+        0.5428571428571428
+      ],
+      "n": 35,
+      "denominator": 35
+    },
+    "harmful_intervention_rate": {
+      "value": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "n": 17,
+      "denominator": 17
+    },
+    "false_intervention_rate": {
+      "value": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "n": 17,
+      "denominator": 17
+    },
+    "collateral_writes_per_episode": 0.0,
+    "tokens_per_episode": 4113.371428571429,
+    "cost_vs_original": 0.18416285714285713,
+    "tokens_per_recovered": 15996.444444444445,
+    "attempts_per_episode": 0.45714285714285713,
+    "p95_seconds": 0.010249999999999978,
+    "budget_breaches": 0
+  },
+  "mprl_recovery": {
+    "recovery_rate": {
+      "value": 0.7142857142857143,
+      "ci95": [
+        0.5714285714285714,
+        0.8571428571428571
+      ],
+      "n": 35,
+      "denominator": 35
+    },
+    "conditional_recovery_rate": {
+      "value": 0.8064516129032258,
+      "ci95": [
+        0.6451612903225806,
+        0.9354838709677419
+      ],
+      "n": 31,
+      "denominator": 31
+    },
+    "intervention_rate": {
+      "value": 0.8857142857142857,
+      "ci95": [
+        0.7714285714285715,
+        0.9714285714285714
+      ],
+      "n": 35,
+      "denominator": 35
+    },
+    "harmful_intervention_rate": {
+      "value": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "n": 17,
+      "denominator": 17
+    },
+    "false_intervention_rate": {
+      "value": 0.35294117647058826,
+      "ci95": [
+        0.11764705882352941,
+        0.5882352941176471
+      ],
+      "n": 17,
+      "denominator": 17
+    },
+    "collateral_writes_per_episode": 0.0,
+    "tokens_per_episode": 10211.285714285714,
+    "cost_vs_original": 0.82466,
+    "tokens_per_recovered": 14295.8,
+    "attempts_per_episode": 1.1428571428571428,
+    "p95_seconds": 1.2364499999999998,
+    "budget_breaches": 3
+  }
+}

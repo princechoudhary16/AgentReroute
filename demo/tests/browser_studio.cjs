@@ -1,0 +1,78 @@
+// End-to-end interaction checks for the visual system explorer; external model transport is a fixture.
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const assert=require('node:assert/strict');
+const {spawn}=require('node:child_process');
+const fs=require('node:fs');
+(async()=>{
+  const server=spawn('python3',['-m','demo.tests.comparison_fixture_server'],{stdio:['ignore','pipe','pipe']});
+  let browser;
+  try{
+    const base=await new Promise((resolve,reject)=>{let out='';server.stdout.on('data',b=>{out+=b;const url=out.split('\n').find(l=>l.startsWith('http://'));if(url)resolve(url);});server.once('error',reject);server.stderr.on('data',b=>process.stderr.write(b));});
+    browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
+    const page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[];
+    page.on('pageerror',e=>errors.push(e.message));
+    await page.goto(base+'/system');
+    await page.waitForFunction(()=>document.querySelector('#pct').textContent==='100%');
+    assert.equal(await page.locator('#execution-cursor').count(),1,'System explorer needs frame scrubbing');
+    const total=Number(await page.locator('#execution-cursor').getAttribute('max'));
+    assert.ok(total>5);
+    await page.locator('#execution-cursor').evaluate(el=>{el.value=0;el.dispatchEvent(new Event('input'));});
+    assert.equal(await page.locator('#pct').textContent(),'0%');
+    assert.match(await page.locator('#step-phase').textContent(),/Original run/);
+    await page.locator('#btn-next').click();
+    assert.match(await page.locator('#step-payload').textContent(),/find_user_id_by_email/);
+    await page.locator('#zoom-fit').click();
+    await page.locator('#live-trace > summary').click();
+    await page.locator('.trace-row').last().click();
+    assert.equal(await page.locator('#pct').textContent(),'100%');
+    await page.locator('#live-trace > summary').click();
+    await page.locator('[data-sid="clean_control_flow"]').click();
+    await page.waitForFunction(()=>document.querySelector('#dbg-badge').textContent.includes('abstained'));
+    assert.match(await page.locator('#mode').textContent(),/simulation/i);
+    fs.mkdirSync('runs/ui-studio-qa',{recursive:true});
+    await page.screenshot({path:'runs/ui-studio-qa/system-desktop.png',fullPage:true});
+    await page.setViewportSize({width:390,height:844});
+    await page.locator('#zoom-fit').click();
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile overflow');
+    await page.screenshot({path:'runs/ui-studio-qa/system-mobile.png',fullPage:true});
+    // Control the stream to exercise replay while fresh events are arriving.
+    const frames=await page.evaluate(()=>S.frames.slice(0,8));
+    assert.equal(frames.length,8);
+    const streaming=await browser.newPage();
+    streaming.on('pageerror',e=>errors.push(e.message));
+    await streaming.clock.install();
+    await streaming.addInitScript(()=>{window.EventSource=class extends EventTarget {
+      constructor(){super();window.testStream=this;} close(){}
+    };});
+    await streaming.goto(base+'/system');
+    const emit=async(kind,frame)=>streaming.evaluate(({kind,frame})=>window.testStream.dispatchEvent(new MessageEvent(kind,{data:JSON.stringify(frame)})),{kind,frame});
+    for(const frame of frames.slice(0,6)) await emit('frame',frame);
+    await streaming.locator('#execution-cursor').evaluate(el=>{el.value=0;el.dispatchEvent(new Event('input'));});
+    await emit('frame',frames[6]);
+    assert.equal(await streaming.locator('#execution-cursor').inputValue(),'0','Paused view must not follow incoming events');
+    await streaming.locator('#btn-play').click();
+    await emit('frame',frames[7]);
+    assert.equal(await streaming.locator('#execution-cursor').inputValue(),'1','Replay must not skip buffered history on a new event');
+    await emit('end',{});
+    assert.match(await streaming.locator('#btn-play').textContent(),/Pause/,'Ending the stream must not stop buffered replay');
+    await streaming.clock.runFor(30000);
+    assert.equal(await streaming.locator('#execution-cursor').inputValue(),'7');
+    assert.match(await streaming.locator('#btn-play').textContent(),/Play/);
+    await streaming.close();
+    const setup=await browser.newPage({viewport:{width:1440,height:1000}});
+    setup.on('pageerror',e=>errors.push(e.message));
+    let configured=false;
+    await setup.route('**/api/models',route=>route.fulfill({json:{models:['gemini-3.8-flash'],provider:'gemini',configured,default_model:'gemini-3.8-flash',message:'Save GEMINI_API_KEY in .env, then refresh settings.'}}));
+    await setup.goto(base+'/compare');
+    await setup.locator('#provider-setup').waitFor({state:'visible'});
+    assert.equal(await setup.locator('#start-run').isDisabled(),true);
+    assert.match(await setup.locator('#provider-message').textContent(),/GEMINI_API_KEY/);
+    configured=true;
+    await setup.locator('#refresh-provider').click();
+    await setup.waitForFunction(()=>!document.querySelector('#start-run').disabled);
+    assert.equal(await setup.locator('#provider-setup').isVisible(),false);
+    assert.match(await setup.locator('#connection').textContent(),/configured/);
+    assert.deepEqual(errors,[]);
+    console.log('PASS: system scrubber, forward/backward history, trace inspection, scenario switching, live-stream replay, zoom, mobile, Gemini setup refresh and no JS errors');
+  }finally{if(browser)await browser.close();server.kill('SIGTERM');}
+})().catch(e=>{console.error(e);process.exitCode=1;});

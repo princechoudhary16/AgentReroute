@@ -1,4 +1,4 @@
-"""n8n-style Château de Versailles visualizer: one self-contained HTML page plus a stdlib HTTP + SSE server.
+"""Interactive reliability studio: one self-contained HTML page plus a stdlib HTTP + SSE server.
 
 Static export embeds every scenario's frames as JSON; the live server embeds only scenario metadata and streams
 frames from ``GET /api/stream?scenario=<id>`` as Server-Sent Events. The page has no external dependencies.
@@ -12,17 +12,18 @@ from urllib.parse import parse_qs, urlparse
 
 from benchmark.env.workflow import AGENTS
 
+from .studio_theme import BASE_CSS, navigation
 from .scenarios import MILESTONES, SCENARIOS, run_scenario, scenario_meta
 
-WORLD_W, WORLD_H = 1340, 760
-NODE_W, NODE_H = 210, 96
-BLOCK, GAP = 44, 14
+WORLD_W, WORLD_H = 1240, 560
+NODE_W, NODE_H = 200, 82
+BLOCK, GAP = 44, 10
 NODES = {   # id: (x, y, title, kicker)
-    'user': (40, 262, 'User Simulator', 'TRIGGER'),
-    'planner': (360, 262, 'planner', 'AI AGENT · ROUTER'),
-    'order_agent': (840, 40, 'order_agent', 'SPECIALIST I · PENDING'),
-    'product_agent': (840, 280, 'product_agent', 'SPECIALIST II · CATALOGUE'),
-    'returns_agent': (840, 520, 'returns_agent', 'SPECIALIST III · DELIVERED'),
+    'user': (30, 210, 'Customer', 'SIMULATED USER'),
+    'planner': (330, 210, 'Planner', 'ORCHESTRATION'),
+    'order_agent': (740, 15, 'Orders', 'ORDER OPERATIONS'),
+    'product_agent': (740, 195, 'Catalog', 'PRODUCT DISCOVERY'),
+    'returns_agent': (740, 375, 'Returns', 'RETURNS & EXCHANGES'),
 }
 MONOGRAMS = {
     'find_user_id_by_email': 'ID', 'find_user_id_by_name_zip': 'ZIP', 'get_user_details': 'USR',
@@ -54,7 +55,7 @@ def _tool_positions(agent):
     x, y = NODES[agent][:2]
     width = len(tools) * BLOCK + (len(tools) - 1) * GAP
     left = x + NODE_W / 2 - width / 2 if agent == 'planner' else x
-    top = y + NODE_H + (86 if agent == 'planner' else 52)
+    top = y + NODE_H + (58 if agent == 'planner' else 28)
     return {t: (left + i * (BLOCK + GAP), top) for i, t in enumerate(tools)}
 
 
@@ -70,7 +71,7 @@ def render_canvas():
         ports = '' if node == 'user' else '<span class="port port-in"></span>'
         ports += '<span class="port port-out"></span>' if node in ('user', 'planner') else ''
         ports += '<span class="port port-tool"></span>' if tools else ''
-        sub = ('Simulated customer · scripted fixture' if node == 'user' else
+        sub = ('Scripted customer' if node == 'user' else
                f'{len(tools)} tools' + (' · routes to 3 specialists' if node == 'planner' else ''))
         kind = 'node-trigger' if node == 'user' else 'node-agent'
         nodes.append(f'<div class="node {kind}" id="node-{node}" data-node="{node}" style="left:{x}px;top:{y}px;'
@@ -86,15 +87,17 @@ def render_canvas():
                           f'<span class="mono-gram">{MONOGRAMS.get(tool, tool[:3].upper())}</span>'
                           f'<div class="tool-popper">{tool}</div></div>')
     token = ('<g id="flow-token" transform="translate(-100,-100)"><circle class="seal" r="13"/>'
-             '<circle class="seal-ring" r="9"/><text class="seal-mark" text-anchor="middle" dy="4">⚜</text></g>')
+             '<circle class="seal-ring" r="9"/><text class="seal-mark" text-anchor="middle" dy="4">↗</text></g>')
     svg = (f'<svg id="wires" width="{WORLD_W}" height="{WORLD_H}" viewBox="0 0 {WORLD_W} {WORLD_H}" '
            f'aria-hidden="true">{"".join(wires)}{token}</svg>')
     return svg, ''.join(nodes) + ''.join(blocks)
 
 
 def _buttons(meta):
+    names = dict(zip(SCENARIOS, ['Lost context', 'Wrong specialist', 'Unbacked claim', 'Healthy control']))
     return ''.join(f'<button class="scenario-btn" data-sid="{m["id"]}" title="{html.escape(m["summary"])}">'
-                   f'{html.escape(m["title"])}</button>' for m in meta)
+                   f'<span class="case-number">0{i+1}</span><span>{names[m["id"]]}</span><span class="case-arrow">↗</span></button>'
+                   for i, m in enumerate(meta))
 
 
 def build_html(scenarios=None, live=False):
@@ -107,11 +110,9 @@ def build_html(scenarios=None, live=False):
     svg, nodes = render_canvas()
     payload = json.dumps(data, ensure_ascii=False).replace('</', '<\\/')
     milestones = ''.join(f'<li class="milestone" id="ms-{i}"><span class="ms-dot"></span>{html.escape(m)}</li>'
-                         for i, m in enumerate(['I. P1/P2/P3 Attribution Checks', 'II. DualLoopRLJudge Ranking',
-                                                'III. Rollback & Directive Replay',
-                                                'IV. Fresh-Context Verifier & θ Update'], 1))
+                         for i, m in enumerate(['Identify constraints', 'Rank candidates', 'Replay correction', 'Verify & learn'], 1))
     return (PAGE.replace('__SVG__', svg).replace('__NODES__', nodes).replace('__BUTTONS__', _buttons(meta))
-            .replace('__MILESTONES__', milestones).replace('__MODE__', 'Live SSE' if live else 'Offline export')
+            .replace('__MILESTONES__', milestones).replace('__MODE__', 'Interactive simulation' if live else 'Offline simulation')
             .replace('__WORLD_W__', str(WORLD_W)).replace('__WORLD_H__', str(WORLD_H)).replace('__DATA__', payload))
 
 
@@ -125,9 +126,16 @@ def build_demo_html(out_path, scenario_ids=None):
 
 
 # ------------------------------------------------------------------------------ live server
-def make_server(host='127.0.0.1', port=8765, delay=0.9):
+def make_server(host='127.0.0.1', port=8765, delay=0.9, comparison_service=None):
     """ThreadingHTTPServer serving the page, /api/scenarios and /api/stream (SSE). ``delay``: seconds per frame."""
+    from .comparison import ComparisonService
+    from .comparison_page import PAGE as COMPARISON_PAGE
+    from .story_page import PAGE as STORY_PAGE
+    from .widget_bridge import embed
+    comparisons = comparison_service or ComparisonService()
     page = build_html(live=True).encode('utf-8')
+    widgets = {'/widgets/system': embed(page.decode('utf-8'), 'system').encode('utf-8'),
+               '/widgets/compare': embed(COMPARISON_PAGE, 'compare').encode('utf-8')}
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -140,10 +148,70 @@ def make_server(host='127.0.0.1', port=8765, delay=0.9):
             self.end_headers()
             self.wfile.write(body)
 
+        def _json(self, code, value):
+            return self._send(code, json.dumps(value, allow_nan=False).encode('utf-8'), 'application/json')
+
+        def do_POST(self):
+            origin = self.headers.get('Origin')
+            if origin:
+                parsed = urlparse(origin)
+                if parsed.scheme != 'http' or parsed.netloc != self.headers.get('Host') or parsed.path not in ('', '/'):
+                    return self._json(403, {'error': 'Cross-origin comparison requests are not allowed.'})
+            elif self.headers.get('Sec-Fetch-Site') == 'cross-site':
+                return self._json(403, {'error': 'Cross-origin comparison requests are not allowed.'})
+            if self.headers.get('Content-Type', '').split(';')[0].strip() != 'application/json':
+                return self._json(415, {'error': 'Send an application/json request.'})
+            try:
+                length = int(self.headers.get('Content-Length', '0'))
+                if not 0 < length <= 4096:
+                    raise ValueError('Request body must be between 1 and 4096 bytes.')
+                body = json.loads(self.rfile.read(length))
+                if not isinstance(body, dict):
+                    raise ValueError('Request must be a JSON object.')
+                path = urlparse(self.path).path
+                if path == '/api/comparisons':
+                    if set(body) != {'scenario', 'model'}:
+                        raise ValueError('Supply scenario and model only.')
+                    return self._json(202, comparisons.start(body['scenario'], body['model']))
+                parts = path.strip('/').split('/')
+                if len(parts) == 4 and parts[:2] == ['api', 'comparisons'] and parts[3] == 'cancel':
+                    if body:
+                        raise ValueError('Cancel body must be empty.')
+                    return self._json(200, comparisons.cancel(parts[2]))
+                return self._json(404, {'error': 'Unknown comparison route.'})
+            except KeyError:
+                return self._json(404, {'error': 'Comparison not found; it may have expired or the server restarted.'})
+            except (ValueError, TypeError, UnicodeError) as exc:
+                return self._json(400, {'error': str(exc)})
+            except RuntimeError as exc:
+                return self._json(409, {'error': str(exc)})
+            except OSError as exc:
+                return self._json(503, {'error': 'Model service is unavailable: ' + str(exc)})
+
         def do_GET(self):
             url = urlparse(self.path)
-            if url.path in ('/', '/index.html'):
+            if url.path in widgets:
+                return self._send(200, widgets[url.path], 'text/html; charset=utf-8')
+            if url.path == '/system':
                 return self._send(200, page, 'text/html; charset=utf-8')
+            if url.path == '/compare':
+                return self._send(200, COMPARISON_PAGE.encode('utf-8'), 'text/html; charset=utf-8')
+            if url.path == '/api/models':
+                try:
+                    return self._json(200, comparisons.model_info())
+                except (ValueError, KeyError, TypeError, OSError) as exc:
+                    return self._json(503, {'error': 'Cannot read model settings: ' + str(exc)})
+            if url.path.startswith('/api/comparisons/'):
+                job_id = url.path[len('/api/comparisons/'):]
+                try:
+                    cursor = int(parse_qs(url.query).get('after', ['0'])[0])
+                    return self._json(200, comparisons.snapshot(job_id, cursor))
+                except KeyError:
+                    return self._json(404, {'error': 'Comparison not found; it may have expired or the server restarted.'})
+                except ValueError as exc:
+                    return self._json(400, {'error': str(exc)})
+            if url.path in ('/', '/index.html'):
+                return self._send(200, STORY_PAGE.encode('utf-8'), 'text/html; charset=utf-8')
             if url.path == '/api/scenarios':
                 return self._send(200, json.dumps(scenario_meta()).encode('utf-8'), 'application/json')
             if url.path == '/api/stream':
@@ -181,14 +249,19 @@ def make_server(host='127.0.0.1', port=8765, delay=0.9):
                 pass                           # viewer switched scenario or closed the tab
             self.close_connection = True
 
-    server = ThreadingHTTPServer((host, port), Handler)
+    class DemoServer(ThreadingHTTPServer):
+        def server_close(self):
+            comparisons.close()
+            super().server_close()
+
+    server = DemoServer((host, port), Handler)
     server.daemon_threads = True
     return server
 
 
 def serve(port=8765, host='127.0.0.1', delay=0.9):
     server = make_server(host, port, delay)
-    print(f'AgentReroute Versailles demo at http://{host}:{server.server_address[1]}/  (Ctrl+C to stop)')
+    print(f'AgentReroute studio at http://{host}:{server.server_address[1]}/  (Ctrl+C to stop)')
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -203,220 +276,31 @@ PAGE = r'''<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Versailles MAS Visualizer</title>
-<style>
-:root{
-  --vellum:#FAF6EE; --dot:#C8B898; --alabaster:#FFFDF9; --parchemin:#F3ECE0; --hairline:#D8C7A8;
-  --royal:#1B365D; --royal-soft:#E6ECF5; --gold:#B68D40; --gold-soft:#F5EBD6;
-  --carmine:#8B1E24; --carmine-soft:#F9E6E7; --emerald:#1E5631; --emerald-soft:#E5F0E8;
-  --ink:#2A2418; --muted:#6E604A;
-  --serif:Georgia,"Palatino Linotype","Book Antiqua",serif;
-  --sans:system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
-  --mono:ui-monospace,Consolas,"Courier New",monospace;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--vellum);color:var(--ink);font-family:var(--sans);font-size:14px}
-button,select{font-family:var(--sans);font-size:13px;color:var(--ink)}
-.page{max-width:1480px;margin:0 auto;padding:18px 16px 28px}
-header.masthead{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;
-  border-bottom:1px solid var(--hairline);padding-bottom:12px;margin-bottom:14px}
-.brand h1{font-family:var(--serif);font-weight:normal;color:var(--royal);font-size:26px;margin:0;letter-spacing:.2px}
-.brand h1 .fleur{color:var(--gold)}
-.brand p{margin:4px 0 0;color:var(--muted);font-family:var(--serif);font-style:italic}
-.mode{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);border:1px solid var(--gold);
-  border-radius:999px;padding:3px 10px;background:var(--gold-soft)}
-.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.ctl{background:var(--alabaster);border:1px solid var(--hairline);border-radius:8px;padding:7px 12px;cursor:pointer}
-.ctl:hover{border-color:var(--gold)}
-.ctl.primary{background:var(--royal);border-color:var(--royal);color:#fff;min-width:84px}
-.ctl:focus-visible,.scenario-btn:focus-visible,.trace-row:focus-visible,.tool-miniblock:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-.scenarios{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
-.scenario-btn{font-family:var(--serif);background:var(--alabaster);border:1px solid var(--hairline);border-radius:8px;
-  padding:8px 14px;cursor:pointer;color:var(--ink);font-size:14px}
-.scenario-btn.on{background:var(--royal-soft);border-color:var(--royal);color:var(--royal)}
-.summary{color:var(--muted);margin:0 0 14px;font-family:var(--serif);font-size:15px;min-height:1.4em}
-.summary b{color:var(--royal);font-weight:normal}
-/* ---------- chart card ---------- */
-.chart{background:var(--alabaster);border:1px solid var(--hairline);border-radius:14px;overflow:hidden;
-  box-shadow:0 1px 0 #fff inset,0 8px 24px -18px rgba(70,50,10,.35)}
-.chart-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--hairline);
-  background:var(--parchemin)}
-.chart-head h2{margin:0;font-family:var(--serif);font-weight:normal;font-size:17px;color:var(--royal)}
-.zoombar{display:flex;gap:4px;align-items:center}
-.zoombar button{background:var(--alabaster);border:1px solid var(--hairline);border-radius:6px;min-width:34px;height:30px;cursor:pointer}
-.zoombar button:hover{border-color:var(--gold)}
-#zoom-label{min-width:58px}
-.canvas{position:relative;height:min(64vh,620px);min-height:380px;overflow:hidden;cursor:grab;
-  background-color:var(--vellum);background-image:radial-gradient(circle,var(--dot) 1.1px,transparent 1.4px);
-  background-size:22px 22px}
-.canvas.dragging{cursor:grabbing}
-#world{position:absolute;left:0;top:0;width:__WORLD_W__px;height:__WORLD_H__px;transform-origin:0 0}
-#wires{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
-.wire{fill:none;stroke:var(--hairline);stroke-width:2.2}
-.wire.tether{stroke-dasharray:4 5;stroke-width:1.5}
-.wire-active,.wire-gold,.wire-fault,.wire-recovered{stroke-width:3;stroke-dasharray:9 7;animation:march .9s linear infinite}
-.wire-active{stroke:var(--royal)}
-.wire-gold{stroke:var(--gold)}
-.wire-fault{stroke:var(--carmine)}
-.wire-recovered{stroke:var(--emerald)}
-.wire.tether.wire-active,.wire.tether.wire-gold,.wire.tether.wire-fault,.wire.tether.wire-recovered{stroke-width:2.2}
-@keyframes march{to{stroke-dashoffset:-32}}
-#flow-token .seal{fill:var(--royal);stroke:var(--gold);stroke-width:2.5}
-#flow-token .seal-ring{fill:none;stroke:var(--gold-soft);stroke-width:1}
-#flow-token .seal-mark{fill:var(--gold-soft);font-size:12px;font-family:var(--serif)}
-#flow-token.fault .seal{fill:var(--carmine)}
-#flow-token.recovered .seal{fill:var(--emerald)}
-.node{position:absolute;background:var(--alabaster);border:1.5px solid var(--hairline);border-radius:12px;
-  padding:12px 16px;box-shadow:0 6px 16px -12px rgba(60,40,10,.45);transition:border-color .25s,box-shadow .25s,background .25s}
-.node-trigger{border-radius:44px 12px 12px 44px;padding-left:26px}
-.node-kicker{font-size:10px;letter-spacing:.14em;color:var(--gold);font-weight:600}
-.node-title{font-family:var(--serif);font-size:19px;color:var(--royal);margin-top:3px}
-.node-sub{font-size:11.5px;color:var(--muted);margin-top:3px}
-.node-state{position:absolute;right:12px;top:-9px;font-size:9.5px;letter-spacing:.1em;font-weight:700}
-.node-state::after{background:var(--alabaster);border:1px solid currentColor;border-radius:999px;padding:1px 7px}
-.port{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--alabaster);border:2px solid var(--gold)}
-.port-in{left:-7px;top:calc(50% - 6px)}
-.port-out{right:-7px;top:calc(50% - 6px)}
-.port-tool{left:calc(50% - 6px);bottom:-7px;border-radius:2px;transform:rotate(45deg);background:var(--gold-soft)}
-.node.active{border-color:var(--royal);background:var(--royal-soft);box-shadow:0 0 0 4px rgba(27,54,93,.12),0 8px 18px -12px rgba(27,54,93,.6)}
-.node.active .node-state::after{content:"ACTIVE";color:var(--royal)}
-.node.fault{border-color:var(--carmine);background:var(--carmine-soft);box-shadow:0 0 0 4px rgba(139,30,36,.13)}
-.node.fault .node-state::after{content:"FAULT";color:var(--carmine)}
-.node.blamed{border-color:var(--carmine);border-style:dashed;background:var(--carmine-soft);animation:pulse 1.4s ease-in-out infinite}
-.node.blamed .node-state::after{content:"BLAMED";color:var(--carmine)}
-.node.recovered{border-color:var(--emerald);background:var(--emerald-soft);box-shadow:0 0 0 4px rgba(30,86,49,.12)}
-.node.recovered .node-state::after{content:"REPAIRED";color:var(--emerald)}
-@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(139,30,36,.10)}}
-.tool-miniblock{position:absolute;width:44px;height:44px;border-radius:10px;background:var(--gold-soft);
-  border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;cursor:default;z-index:2;
-  box-shadow:0 3px 8px -6px rgba(90,60,10,.6);transition:transform .2s,background .2s,border-color .2s}
-.mono-gram{font-family:var(--mono);font-size:11.5px;font-weight:700;color:#7A5A1E}
-.tool-miniblock.used{background:#fff}
-.tool-miniblock.active{z-index:6;transform:translateY(-3px);background:var(--royal);border-color:var(--royal)}
-.tool-miniblock.active .mono-gram{color:#fff}
-.tool-miniblock.error{background:var(--carmine);border-color:var(--carmine)}
-.tool-miniblock.error .mono-gram{color:#fff}
-.tool-popper{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translate(-50%,4px);white-space:nowrap;
-  background:var(--alabaster);border:1px solid var(--gold);border-radius:7px;padding:5px 9px;font-family:var(--mono);
-  font-size:11.5px;color:var(--royal);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
-  box-shadow:0 6px 14px -8px rgba(60,40,10,.5)}
-.tool-popper::after{content:"";position:absolute;left:50%;top:100%;margin-left:-5px;border:5px solid transparent;border-top-color:var(--gold)}
-.tool-miniblock:hover,.tool-miniblock:focus{z-index:7}
-.tool-miniblock:hover .tool-popper,.tool-miniblock:focus .tool-popper,.tool-miniblock.active .tool-popper{opacity:1;transform:translate(-50%,0)}
-.tool-miniblock.error .tool-popper{border-color:var(--carmine);color:var(--carmine);background:var(--carmine-soft)}
-.tool-miniblock.error .tool-popper::after{border-top-color:var(--carmine)}
-/* ---------- debugger progress bar ---------- */
-.progress{border-top:1px solid var(--hairline);background:var(--parchemin);padding:12px 16px 14px}
-.progress-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.progress-top .label{font-family:var(--serif);color:var(--royal);font-size:15px}
-.badge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.1em;border-radius:999px;padding:3px 9px;
-  border:1px solid currentColor;text-transform:uppercase}
-.b-normal{color:var(--royal);background:var(--royal-soft)}
-.b-fault{color:var(--carmine);background:var(--carmine-soft)}
-.b-debug{color:#7A5A1E;background:var(--gold-soft)}
-.b-recovered{color:var(--emerald);background:var(--emerald-soft)}
-#pct{margin-left:auto;font-family:var(--serif);font-size:20px;color:var(--royal)}
-.bar{height:10px;border-radius:999px;background:var(--alabaster);border:1px solid var(--hairline);margin:10px 0 10px;overflow:hidden}
-#bar-fill{height:100%;width:0;background:linear-gradient(90deg,var(--royal),var(--gold));transition:width .6s ease}
-.milestones{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.milestone{font-size:12px;color:var(--muted);display:flex;gap:7px;align-items:center;font-family:var(--serif)}
-.ms-dot{width:11px;height:11px;flex:none;border-radius:50%;border:1.5px solid var(--hairline);background:var(--alabaster)}
-.milestone.done{color:var(--ink)}
-.milestone.done .ms-dot{background:var(--gold);border-color:var(--gold)}
-.milestone.current{color:var(--royal);font-weight:bold}
-.milestone.current .ms-dot{background:var(--royal);border-color:var(--royal);box-shadow:0 0 0 3px var(--royal-soft)}
-/* ---------- bottom dock ---------- */
-.dock{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-top:14px}
-.panel{grid-column:span 6;background:var(--alabaster);border:1px solid var(--hairline);border-radius:14px;display:flex;flex-direction:column;min-width:0}
-.panel h3{margin:0;padding:10px 14px;border-bottom:1px solid var(--hairline);background:var(--parchemin);font-family:var(--serif);
-  font-weight:normal;color:var(--royal);font-size:16px;border-radius:14px 14px 0 0}
-.panel h3 small{color:var(--muted);font-style:italic;font-size:13px}
-.panel-body{padding:12px 14px;min-width:0}
-#step-title{font-family:var(--serif);font-size:18px;color:var(--ink);margin:0 0 8px}
-.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.chip{font-size:11px;border:1px solid var(--hairline);border-radius:6px;padding:2px 8px;background:var(--parchemin);font-family:var(--mono)}
-#step-narrative{font-family:var(--serif);font-size:15px;line-height:1.5;margin:0 0 10px;white-space:pre-wrap;word-break:break-word}
-#step-fault{display:none;font-size:12.5px;color:var(--carmine);background:var(--carmine-soft);border:1px solid var(--carmine);
-  border-radius:8px;padding:6px 10px;margin-bottom:10px}
-pre#step-payload{margin:0;max-height:300px;overflow:auto;background:var(--parchemin);border:1px solid var(--hairline);
-  border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:12px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
-#trace{list-style:none;margin:0;padding:6px;max-height:440px;overflow:auto}
-.trace-row{width:100%;display:grid;grid-template-columns:38px 104px 1fr;gap:8px;align-items:center;text-align:left;
-  border:1px solid transparent;border-radius:8px;background:none;padding:6px 8px;cursor:pointer}
-.trace-row:hover{background:var(--parchemin)}
-.trace-row.current{border-color:var(--royal);background:var(--royal-soft)}
-.trace-row.future{opacity:.45}
-.trace-row .seq{font-family:var(--mono);color:var(--muted);font-size:12px}
-.trace-row .what{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.trace-row .what b{font-family:var(--serif);font-weight:normal;color:var(--royal)}
-.phase-sep{font-family:var(--serif);font-style:italic;color:var(--gold);font-size:12.5px;padding:8px 8px 2px;border-top:1px dashed var(--hairline);margin-top:4px}
-footer{margin-top:16px;color:var(--muted);font-size:12px;font-family:var(--serif);font-style:italic}
-@media (max-width:900px){.panel{grid-column:span 12}.milestones{grid-template-columns:repeat(2,1fr)}.brand h1{font-size:21px}}
+<title>Live system · AgentReroute</title>
+<style>__STUDIO_THEME__
+:root{--vellum:var(--bg);--dot:#304149;--alabaster:var(--surface);--parchemin:#0d1519;--hairline:var(--border);--royal:var(--cyan);--royal-soft:#172b34;--gold:var(--violet);--gold-soft:#211e35;--carmine:var(--danger);--carmine-soft:#321e26;--emerald:var(--mint);--emerald-soft:#202d23;--ink:var(--text);--serif:var(--sans)}
+.scenario-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.scenarios{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.scenario-btn{display:flex;align-items:center;gap:11px;text-align:left;border:1px solid var(--border);border-radius:10px;padding:15px;background:var(--surface);font-size:12px;transition:border-color .2s}.case-number{font:10px var(--mono);color:#667b83}.case-arrow{margin-left:auto;color:#63767e}.scenario-btn.on{border-color:#69894e;background:linear-gradient(110deg,#202c24,#111b1c);color:var(--mint)}.scenario-btn.on .case-number,.scenario-btn.on .case-arrow{color:var(--mint)}.scenario-btn:hover{border-color:#526b74}.summary{color:var(--muted);font-size:11px;line-height:1.7;margin:11px 0 21px}.summary b{color:#c4d0d3;font-weight:500}.summary-details{margin-bottom:18px}.summary-details summary{color:var(--muted);font-size:11px;padding:10px 0}.summary-details .summary{margin:0 0 10px}.workspace-grid{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:16px;align-items:stretch}.chart{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:0}.chart-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border)}.chart-head h2{font-size:12px;font-weight:500;margin:0}.chart-head h2 span{display:inline-block;width:6px;height:6px;background:var(--mint);border-radius:50%;margin-right:8px}.zoombar{display:flex;gap:4px;align-items:center}.zoombar button{background:transparent;border:1px solid var(--border);border-radius:5px;min-width:27px;height:27px;font-size:10px}.zoombar button:hover{background:var(--raised)}#zoom-label{min-width:43px}.canvas{position:relative;height:410px;overflow:hidden;cursor:grab;background:radial-gradient(ellipse at 50% 50%,#15252a66,transparent 65%),radial-gradient(circle,#28383e 1px,transparent 1px),#0b1216;background-size:auto,22px 22px,auto;touch-action:none}.canvas.dragging{cursor:grabbing}#world{position:absolute;left:0;top:0;width:__WORLD_W__px;height:__WORLD_H__px;transform-origin:0 0}#wires{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}.wire{fill:none;stroke:#344851;stroke-width:2.2}.wire.tether{stroke-dasharray:3 6;stroke-width:1.3}.wire-active,.wire-gold,.wire-fault,.wire-recovered{stroke-width:3;stroke-dasharray:9 7;animation:march .9s linear infinite}.wire-active{stroke:var(--cyan)}.wire-gold{stroke:var(--violet)}.wire-fault{stroke:var(--danger)}.wire-recovered{stroke:var(--mint)}@keyframes march{to{stroke-dashoffset:-32}}#flow-token .seal{fill:#21382a;stroke:var(--mint);stroke-width:2}#flow-token .seal-ring{fill:none;stroke:var(--mint);stroke-width:.6}#flow-token .seal-mark{fill:var(--mint);font-size:13px}#flow-token.fault .seal{fill:#54252e;stroke:var(--danger)}#flow-token.recovered .seal{fill:#21382a}.node{position:absolute;background:linear-gradient(145deg,#1c2c33,#101a20);border:1px solid #40565f;border-radius:13px;padding:15px 17px;box-shadow:0 10px 24px #0004;transition:border-color .2s,background .2s}.node-trigger{border-style:dashed}.node-kicker{font:9px var(--mono);letter-spacing:1px;color:var(--muted)}.node-title{font-size:21px;letter-spacing:-.6px;font-weight:550;color:var(--text);margin-top:5px}.node-sub{font-size:10px;color:var(--muted);margin-top:4px}.node-state{position:absolute;right:12px;top:-9px;font:9px var(--mono)}.node-state::after{background:#0d171c;border:1px solid currentColor;border-radius:5px;padding:3px 6px}.node.active{border-color:var(--cyan);box-shadow:0 0 24px #7fdbed18}.node.active .node-state::after{content:'ACTIVE';color:var(--cyan)}.node.fault,.node.blamed{border-color:var(--danger);background:#2c1c25;box-shadow:0 0 22px #ff9b9b15}.node.fault .node-state::after{content:'FAULT';color:var(--danger)}.node.blamed{border-style:dashed}.node.blamed .node-state::after{content:'IDENTIFIED';color:var(--danger)}.node.recovered{border-color:var(--mint);background:linear-gradient(145deg,#23372b,#12251f);box-shadow:0 0 22px #bcf78312}.node.recovered .node-state::after{content:'RECOVERED';color:var(--mint)}.port{position:absolute;width:9px;height:9px;border-radius:50%;background:#112028;border:2px solid #7c939b}.port-in{left:-5px;top:calc(50% - 5px)}.port-out{right:-5px;top:calc(50% - 5px)}.port-tool{left:calc(50% - 5px);bottom:-5px}.tool-miniblock{position:absolute;width:44px;height:44px;border-radius:9px;background:#151e2b;border:1px solid #4c4967;display:flex;align-items:center;justify-content:center;z-index:2;cursor:help}.mono-gram{font:10px var(--mono);color:#bdacd9}.tool-miniblock.used{background:#252a37}.tool-miniblock.active{z-index:6;transform:translateY(-3px);border-color:var(--violet);background:#312844}.tool-miniblock.active .mono-gram{color:#e6dfff}.tool-miniblock.error{border-color:var(--danger);background:#432330}.tool-popper{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);white-space:nowrap;background:#202b32;border:1px solid #665b83;border-radius:7px;padding:7px 10px;font:11px var(--mono);color:var(--text);opacity:0;pointer-events:none;box-shadow:0 8px 20px #0008}.tool-miniblock:hover,.tool-miniblock:focus{z-index:7}.tool-miniblock:hover .tool-popper,.tool-miniblock:focus .tool-popper,.tool-miniblock.active .tool-popper{opacity:1}.tool-miniblock.error .tool-popper{border-color:var(--danger)}.canvas-legend{display:flex;gap:18px;padding:0 18px 14px;background:#0b1216;font:9px var(--mono);color:var(--muted)}.canvas-legend span:before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--cyan);margin-right:6px}.canvas-legend span:nth-child(2):before{background:var(--danger)}.canvas-legend span:nth-child(3):before{background:var(--mint)}.canvas-legend small{margin-left:auto;font-size:9px;color:#6b838b}.playback-bar{display:flex;align-items:center;gap:7px;padding:13px 16px;border-top:1px solid var(--border)}.playback-bar .ctl{padding:7px 10px;font-size:10px}.playback-bar input{min-width:40px;flex:1;width:100%;margin:0 10px}.frame-count{font:9px var(--mono);color:var(--muted);white-space:nowrap}.progress{padding:17px 18px;background:#101b20;border-top:1px solid var(--border)}.progress-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.progress-top .label{font-size:11px;color:var(--text)}.badge{display:inline-block;font:9px var(--mono);border:1px solid currentColor;border-radius:5px;padding:4px 7px;white-space:nowrap}.b-normal{color:var(--cyan);background:#152a33}.b-fault{color:var(--danger);background:#321e26}.b-debug{color:var(--violet);background:#272036}.b-recovered{color:var(--mint);background:#203023}#pct{margin-left:auto;font:12px var(--mono);color:var(--mint)}#dbg-text{display:none}.bar{height:3px;border-radius:5px;background:#273a40;margin:14px 0;overflow:hidden}#bar-fill{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--mint));transition:width .4s}.milestones{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.milestone{font-size:9px;color:var(--muted);display:flex;gap:5px;align-items:center;line-height:1.5}.ms-dot{width:5px;height:5px;flex:none;border-radius:50%;background:#48606a}.milestone.done,.milestone.current{color:var(--text)}.milestone.done .ms-dot{background:var(--mint)}.milestone.current .ms-dot{background:var(--cyan);box-shadow:0 0 10px #7fdbed55}.panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;min-width:0;overflow:hidden}.panel h3{font:10px var(--mono);letter-spacing:1px;text-transform:uppercase;font-weight:400;padding:18px;margin:0;border-bottom:1px solid var(--border);color:var(--muted)}.panel-body{padding:20px 18px}#step-title{font-size:22px;line-height:1.35;letter-spacing:-.6px;font-weight:500;margin:0 0 17px}.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:19px}.chip{font:9px var(--mono);color:var(--muted);background:var(--raised);padding:5px 7px;border-radius:5px}#step-narrative{font-size:12px;line-height:1.8;margin:0;color:#c1cfd2;white-space:pre-wrap;overflow-wrap:anywhere}#step-fault{display:none;font-size:11px;color:var(--danger);background:#2b1e25;border:1px solid #61343f;border-radius:8px;padding:10px;margin-bottom:15px;line-height:1.7}.payload-details{margin-top:22px;border-top:1px solid var(--border)}.payload-details summary{font-size:11px;color:var(--muted);padding:15px 0}.payload-details pre{max-height:320px;overflow:auto;margin:0;padding:12px;background:#0a1318;border:1px solid var(--border);border-radius:8px;font-size:10px}.inspector-footer{margin-top:auto;padding:16px 18px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);line-height:1.7}#current-step{display:flex;flex-direction:column}.dock{margin-top:16px}.dock summary{padding:17px 19px;font-size:12px}.dock summary span{color:var(--muted);font-size:10px;margin-left:12px}#trace{list-style:none;margin:0;padding:0 12px 12px;max-height:390px;overflow:auto;position:relative}.trace-row{width:100%;display:grid;grid-template-columns:35px 95px minmax(0,1fr);gap:8px;align-items:center;text-align:left;border:1px solid transparent;border-radius:7px;background:none;padding:9px 8px}.trace-row:hover{background:var(--raised)}.trace-row.current{border-color:#376476;background:#172b34}.trace-row.future{opacity:.45}.trace-row .seq{font:10px var(--mono);color:var(--muted)}.trace-row .what{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}.trace-row .what b{font-weight:500;color:var(--text)}.phase-sep{font:9px var(--mono);letter-spacing:.7px;color:var(--violet);padding:14px 8px 8px;text-transform:uppercase}
+@media(max-width:1150px){.workspace-grid{grid-template-columns:minmax(0,1fr) 270px}.canvas{height:390px}.milestones{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:850px){.workspace-grid{grid-template-columns:1fr}.scenarios{grid-template-columns:repeat(2,1fr)}.canvas{height:410px}#current-step .panel-body{padding:18px}.inspector-footer{display:none}.milestones{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:540px){.scenario-btn{font-size:11px;padding:12px;gap:8px}.canvas{height:300px}.canvas-legend{gap:12px;padding:0 12px 13px}.canvas-legend small{display:none}.chart-head{padding:13px}.playback-bar{padding:12px;gap:4px;flex-wrap:wrap}.playback-bar input{order:5;flex-basis:70%;margin:6px 0}.frame-count{margin-left:auto}.milestones{grid-template-columns:repeat(2,1fr)}.progress{padding:14px}.progress-top{gap:8px}.progress-top .label{font-size:10px}.trace-row{grid-template-columns:26px 80px minmax(0,1fr)}.summary-details .summary{font-size:10px}}
 </style>
 </head>
-<body>
-<div class="page">
-  <header class="masthead">
-    <div class="brand">
-      <h1><span class="fleur">⚜</span> AgentReroute · Live MAS Control Propagation &amp; Recovery</h1>
-      <p>Château de Versailles edition — a four-agent retail court, its faults, and their repair</p>
-    </div>
-    <div class="controls">
-      <span class="mode" id="mode">__MODE__</span>
-      <button class="ctl" id="btn-prev" aria-label="Previous step">◀ Prev</button>
-      <button class="ctl primary" id="btn-play" aria-label="Play or pause">▶ Play</button>
-      <button class="ctl" id="btn-next" aria-label="Next step">Next ▶</button>
-      <select class="ctl" id="speed" aria-label="Playback speed">
-        <option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option>
-      </select>
-    </div>
-  </header>
-  <nav class="scenarios" aria-label="Scenarios">__BUTTONS__</nav>
-  <p class="summary" id="summary"></p>
-
-  <section class="chart" aria-label="Workflow canvas">
-    <div class="chart-head">
-      <h2>Workflow Canvas <small style="color:var(--muted);font-style:italic">— drag to pan, wheel to zoom</small></h2>
-      <div class="zoombar">
-        <button id="zoom-out" aria-label="Zoom out">−</button>
-        <button id="zoom-label" aria-label="Reset zoom to 100%">100%</button>
-        <button id="zoom-in" aria-label="Zoom in">+</button>
-        <button id="zoom-fit" aria-label="Fit view">Fit View</button>
-      </div>
-    </div>
-    <div class="canvas" id="canvas">
-      <div id="world">__SVG____NODES__</div>
-    </div>
-    <div class="progress" id="debugger">
-      <div class="progress-top">
-        <span class="label">AgentReroute Debugger &amp; Recovery</span>
-        <span class="badge b-normal" id="dbg-badge">Idle</span>
-        <span id="dbg-text" style="color:var(--muted);font-size:12.5px"></span>
-        <span id="pct">0%</span>
-      </div>
-      <div class="bar"><div id="bar-fill"></div></div>
-      <ol class="milestones">__MILESTONES__</ol>
-    </div>
-  </section>
-
-  <section class="dock">
-    <div class="panel" id="current-step">
-      <h3>Current Step Inspection</h3>
-      <div class="panel-body">
-        <p id="step-title">—</p>
-        <div class="chips"><span class="badge b-normal" id="step-status">NORMAL</span><span class="chip" id="step-actor">actor</span><span class="chip" id="step-phase">phase</span><span class="chip" id="step-index">step</span></div>
-        <div id="step-fault"></div>
-        <p id="step-narrative"></p>
-        <pre id="step-payload">{}</pre>
-      </div>
-    </div>
-    <div class="panel" id="live-trace">
-      <h3>Live Trace Chronicle <small>— Gazette de Propagation</small></h3>
-      <ol id="trace"></ol>
-    </div>
-  </section>
-  <footer>Scripted agents are an offline fixture, not a model. AgentReroute (MPRLRecoveryPolicy) sees only the observable trace; injected-fault notes are shown to the viewer alone.</footer>
+<body><main class="studio-shell">
+__NAV__
+<header class="studio-hero"><div><div class="eyebrow">Agent reliability, made visible</div><h1>Every failure.<br><em>A path forward.</em></h1><p>Follow the handoff. Find the fault. Watch a correction take shape.<br>An inside look at how AgentReroute gets an agent back on track.</p></div><div class="hero-aside"><div><strong>4 agents</strong>One connected system</div><i></i><div><strong>3 perspectives</strong>One recovery loop</div></div></header>
+<div class="scenario-heading"><span class="eyebrow-label">Explore a scenario</span><span class="pill" id="mode">__MODE__</span></div>
+<nav class="scenarios" aria-label="Scenarios">__BUTTONS__</nav>
+<details class="summary-details"><summary>What happens in this scenario</summary><p class="summary" id="summary"></p></details>
+<div class="workspace-grid">
+<section class="chart" aria-label="Workflow canvas"><div class="chart-head"><h2><span></span>Agent network</h2><div class="zoombar"><button id="zoom-out" aria-label="Zoom out">−</button><button id="zoom-label" aria-label="Reset zoom to 100%">100%</button><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-fit" aria-label="Fit view">Fit View</button></div></div>
+<div class="canvas" id="canvas"><div id="world">__SVG____NODES__</div></div><div class="canvas-legend"><span>Active</span><span>Fault</span><span>Recovered</span><small>Drag to explore · Scroll to zoom</small></div>
+<div class="playback-bar"><button class="ctl" id="btn-prev" aria-label="Previous step">←</button><button class="ctl primary" id="btn-play" aria-label="Play or pause">▶ Play</button><button class="ctl" id="btn-next" aria-label="Next step">→</button><input id="execution-cursor" type="range" min="0" max="0" value="0" aria-label="Execution frame"><span class="frame-count" id="frame-count">0 / 0</span><select class="ctl" id="speed" aria-label="Playback speed"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option></select></div>
+<div class="progress" id="debugger"><div class="progress-top"><span class="label">Recovery loop</span><span class="badge b-normal" id="dbg-badge">Idle</span><span id="dbg-text"></span><span id="pct">0%</span></div><div class="bar"><div id="bar-fill"></div></div><ol class="milestones">__MILESTONES__</ol></div></section>
+<aside class="panel" id="current-step"><h3>Inside this step</h3><div class="panel-body"><p id="step-title">Preparing the system</p><div class="chips"><span class="badge b-normal" id="step-status">NORMAL</span><span class="chip" id="step-actor">actor</span><span class="chip" id="step-phase">phase</span><span class="chip" id="step-index">step</span></div><div id="step-fault"></div><p id="step-narrative"></p><details class="payload-details"><summary>Inspect step data</summary><pre id="step-payload">{}</pre></details></div><div class="inspector-footer">Select a frame to inspect the decision, tool call or recovery action at that moment.</div></aside>
 </div>
+<section class="dock"><details class="panel" id="live-trace"><summary>Execution history <span>Every step, in order</span></summary><ol id="trace"></ol></details></section>
+<footer class="studio-footer"><span>Scripted simulation · Real recovery policy · Fault labels are visible only to you.</span><span>Observe → Attribute → Recover → Verify</span></footer>
+</main>
 <script>
 const DATA = __DATA__;
 const WORLD = {w: __WORLD_W__, h: __WORLD_H__};
@@ -431,28 +315,30 @@ const BADGE = {NORMAL: 'b-normal', FAULT: 'b-fault', DEBUG: 'b-debug', RECOVERED
 const canvas = $('canvas'), world = $('world');
 function applyView() {
   world.style.transform = `translate(${S.pan.x}px, ${S.pan.y}px) scale(${S.scale})`;
-  canvas.style.backgroundSize = `${22 * S.scale}px ${22 * S.scale}px`;
-  canvas.style.backgroundPosition = `${S.pan.x}px ${S.pan.y}px`;
+  canvas.style.backgroundSize = `auto, ${22 * S.scale}px ${22 * S.scale}px, auto`;
+  canvas.style.backgroundPosition = `center, ${S.pan.x}px ${S.pan.y}px, center`;
   $('zoom-label').textContent = Math.round(S.scale * 100) + '%';
 }
 function zoomAt(next, cx, cy) {
-  next = Math.min(1.65, Math.max(0.55, next));
+  next = Math.min(1.65, Math.max(0.2, next));
   S.pan.x = cx - (cx - S.pan.x) * next / S.scale;
   S.pan.y = cy - (cy - S.pan.y) * next / S.scale;
   S.scale = next; applyView();
 }
 function fitView() {
   const r = canvas.getBoundingClientRect();
-  S.scale = Math.min(1.65, Math.max(0.55, Math.min(r.width / (WORLD.w + 40), r.height / (WORLD.h + 40))));
+  S.scale = Math.min(1.65, Math.max(0.2, Math.min(r.width / (WORLD.w + 40), r.height / (WORLD.h + 40))));
   S.pan.x = (r.width - WORLD.w * S.scale) / 2; S.pan.y = (r.height - WORLD.h * S.scale) / 2; applyView();
 }
 canvas.addEventListener('wheel', (e) => {
+  if (window.STUDIO_EMBEDDED && !e.ctrlKey && !e.metaKey) return;
   e.preventDefault();
   const r = canvas.getBoundingClientRect();
   zoomAt(S.scale * (e.deltaY < 0 ? 1.1 : 1 / 1.1), e.clientX - r.left, e.clientY - r.top);
 }, {passive: false});
 let drag = null;
 canvas.addEventListener('pointerdown', (e) => {
+  if (window.STUDIO_EMBEDDED && e.pointerType === 'touch') return;
   if (e.target.closest('.tool-miniblock')) return;
   drag = {x: e.clientX - S.pan.x, y: e.clientY - S.pan.y}; canvas.classList.add('dragging');
   canvas.setPointerCapture(e.pointerId);
@@ -479,7 +365,7 @@ function pathFor(edge) {
 }
 function moveToken(path, reverse) {
   cancelAnimationFrame(anim);
-  const len = path.getTotalLength(), t0 = performance.now(), dur = 700 / S.speed;
+  const len = path.getTotalLength(), t0 = performance.now(), dur = (window.STUDIO_REDUCED_MOTION || window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 1 : 700 / S.speed;
   const tick = (now) => {
     const k = Math.min(1, (now - t0) / dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
     const p = path.getPointAtLength(len * (reverse ? 1 - e : e));
@@ -570,6 +456,28 @@ function paintStep(f) {
   fault.style.display = f.fault ? 'block' : 'none';
   fault.textContent = f.fault ? `Injected fault: ${f.fault.operator} (${f.fault.mode}) — ${f.fault.note}` : '';
   $('step-payload').textContent = JSON.stringify(f.payload, null, 2);
+  if (window.storyGuide) window.storyGuide(systemGuide(f));
+}
+
+function systemGuide(f) {
+  if (f.phase === 'verified') return f.title.includes('Abstained')
+    ? {title:'A healthy run can stay as it is.',body:'The policy found no fault to repair and abstained. Recovery also means knowing when to leave the execution alone.'}
+    : f.verified ? {title:'Check the outcome, not just the explanation.',body:'This replay passed the verifier. The observed result now supplies feedback to the recovery policy. Inspect the step data for the evidence.'}
+    : {title:'The correction has not been verified.',body:'A plausible repair is not enough. This result did not pass verification; inspect the replay and the recorded checks.'};
+  if (f.phase === 'recovery_replay') return {title:'Try a different path from the fault.',body:'The system is replaying with a correction applied. Watch the highlighted agent and its tools; verification comes after the new execution.'};
+  if (f.phase === 'debugging' && f.active_phase === 3 && f.payload.decision?.status === 'abstained')
+    return {title:'No correction is needed here.',body:'The policy abstained and selected no rollback point. This execution will be left unchanged; the final verification records that decision.'};
+  if (f.phase === 'debugging' && f.active_phase === 2 && !f.payload.top1)
+    return {title:'No intervention point is selected.',body:'The ranking did not identify a usable fault target. Inspect the checks before assuming that a repair is needed.'};
+  if (f.phase === 'debugging') return [null,
+    {title:'Look at the trace from three perspectives.',body:'The policy checks the goal and plan, tool execution, and the facts shared between agents. These checks supply evidence for possible faults.'},
+    {title:'Rank the possible starting points.',body:'The policy combines the evidence into fault candidates. A higher policy score means a preferred intervention, not a calibrated probability.'},
+    {title:'Go back to the decision that matters.',body:'A rollback point and correction have been selected. The next replay tests whether changing this decision improves the outcome.'}][f.active_phase] || {title:'Inspect the evidence.',body:f.narrative};
+  if (f.status === 'FAULT') return {title:'Here is the injected wrong turn.',body:'The highlighted action contains the scenario’s fault. This label helps you follow the demonstration; the recovery policy has to work from the observable trace.'};
+  return {title:'Follow the request through the agents.',body:f.kind==='tool'
+    ? 'The highlighted agent is using a tool. Its inputs and response are available under Inspect step data. Use the timeline to pause or go back.'
+    : f.kind==='handoff' ? 'One agent is handing the task to another. The destination and the context sent with it determine what the next agent can do.'
+    : 'The moving signal follows the current conversation. Watch the request, agent handoffs and tool results build a trace, one step at a time.'};
 }
 
 /* ---------------- trace chronicle ---------------- */
@@ -608,9 +516,13 @@ function paintTraceCursor() {
 function show(i) {
   if (i < 0 || i >= S.frames.length) return;
   S.cur = i; paint(S.frames[i]);
+  $('execution-cursor').max = Math.max(0,S.frames.length-1);
+  $('execution-cursor').value = i;
+  $('frame-count').textContent = `${i+1} / ${S.frames.length}`;
 }
 function delay(f) { return (f && f.kind === 'debug' ? 2200 : 1400) / S.speed; }
 function tick() {
+  S.timer = null;
   if (!S.playing) return;
   if (S.cur >= S.frames.length - 1) { if (!S.streaming) pause(); return; }
   show(S.cur + 1);
@@ -619,15 +531,16 @@ function tick() {
 function play() {
   if (S.cur >= S.frames.length - 1 && !S.streaming) S.cur = -1;
   S.playing = true; $('btn-play').textContent = '❚❚ Pause';
-  clearTimeout(S.timer); tick();
+  clearTimeout(S.timer); S.timer = null; tick();
 }
-function pause() { S.playing = false; clearTimeout(S.timer); $('btn-play').textContent = '▶ Play'; }
+function pause() { S.playing = false; clearTimeout(S.timer); S.timer = null; $('btn-play').textContent = '▶ Play'; }
 $('btn-play').onclick = () => (S.playing ? pause() : play());
 $('btn-prev').onclick = () => { pause(); show(S.cur - 1); };
 $('btn-next').onclick = () => { pause(); show(S.cur + 1); };
+$('execution-cursor').oninput = e => { pause(); show(Number(e.target.value)); };
 $('speed').onchange = (e) => { S.speed = +e.target.value; };
 document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'SELECT') return;
+  if (['SELECT','INPUT','TEXTAREA','BUTTON','SUMMARY'].includes(e.target.tagName)) return;
   if (e.key === 'ArrowRight') $('btn-next').click();
   else if (e.key === 'ArrowLeft') $('btn-prev').click();
   else if (e.key === ' ' && e.target === document.body) { e.preventDefault(); $('btn-play').click(); }
@@ -651,17 +564,30 @@ function selectScenario(sid) {
   S.es = new EventSource(`/api/stream?scenario=${encodeURIComponent(sid)}&speed=${S.speed}`);
   S.es.addEventListener('meta', (e) => summarize(meta, JSON.parse(e.data)));
   S.es.addEventListener('frame', (e) => {
+    const following = S.playing && S.cur === S.frames.length - 1 && S.timer === null;
     const f = JSON.parse(e.data); S.frames.push(f); traceRow(f, S.frames.length - 1);
-    if (S.playing || S.cur === S.frames.length - 2) show(S.frames.length - 1); else paintTraceCursor();
+    $('execution-cursor').max = Math.max(0,S.frames.length-1);
+    if (following) show(S.frames.length - 1); else { paintTraceCursor(); $('frame-count').textContent=`${S.cur+1} / ${S.frames.length}`; }
   });
-  const done = () => { S.streaming = false; if (S.es) S.es.close(); S.es = null; pause(); };
+  const done = () => {
+    S.streaming = false; if (S.es) S.es.close(); S.es = null;
+    if (S.cur >= S.frames.length - 1) pause();
+    else if (S.playing && S.timer === null) tick();
+  };
   S.es.addEventListener('end', done); S.es.onerror = done;
   S.playing = true; $('btn-play').textContent = '❚❚ Pause';
 }
 document.querySelectorAll('.scenario-btn').forEach((b) => (b.onclick = () => selectScenario(b.dataset.sid)));
-fitView(); window.addEventListener('resize', fitView);
+fitView();
+let canvasWidth=canvas.clientWidth, canvasHeight=canvas.clientHeight;
+window.addEventListener('resize', () => {
+  if(canvas.clientWidth===canvasWidth && canvas.clientHeight===canvasHeight)return;
+  canvasWidth=canvas.clientWidth;canvasHeight=canvas.clientHeight;fitView();
+});
 if (DATA.scenarios.length) selectScenario(DATA.scenarios[0].id);
 </script>
 </body>
 </html>
 '''
+
+PAGE = PAGE.replace('__STUDIO_THEME__', BASE_CSS).replace('__NAV__', navigation('system'))
