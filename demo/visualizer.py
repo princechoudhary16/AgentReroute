@@ -130,8 +130,12 @@ def make_server(host='127.0.0.1', port=8765, delay=0.9, comparison_service=None)
     """ThreadingHTTPServer serving the page, /api/scenarios and /api/stream (SSE). ``delay``: seconds per frame."""
     from .comparison import ComparisonService
     from .comparison_page import PAGE as COMPARISON_PAGE
+    from .story_page import PAGE as STORY_PAGE
+    from .widget_bridge import embed
     comparisons = comparison_service or ComparisonService()
     page = build_html(live=True).encode('utf-8')
+    widgets = {'/widgets/system': embed(page.decode('utf-8'), 'system').encode('utf-8'),
+               '/widgets/compare': embed(COMPARISON_PAGE, 'compare').encode('utf-8')}
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -186,6 +190,10 @@ def make_server(host='127.0.0.1', port=8765, delay=0.9, comparison_service=None)
 
         def do_GET(self):
             url = urlparse(self.path)
+            if url.path in widgets:
+                return self._send(200, widgets[url.path], 'text/html; charset=utf-8')
+            if url.path == '/system':
+                return self._send(200, page, 'text/html; charset=utf-8')
             if url.path == '/compare':
                 return self._send(200, COMPARISON_PAGE.encode('utf-8'), 'text/html; charset=utf-8')
             if url.path == '/api/models':
@@ -203,7 +211,7 @@ def make_server(host='127.0.0.1', port=8765, delay=0.9, comparison_service=None)
                 except ValueError as exc:
                     return self._json(400, {'error': str(exc)})
             if url.path in ('/', '/index.html'):
-                return self._send(200, page, 'text/html; charset=utf-8')
+                return self._send(200, STORY_PAGE.encode('utf-8'), 'text/html; charset=utf-8')
             if url.path == '/api/scenarios':
                 return self._send(200, json.dumps(scenario_meta()).encode('utf-8'), 'application/json')
             if url.path == '/api/stream':
@@ -323,12 +331,14 @@ function fitView() {
   S.pan.x = (r.width - WORLD.w * S.scale) / 2; S.pan.y = (r.height - WORLD.h * S.scale) / 2; applyView();
 }
 canvas.addEventListener('wheel', (e) => {
+  if (window.STUDIO_EMBEDDED && !e.ctrlKey && !e.metaKey) return;
   e.preventDefault();
   const r = canvas.getBoundingClientRect();
   zoomAt(S.scale * (e.deltaY < 0 ? 1.1 : 1 / 1.1), e.clientX - r.left, e.clientY - r.top);
 }, {passive: false});
 let drag = null;
 canvas.addEventListener('pointerdown', (e) => {
+  if (window.STUDIO_EMBEDDED && e.pointerType === 'touch') return;
   if (e.target.closest('.tool-miniblock')) return;
   drag = {x: e.clientX - S.pan.x, y: e.clientY - S.pan.y}; canvas.classList.add('dragging');
   canvas.setPointerCapture(e.pointerId);
@@ -355,7 +365,7 @@ function pathFor(edge) {
 }
 function moveToken(path, reverse) {
   cancelAnimationFrame(anim);
-  const len = path.getTotalLength(), t0 = performance.now(), dur = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 700 / S.speed;
+  const len = path.getTotalLength(), t0 = performance.now(), dur = (window.STUDIO_REDUCED_MOTION || window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 1 : 700 / S.speed;
   const tick = (now) => {
     const k = Math.min(1, (now - t0) / dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
     const p = path.getPointAtLength(len * (reverse ? 1 - e : e));
@@ -446,6 +456,28 @@ function paintStep(f) {
   fault.style.display = f.fault ? 'block' : 'none';
   fault.textContent = f.fault ? `Injected fault: ${f.fault.operator} (${f.fault.mode}) — ${f.fault.note}` : '';
   $('step-payload').textContent = JSON.stringify(f.payload, null, 2);
+  if (window.storyGuide) window.storyGuide(systemGuide(f));
+}
+
+function systemGuide(f) {
+  if (f.phase === 'verified') return f.title.includes('Abstained')
+    ? {title:'A healthy run can stay as it is.',body:'The policy found no fault to repair and abstained. Recovery also means knowing when to leave the execution alone.'}
+    : f.verified ? {title:'Check the outcome, not just the explanation.',body:'This replay passed the verifier. The observed result now supplies feedback to the recovery policy. Inspect the step data for the evidence.'}
+    : {title:'The correction has not been verified.',body:'A plausible repair is not enough. This result did not pass verification; inspect the replay and the recorded checks.'};
+  if (f.phase === 'recovery_replay') return {title:'Try a different path from the fault.',body:'The system is replaying with a correction applied. Watch the highlighted agent and its tools; verification comes after the new execution.'};
+  if (f.phase === 'debugging' && f.active_phase === 3 && f.payload.decision?.status === 'abstained')
+    return {title:'No correction is needed here.',body:'The policy abstained and selected no rollback point. This execution will be left unchanged; the final verification records that decision.'};
+  if (f.phase === 'debugging' && f.active_phase === 2 && !f.payload.top1)
+    return {title:'No intervention point is selected.',body:'The ranking did not identify a usable fault target. Inspect the checks before assuming that a repair is needed.'};
+  if (f.phase === 'debugging') return [null,
+    {title:'Look at the trace from three perspectives.',body:'The policy checks the goal and plan, tool execution, and the facts shared between agents. These checks supply evidence for possible faults.'},
+    {title:'Rank the possible starting points.',body:'The policy combines the evidence into fault candidates. A higher policy score means a preferred intervention, not a calibrated probability.'},
+    {title:'Go back to the decision that matters.',body:'A rollback point and correction have been selected. The next replay tests whether changing this decision improves the outcome.'}][f.active_phase] || {title:'Inspect the evidence.',body:f.narrative};
+  if (f.status === 'FAULT') return {title:'Here is the injected wrong turn.',body:'The highlighted action contains the scenario’s fault. This label helps you follow the demonstration; the recovery policy has to work from the observable trace.'};
+  return {title:'Follow the request through the agents.',body:f.kind==='tool'
+    ? 'The highlighted agent is using a tool. Its inputs and response are available under Inspect step data. Use the timeline to pause or go back.'
+    : f.kind==='handoff' ? 'One agent is handing the task to another. The destination and the context sent with it determine what the next agent can do.'
+    : 'The moving signal follows the current conversation. Watch the request, agent handoffs and tool results build a trace, one step at a time.'};
 }
 
 /* ---------------- trace chronicle ---------------- */
@@ -546,7 +578,12 @@ function selectScenario(sid) {
   S.playing = true; $('btn-play').textContent = '❚❚ Pause';
 }
 document.querySelectorAll('.scenario-btn').forEach((b) => (b.onclick = () => selectScenario(b.dataset.sid)));
-fitView(); window.addEventListener('resize', fitView);
+fitView();
+let canvasWidth=canvas.clientWidth, canvasHeight=canvas.clientHeight;
+window.addEventListener('resize', () => {
+  if(canvas.clientWidth===canvasWidth && canvas.clientHeight===canvasHeight)return;
+  canvasWidth=canvas.clientWidth;canvasHeight=canvas.clientHeight;fitView();
+});
 if (DATA.scenarios.length) selectScenario(DATA.scenarios[0].id);
 </script>
 </body>

@@ -11,7 +11,7 @@ const fs=require('node:fs');
     browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
     const page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[];
     page.on('pageerror',e=>errors.push(e.message));
-    await page.goto(base);
+    await page.goto(base+'/system');
     await page.waitForFunction(()=>document.querySelector('#pct').textContent==='100%');
     assert.equal(await page.locator('#execution-cursor').count(),1,'System explorer needs frame scrubbing');
     const total=Number(await page.locator('#execution-cursor').getAttribute('max'));
@@ -44,7 +44,7 @@ const fs=require('node:fs');
     await streaming.addInitScript(()=>{window.EventSource=class extends EventTarget {
       constructor(){super();window.testStream=this;} close(){}
     };});
-    await streaming.goto(base);
+    await streaming.goto(base+'/system');
     const emit=async(kind,frame)=>streaming.evaluate(({kind,frame})=>window.testStream.dispatchEvent(new MessageEvent(kind,{data:JSON.stringify(frame)})),{kind,frame});
     for(const frame of frames.slice(0,6)) await emit('frame',frame);
     await streaming.locator('#execution-cursor').evaluate(el=>{el.value=0;el.dispatchEvent(new Event('input'));});

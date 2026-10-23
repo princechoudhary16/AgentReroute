@@ -42,9 +42,11 @@ python3 -m demo --serve --port 8765
 ```
 
 Add `GEMINI_API_KEY=your-key` to the ignored root `.env` file, then open
-[the studio](http://localhost:8765/). **Live system** explores the scripted recovery
-simulation; **Compare engines** runs both algorithms through Gemini Flash-Lite. Refresh
-settings after saving the key. Free-tier access depends on your Google project.
+[the studio](http://localhost:8765/). Scroll through the recovery story, then use
+the embedded **Live system** and **Compare engines** tools. The comparison runs
+both algorithms through Gemini Flash-Lite when you press **Run comparison**.
+Dedicated views remain at `/system` and `/compare`. Refresh settings after saving
+the key. Free-tier access depends on your Google project.
 See [the guide](docs/comparison-ui.md).
 
 

@@ -12,10 +12,14 @@ Add the Gemini key to the repository's ignored `.env` file:
 GEMINI_API_KEY=your-key
 ```
 
-Open [the studio](http://localhost:8765/). **Live system** is a scripted retail
-simulation with the real recovery policy. **Compare engines** runs AgentRx and
-AgentReroute through Gemini for diagnosis and post-rollback agent turns. Choose a
-scenario and press **Run comparison**. Saving the key and refreshing settings is
+Open [the studio](http://localhost:8765/). The homepage tells the recovery story
+as you scroll: core ideas, an animated walkthrough, then both working tools inline.
+Each tool has a short explanation that follows the currently selected step.
+**Live system** is a scripted retail simulation with the real recovery policy.
+**Compare engines** runs AgentRx and AgentReroute through Gemini for diagnosis and
+post-rollback agent turns. Choose a scenario and press **Run comparison**.
+Scrolling and opening widgets do not start model inference.
+Saving the key and refreshing settings is
 enough; no server restart is needed. The server reads the key, never the browser.
 An exported `GEMINI_API_KEY` takes precedence over `.env` (including an empty value).
 The command-line benchmark runner still expects an exported key.
@@ -38,6 +42,11 @@ shared timeline to pause, step backward or forward, and return to live events.
 Historical playback does not start additional inference or reveal future results
 as current. Completed runs can be revisited through the `?run=<id>` URL, including
 after restarting the server; refreshing an active page resumes observation.
+
+Use `/system` and `/compare` for dedicated full views. Inline saved comparisons
+also have portable links: `/?run=<id>#compare-engines`. The page respects reduced
+motion settings and offers a motion toggle. Chapter links let you skip directly
+to either tool without scrolling through the explanation.
 
 ## What is being compared
 
@@ -88,6 +97,7 @@ Optional browser QA requires Playwright and Chromium (development tools only):
 ```bash
 node demo/tests/browser_comparison.cjs
 node demo/tests/browser_studio.cjs
+node demo/tests/browser_story.cjs
 ```
 
 Use `PLAYWRIGHT_MODULE` for an installed module path and `CHROMIUM_PATH` for a
@@ -97,7 +107,10 @@ the external model transport replaced, and shuts it down. It checks historical
 counters, stage completion, future-result isolation, model/scenario restoration,
 trace inspection, cancellation, invalid-synthesis warnings, mobile layout and
 browser errors. Screenshots go
-to `runs/ui-comparison-qa/` and `runs/ui-studio-qa/`. This fixture never replaces the real 8765 server.
+to `runs/ui-comparison-qa/`, `runs/ui-studio-qa/` and `runs/ui-story-qa/`.
+The story checks also cover deferred widgets, current-step explanations, saved
+run links, touch scrolling, preserved map zoom, and iframe sizing.
+This fixture never replaces the real 8765 server.
 
 Historical Ollama runs keep their original provider identity and remain viewable.
 A real local Qwen3-VL 8B pilot on the unbacked-write scenario completed on both
