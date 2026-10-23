@@ -137,15 +137,12 @@ class HtmlExportTests(unittest.TestCase):
             path = build_demo_html(Path(tmp)/'sub'/'demo.html')
             page = path.read_text(encoding='utf-8')
         self.assertTrue(page.startswith('<!doctype html>'))
-        for token in ('#FAF6EE', '#1B365D', '#B68D40', '#8B1E24', '#1E5631', '#C8B898'):
-            self.assertIn(token, page)
         for needle in ('id="zoom-in"', 'id="zoom-out"', 'id="zoom-fit"', 'Fit View', 'id="flow-token"',
                        'id="btn-play"', 'id="btn-prev"', 'id="btn-next"', '0.5x', '2x',
-                       'id="current-step"', 'id="live-trace"', 'Gazette de Propagation', 'id="bar-fill"',
+                       'id="current-step"', 'id="live-trace"', 'Execution history', 'id="execution-cursor"', 'id="bar-fill"',
                        'wire-active', 'wire-gold', 'wire-fault', 'wire-recovered'):
             self.assertIn(needle, page)
-        for i, m in enumerate(['I. P1/P2/P3 Attribution Checks', 'II. DualLoopRLJudge Ranking',
-                               'III. Rollback &amp; Directive Replay', 'IV. Fresh-Context Verifier &amp; θ Update'], 1):
+        for i, m in enumerate(['Identify constraints', 'Rank candidates', 'Replay correction', 'Verify &amp; learn'], 1):
             self.assertIn(f'id="ms-{i}"', page)
             self.assertIn(m, page)
         for agent in ('planner', 'order_agent', 'product_agent', 'returns_agent'):
@@ -186,7 +183,7 @@ class ServerTests(unittest.TestCase):
     def test_index_and_scenarios(self):
         status, ctype, body = self.get('/')
         self.assertEqual((status, ctype), (200, 'text/html; charset=utf-8'))
-        self.assertIn('Live SSE', body)
+        self.assertIn('Interactive simulation', body)
         status, ctype, body = self.get('/api/scenarios')
         self.assertEqual((status, ctype), (200, 'application/json'))
         self.assertEqual([m['id'] for m in json.loads(body)], IDS)

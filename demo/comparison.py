@@ -1,4 +1,4 @@
-"""Real local-model comparisons on shared controlled input, with inspectable execution events."""
+"""Model comparisons on shared controlled input, with inspectable execution events."""
 import copy
 import json
 import threading
@@ -22,6 +22,7 @@ from benchmark.scoring.recovery import BudgetCaps, RecoveryEnv, looks_ok
 from benchmark.taxonomy import from_agentrx
 from repair_strategies.adapters.benchmark import RepairStrategyPolicy
 from .scenarios import MAX_STEPS, SCENARIOS, _task_view, step_frames
+from . import model_settings
 
 OLLAMA = 'http://127.0.0.1:11434'
 SYSTEMS = ('agentrx', 'agentreroute')
@@ -193,7 +194,7 @@ class ScenarioInput:
 
 
 class ReplayClient:
-    """Keep the original prefix identical; post-rollback agent turns use actual native Ollama inference."""
+    """Keep the original prefix identical; post-rollback agent turns use actual model inference."""
     def __init__(self, scripted, provider, rollback):
         self.scripted, self.provider, self.rollback = scripted, provider, rollback
 
@@ -216,7 +217,8 @@ def run_system(system, case, raw_provider, output, emit, cancel):
               'provider': copy.deepcopy(provider.identity)}
     emit({'kind': 'system_started', **result})
     try:
-        raw_provider.prepare_for_run()
+        if hasattr(raw_provider, 'prepare_for_run'):
+            raw_provider.prepare_for_run()
         result['provider'] = copy.deepcopy(raw_provider.identity)
         judge = DualLoopRLJudge() if system == 'agentreroute' else None
         config = {'evidence': True, 'checklist': True, 'generation': 'oneshot',
@@ -297,17 +299,30 @@ def run_system(system, case, raw_provider, output, emit, cancel):
 
 
 class ComparisonService:
-    def __init__(self, output='runs/ui-comparisons', *, provider_factory=local_provider, model_catalog=installed_models,
+    def __init__(self, output='runs/ui-comparisons', *, provider_factory=None, model_catalog=None,
                  max_jobs=8):
-        self.output, self.provider_factory, self.model_catalog = Path(output), provider_factory, model_catalog
+        self.output = Path(output)
+        self.provider_factory = provider_factory or model_settings.gemini_provider
+        self.model_catalog = model_catalog or model_settings.gemini_models
+        self._injected_provider = provider_factory is not None or model_catalog is not None
         self.max_jobs, self.jobs = max_jobs, {}
         self.lock, self.closed = threading.RLock(), False
+
+    def model_info(self):
+        if not self._injected_provider:
+            return model_settings.model_info()
+        models = self.model_catalog()
+        return {'models': models, 'provider': 'test', 'configured': True,
+                'default_model': models[0] if models else None}
 
     def start(self, scenario, model):
         if not isinstance(scenario, str) or scenario not in SCENARIOS:
             raise ValueError('Select a known scenario.')
-        if not isinstance(model, str) or len(model) > 512 or model not in self.model_catalog():
-            raise ValueError('Select an installed local Ollama model.')
+        info = self.model_info()
+        if not info['configured']:
+            raise ValueError(info['message'])
+        if not isinstance(model, str) or len(model) > 512 or model not in info['models']:
+            raise ValueError('Select an available model.')
         with self.lock:
             if self.closed:
                 raise RuntimeError('Comparison service is closed.')
@@ -317,7 +332,7 @@ class ComparisonService:
                 self.jobs.pop(next(iter(self.jobs)))
             jid = uuid.uuid4().hex
             job = {'id': jid, 'scenario': scenario, 'model': model, 'status': 'running', 'events': [], 'results': {},
-                   'cancel': threading.Event(), 'created': time.time()}
+                   'provider': info['provider'], 'cancel': threading.Event(), 'created': time.time()}
             self.jobs[jid] = job
             threading.Thread(target=self._run, args=(job,), daemon=True, name='comparison-' + jid[:8]).start()
             return {'id': jid, 'status': job['status']}
@@ -334,7 +349,7 @@ class ComparisonService:
             write_json(output/'input.json', case.trace)
             self._emit(job, {'kind': 'input_ready', 'trace': case.trace, 'input_hash': case.input_hash,
                              'frames': step_frames(case.original, 'initial_run'),
-                             'notice': 'Controlled scripted input and user; actual Ollama diagnosis and post-rollback agent turns. Sequential systems; initial MP weights.'})
+                             'notice': 'Controlled scripted input and user; actual model diagnosis and post-rollback agent turns. Sequential systems; initial MP weights.'})
             for system in SYSTEMS:
                 if job['cancel'].is_set():
                     break
@@ -363,7 +378,7 @@ class ComparisonService:
             raise ValueError('Event cursor must be a nonnegative integer.')
         with self.lock:
             job = self._lookup(job_id)
-            return copy.deepcopy({k: job[k] for k in ('id','scenario','model','status','results')}) | {
+            return copy.deepcopy({k: job[k] for k in ('id','scenario','model','provider','status','results')}) | {
                 'cancel_requested': job['cancel'].is_set(), 'events': copy.deepcopy(job['events'][after:]),
                 'artifact_dir': str((self.output/job_id).resolve())}
 
@@ -387,6 +402,8 @@ class ComparisonService:
             if saved['id'] != job_id or saved['status'] not in TERMINAL or not isinstance(saved['events'], list):
                 raise KeyError(job_id)
             job = {k: saved[k] for k in ('id','scenario','model','status','events','results')}
+            job['provider'] = saved.get('provider') or next((r.get('provider', {}).get('provider')
+                for r in saved['results'].values() if r.get('provider', {}).get('provider')), 'ollama')
         except (OSError, ValueError, TypeError):
             raise KeyError(job_id) from None
         while len(self.jobs) >= self.max_jobs:

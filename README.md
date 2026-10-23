@@ -16,7 +16,7 @@ agent, and supporting evidence.
 | `recovery_orchestrator` | Decides whether, where and how to intervene, with a verifier gate and budget ([README](recovery_orchestrator/README.md)) |
 | `tool_prevention` | Deterministic pre-execution tool enforcement on a retail backend |
 | `tool_middleware` | Generic, conservative automatic tool prerequisites |
-| `demo` | Offline Versailles visualizer of control propagation and recovery (`python -m demo --out runs/demo_versailles.html`) |
+| `demo` | Interactive recovery studio and Gemini comparison (`python3 -m demo --serve`) |
 
 Tests: `python -m agentrx test`, plus
 `python -m unittest discover -s <package>/tests -t .` for `demo`, `repair_strategies`,
@@ -41,9 +41,11 @@ not model accuracy. Reports are saved under `runs/smoke/experiment/`.
 python3 -m demo --serve --port 8765
 ```
 
-Open [localhost:8765/compare](http://localhost:8765/compare) for actual Ollama
-execution, shared input, request logs, event playback and observed results.
-See [comparison setup and limits](docs/comparison-ui.md).
+Add `GEMINI_API_KEY=your-key` to the ignored root `.env` file, then open
+[the studio](http://localhost:8765/). **Live system** explores the scripted recovery
+simulation; **Compare engines** runs both algorithms through Gemini Flash-Lite. Refresh
+settings after saving the key. Free-tier access depends on your Google project.
+See [the guide](docs/comparison-ui.md).
 
 
 ## Benchmark data
@@ -92,7 +94,7 @@ If you cannot run Ollama locally or want to use a cloud model, set your API key 
 - **Google Gemini**:
   ```bash
   export GEMINI_API_KEY="your-gemini-api-key"
-  python3 -m agentrx run --model gemini --out runs/gemini
+  python3 -m agentrx run --config configs/dev_gemini.json --out runs/gemini
   ```
 - **OpenAI**:
   ```bash
@@ -102,7 +104,7 @@ If you cannot run Ollama locally or want to use a cloud model, set your API key 
 
 Test your setup without spending tokens or making network calls with `--preflight`:
 ```bash
-python3 -m agentrx run --model gemini --preflight --out runs/gemini
+python3 -m agentrx run --config configs/dev_gemini.json --preflight --out runs/gemini
 ```
 
 ### 3. Adding any OpenAI-compatible model

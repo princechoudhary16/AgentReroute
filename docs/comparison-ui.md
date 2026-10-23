@@ -6,14 +6,31 @@ Run from the repository checkout:
 python3 -m demo --serve --port 8765
 ```
 
-Open [Compare systems](http://localhost:8765/compare), choose an installed Ollama
-model and a scenario, then press **Run comparison**. Ollama must be running with
-an already installed model. No API key, model download or trained checkpoint is
-required by this page.
+Add the Gemini key to the repository's ignored `.env` file:
+
+```dotenv
+GEMINI_API_KEY=your-key
+```
+
+Open [the studio](http://localhost:8765/). **Live system** is a scripted retail
+simulation with the real recovery policy. **Compare engines** runs AgentRx and
+AgentReroute through Gemini for diagnosis and post-rollback agent turns. Choose a
+scenario and press **Run comparison**. Saving the key and refreshing settings is
+enough; no server restart is needed. The server reads the key, never the browser.
+An exported `GEMINI_API_KEY` takes precedence over `.env` (including an empty value).
+The command-line benchmark runner still expects an exported key.
+
+The default is `gemini-3.5-flash-lite`, with `gemini-3.8-flash` also available. Both
+use Google's official OpenAI-compatible endpoint, low reasoning effort and a
+4,096-token output cap. Google lists a
+[free tier](https://ai.google.dev/gemini-api/docs/pricing) for both models. Eligibility,
+limits and charges depend on the project's billing settings; the app cannot select
+an account tier or guarantee zero charges. It makes no billing changes and has no
+fallback to a paid-only model. A configured key is not proof of valid access or quota.
 
 The two panels show actual `diagnose` / `diagnose_mp_rl` calls, generated checks,
 attribution, repair attempts and measured model usage. Outcomes, stages and key
-numbers stay visible. Expand **Checks & model requests** for all requests; selecting
+numbers stay visible. Expand **Inspect evidence** for all requests; selecting
 one opens its response in the event inspector. Full metrics and the shared input
 trace are expandable below the panels. Validation warnings remain visible even
 when details are closed. Use the
@@ -32,21 +49,21 @@ policy with the initial weights. It does not load a trained checkpoint.
 
 Both feed their findings into the **same repair engine and retail environment**.
 The original prefix and user simulator are scripted to keep the case repeatable;
-agent turns after rollback call Ollama and invoke the actual local retail tools.
+agent turns after rollback call Gemini and invoke the actual local retail tools.
 Neither side is fed injected-fault labels or gold actions. Final retail-state and
 required-output scores are computed after the repair policy returns; observable
 repair acceptance supplies MP policy feedback. A failed repair remains failed on
 the page, even when attribution found the injected step.
 
-Systems execute sequentially to avoid competing for the local GPU. Timings include
-model loading and queueing. Token counts come from native Ollama telemetry;
+Systems execute sequentially with identical model settings. Timings include
+network latency and provider queueing. Token counts come from provider telemetry;
 unavailable measurements stay blank. Known usage from failed requests is included;
 if any finished request has unknown usage, its token totals stay blank. One run is an observation, not benchmark
 accuracy, and a policy-selection score is not a calibrated failure probability.
 Initial weights and benchmark-tuned seed checks limit generalization claims.
 
-Ollama generation can take several minutes. **Stop** prevents further inference
-after the current request finishes (up to its 180-second transport timeout).
+Model generation can take several minutes. **Stop** prevents further inference
+after the current request finishes (each HTTP attempt has a 180-second timeout; one bounded retry may follow).
 There is a 64-request cap per system and a separate three-attempt recovery budget.
 If model generation fails, its errors remain in the log; partial seed fallback is
 not presented as an error-free model result. Rejected model rules and exhausted
@@ -70,6 +87,7 @@ Optional browser QA requires Playwright and Chromium (development tools only):
 
 ```bash
 node demo/tests/browser_comparison.cjs
+node demo/tests/browser_studio.cjs
 ```
 
 Use `PLAYWRIGHT_MODULE` for an installed module path and `CHROMIUM_PATH` for a
@@ -79,11 +97,20 @@ the external model transport replaced, and shuts it down. It checks historical
 counters, stage completion, future-result isolation, model/scenario restoration,
 trace inspection, cancellation, invalid-synthesis warnings, mobile layout and
 browser errors. Screenshots go
-to `runs/ui-comparison-qa/`. This fixture never replaces the real 8765 server.
+to `runs/ui-comparison-qa/` and `runs/ui-studio-qa/`. This fixture never replaces the real 8765 server.
 
+Historical Ollama runs keep their original provider identity and remain viewable.
 A real local Qwen3-VL 8B pilot on the unbacked-write scenario completed on both
 sides. Both selected step 9 / Instruction/PlanAdherenceFailure. AgentRx made 17
 model requests and took about 206s; AgentReroute made 21 requests and took about
 230s. Neither achieved the required final retail state, and neither replay was
 accepted. The page preserves that failed outcome. These are single-run findings
 with initial policy weights, not a trained-model or benchmark performance claim.
+
+A real Gemini Flash-Lite run on 2026-10-23 (`00d7dd20d564442da1a767accbad7b62`)
+completed the misrouted-specialist scenario in about 25 seconds. Both systems
+identified planner step 6, replayed an accepted repair, and met the final task.
+AgentRx used 7 requests (8.72s elapsed); AgentReroute used 10 (16.61s), generated
+5 valid model constraints, and had no rejected constraints or failed requests.
+The actual saved results were checked in the browser on desktop and mobile.
+This is a single controlled case, not a benchmark accuracy comparison.
