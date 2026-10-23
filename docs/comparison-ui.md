@@ -21,10 +21,23 @@ AgentRx/AgentReroute explanation and paired charts introduce the live comparison
 The closing section illustrates targeted replay and compares its role with tool
 validation and retries.
 
-**The presentation charts and 30%/20% impact targets are placeholders**, as labeled
-on the page. They are not benchmark findings or outputs of the live comparison.
-Their editable values are in `demo/story_data.py`; replace them, along with the
-sample labels and evaluation context, when measured results are available.
+The presentation charts now use saved results from the `mp_rl` branch at
+`e96aed0cd401f507851c3a9d860a57b263ec5c80`. Switch between Qwen and MiniMax and between
+quality and efficiency. Expand the sources panel for detailed metrics, model
+context and links to the report and original JSON. Immutable copies of the two
+summaries live in `demo/resources/benchmark_35case/`; `demo/story_data.py` derives
+the chart values and reductions from them.
+
+The benchmark uses 35 failed retail traces and 17 controls with a trained policy.
+The live Gemini comparison below still starts with initial policy weights.
+The hosted impact figures are **30.9% lower recovery-token ratio** and **21.2%
+lower mean diagnosis latency**, calculated before rounding. Recovery tokens exclude
+diagnostic inference; these are not API-bill savings or total task-time gains.
+Local diagnosis is slower, and hosted task recovery is tied at 25/35.
+
+The write-up and saved local summary disagree on AgentReroute tokens per recovered
+case (8,187 versus 14,295.8) and budget breaches (0 versus 3). The page follows the
+raw summary and documents the discrepancy. No new benchmark was run for this update.
 
 **Live system** is a scripted retail simulation with the real recovery policy.
 **Compare engines** runs AgentRx and AgentReroute through Gemini for diagnosis and
