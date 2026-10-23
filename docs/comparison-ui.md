@@ -15,6 +15,17 @@ GEMINI_API_KEY=your-key
 Open [the studio](http://localhost:8765/). The homepage tells the recovery story
 as you scroll: core ideas, an animated walkthrough, then both working tools inline.
 Each tool has a short explanation that follows the currently selected step.
+The walkthrough expands the planning team into intake, context and routing agents,
+then follows a mistaken handoff through its outcome and correction. A visual
+AgentRx/AgentReroute explanation and paired charts introduce the live comparison.
+The closing section illustrates targeted replay and compares its role with tool
+validation and retries.
+
+**The presentation charts and 30%/20% impact targets are placeholders**, as labeled
+on the page. They are not benchmark findings or outputs of the live comparison.
+Their editable values are in `demo/story_data.py`; replace them, along with the
+sample labels and evaluation context, when measured results are available.
+
 **Live system** is a scripted retail simulation with the real recovery policy.
 **Compare engines** runs AgentRx and AgentReroute through Gemini for diagnosis and
 post-rollback agent turns. Choose a scenario and press **Run comparison**.
