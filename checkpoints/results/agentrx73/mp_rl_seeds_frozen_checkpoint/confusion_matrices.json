@@ -1,0 +1,65 @@
+[
+  {
+    "domain": "tau",
+    "variant": "mp_rl_seeds_ckpt",
+    "repetition": 0,
+    "confusion_matrix": {
+      "MisinterpretationOfToolOutput": {
+        "Instruction/PlanAdherenceFailure": 3,
+        "InvalidInvocation": 4
+      },
+      "Instruction/PlanAdherenceFailure": {
+        "InvalidInvocation": 2,
+        "MisinterpretationOfToolOutput": 1
+      },
+      "UnderspecifiedUserIntent": {
+        "InvalidInvocation": 4,
+        "Instruction/PlanAdherenceFailure": 3,
+        "MisinterpretationOfToolOutput": 1
+      },
+      "IntentPlanMisalignment": {
+        "InvalidInvocation": 5,
+        "Instruction/PlanAdherenceFailure": 1,
+        "MisinterpretationOfToolOutput": 1
+      },
+      "InvalidInvocation": {
+        "InvalidInvocation": 1
+      },
+      "IntentNotSupported": {
+        "InvalidInvocation": 1,
+        "MisinterpretationOfToolOutput": 1
+      },
+      "SystemFailure": {
+        "InvalidInvocation": 1
+      }
+    }
+  },
+  {
+    "domain": "magentic",
+    "variant": "mp_rl_seeds_ckpt",
+    "repetition": 0,
+    "confusion_matrix": {
+      "InventionOfNewInformation": {
+        "Instruction/PlanAdherenceFailure": 4
+      },
+      "MisinterpretationOfToolOutput": {
+        "Instruction/PlanAdherenceFailure": 15
+      },
+      "GuardrailsTriggered": {
+        "Instruction/PlanAdherenceFailure": 9
+      },
+      "IntentPlanMisalignment": {
+        "Instruction/PlanAdherenceFailure": 4
+      },
+      "IntentNotSupported": {
+        "Instruction/PlanAdherenceFailure": 3
+      },
+      "Instruction/PlanAdherenceFailure": {
+        "Instruction/PlanAdherenceFailure": 8
+      },
+      "SystemFailure": {
+        "Instruction/PlanAdherenceFailure": 1
+      }
+    }
+  }
+]

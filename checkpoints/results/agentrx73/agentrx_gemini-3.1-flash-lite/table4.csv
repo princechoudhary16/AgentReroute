@@ -1,0 +1,3 @@
+measurement_kind,scope,domain,variant,denominator,step_accuracy_mean,step_accuracy_std,step_accuracy_n,critical_category_accuracy_mean,critical_category_accuracy_std,critical_category_accuracy_n,average_step_distance_mean,average_step_distance_std,average_step_distance_n
+model_measurement,available_release_subset,tau,agentrx,29,0.3103448275862069,0,1,0.10344827586206896,0,1,7,0,1
+model_measurement,available_release_subset,magentic,agentrx,44,0.18181818181818182,0,1,0.25,0,1,30.21951219512195,0,1

@@ -250,3 +250,40 @@ All model checkpoints, attribution traces, and raw JSON evaluation metrics are s
 - **Ollama Per-Episode Attribution Log**: [`checkpoints/results/benchmark_35case/ollama_test_attribution.json`](../checkpoints/results/benchmark_35case/ollama_test_attribution.json)
 - **OpenRouter Benchmark Summary**: [`checkpoints/results/benchmark_35case/openrouter_test_summary.json`](../checkpoints/results/benchmark_35case/openrouter_test_summary.json)
 - **OpenRouter Per-Episode Attribution Log**: [`checkpoints/results/benchmark_35case/openrouter_test_attribution.json`](../checkpoints/results/benchmark_35case/openrouter_test_attribution.json)
+
+---
+
+### 5. Training and validation procedure
+
+How the checkpoint [`checkpoints/rl_state.json`](../checkpoints/rl_state.json) was produced and
+checked. All of this is for the `mp_rl` ranker (the 10 weights θ and the prompt memory).
+
+| Stage | Split | Weights | What was done |
+| :--- | :--- | :--- | :--- |
+| Training | `train` | Updated | `train_and_evaluate_benchmark(corpus, 'train', ..., epochs=4, rl_state_path=...)`: 4 passes, 76 episodes in total |
+| Validation | `calibration` | Frozen | Recovery evaluated with the trained weights; no updates |
+| Test | `test` | Frozen | The 35 failed held-out cases reported in Part 2, section 1 |
+
+The splits are disjoint by task template. Validation and test results are not fed back
+into the weights.
+
+Evidence for each stage:
+
+- **Training.** Running 4 epochs on the `train` split alone reproduces the checkpoint:
+  76 episodes and weights identical to the stored ones (checked on 2026-10-23). The
+  validation split therefore did not update the weights.
+- **Validation.** [`checkpoints/train_val_summary.json`](../checkpoints/train_val_summary.json)
+  records recovery rate 0.8125 on `train` (16 failed episodes; conditional recovery 0.867;
+  intervention rate 0.9375) and 0.739 on `calibration` (23 episodes; conditional recovery
+  0.810; intervention rate 0.913; cost versus the original run 0.91).
+- **LLM synthesis.** It was off for the `mp_rl` column, so the ranker used the seed checks
+  only. Attempts with it on produced malformed model output and rate-limit errors.
+
+Using the checkpoint: copy it first (`cp checkpoints/rl_state.json runs/rl_frozen_copy.json`)
+and point `rl_state_path` at the copy, because training and evaluation runs write back to
+the file they load. To reproduce the training, build the corpus with
+`python3 -m benchmark smoke --out <dir>` and call `train_and_evaluate_benchmark` from
+`agentrx.rl_cross_branch` with `epochs=4` and a fresh `rl_state_path`.
+
+A test of both systems on real, human-annotated traces from the AgentRx release is in
+[real-trace-evaluation.md](real-trace-evaluation.md).

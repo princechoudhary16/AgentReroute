@@ -1,0 +1,1 @@
+{"name": "agentrx73-mp_rl-seeds-frozen-checkpoint", "client": {"provider": "ollama", "model": "qwen2.5-coder:7b", "num_ctx": 16384, "settings": {"temperature": 0}}, "repetitions": 1, "domains": ["tau", "magentic"], "variants": [{"name": "mp_rl_seeds_ckpt", "evidence": false, "protocol": "mp_rl", "recovery_loop": false, "rl_state_path": "runs/rl_frozen_copy.json"}]}
