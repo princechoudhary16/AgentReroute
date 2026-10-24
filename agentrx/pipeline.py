@@ -187,7 +187,10 @@ def diagnose_mp_rl(trajectory, policy, tools, config, provider, artifacts, rl_ju
     write_json(artifacts/'trajectory_ir.json', trajectory)
     try:
         if rl_judge is None:
-            rl_judge = DualLoopRLJudge.load(config['rl_state_path']) if config.get('rl_state_path') else DualLoopRLJudge()
+            # Pure diagnosis (no recovery loop) never writes the checkpoint, so load it read-only.
+            read_only = not config['recovery_loop']
+            rl_judge = (DualLoopRLJudge.load(config['rl_state_path'], read_only=read_only)
+                        if config.get('rl_state_path') else DualLoopRLJudge(read_only=read_only))
         context = {'policy': policy, 'tools': tools, 'python_timeout': config['python_timeout']}
         effective, views = {}, {}
         for pid, spec in PERSPECTIVES.items():

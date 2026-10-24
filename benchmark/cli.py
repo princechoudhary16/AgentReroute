@@ -11,6 +11,7 @@
   from-agentrx-run  convert a faultattribution run directory into a submission
   score             score a submission against a split's gold
   recover           run a recovery policy on a split's replayable episodes
+  oracle-ceiling    preflight: what an oracle attributor recovers on a split (the ceiling)
   report            Markdown summary of score/recover reports
   dashboard         self-contained HTML dashboard
   evaluate          standard suite on a split: baselines, recovery, comparisons, robustness, report, dashboard
@@ -20,10 +21,11 @@
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 from .corpus import build, load_gold, load_public, natural_queue
-from .env.llm import DEFAULT_HOST, DEFAULT_MODEL, CachedLLM, LLMError, OllamaClient
+from .env.llm import DEFAULT_HOST, DEFAULT_MODEL, CachedLLM, LLMError, OllamaClient, request
 from .env.scripted import scripted_llm
 from .env.tasks import fetch_tau_retail
 from .generate import generate
@@ -50,6 +52,20 @@ def cmd_check_ollama(args):
         print(f'Model {args.model} is not pulled. Run: ollama pull {args.model}', file=sys.stderr)
         return 2
     print(f'Model {args.model} is available (digest {client.model_digest(args.model)[:12]}).')
+    # A model listing and a digest do not prove the server can complete: send one real round-trip.
+    req = request(args.model, [{'role': 'user', 'content': 'Reply with the single word: ok'}], json_mode=False)
+    start = time.perf_counter()
+    try:
+        completion = client.complete(req)
+    except LLMError as exc:
+        print(f'Completion failed: {exc}', file=sys.stderr)
+        return 2
+    latency = time.perf_counter() - start
+    if not completion.text.strip():
+        print(f'Completion returned empty text after {latency:.1f}s', file=sys.stderr)
+        return 2
+    print(f'Completion ok: {latency:.1f}s, {completion.tokens_in}+{completion.tokens_out} tokens, '
+          f'reply {completion.text.strip()[:80]!r}')
     return 0
 
 
@@ -158,6 +174,31 @@ def cmd_recover(args):
     return 0
 
 
+def cmd_oracle_ceiling(args):
+    """Preflight: what an oracle attributor recovers on a split - the ceiling a learned policy competes with.
+
+    Reuses gold oracle hypotheses and fixed_rules:oracle (writes no new oracle). If the oracle recovers
+    nothing, no learned policy can earn reward and the corpus, not the learner, is at fault. A scripted
+    corpus is offline_fixture; its numbers verify plumbing only and are not a result.
+    """
+    gold = load_gold(args.corpus, args.split)
+    label = 'offline_fixture' if 'offline_fixture' in {g.get('measurement_kind') for g in gold.values()} else 'model'
+    caps = BudgetCaps(tokens=args.max_tokens, token_multiple=args.token_multiple, attempts=args.max_attempts,
+                      seconds=args.max_seconds)
+    report = run_recovery(args.corpus, args.split, POLICIES['fixed_rules'](), _llm_factory(args), caps,
+                          oracle=True, limit=args.limit)
+    m = report['metrics']
+    print(json.dumps({'measurement_kind': label, 'split': args.split, 'policy': report['policy'],
+                      'n_failed': report['n_failed'], 'oracle_recovery_rate': m['recovery_rate'],
+                      'oracle_conditional_recovery_rate': m['conditional_recovery_rate']}, indent=2))
+    if label == 'offline_fixture':
+        print('NOTE: offline_fixture - plumbing check only, not a result.', file=sys.stderr)
+    if not m['recovery_rate']['value']:
+        print('WARNING: oracle recovers nothing - no learned policy can earn reward on this corpus.',
+              file=sys.stderr)
+    return 0
+
+
 def cmd_report(args):
     attribution = [read_json(p) for p in args.attribution or []]
     recovery = [read_json(p) for p in args.recovery or []]
@@ -234,7 +275,7 @@ def parser():
     s.set_defaults(fn=cmd_fetch_tau)
 
     s = sub.add_parser('generate'); s.add_argument('--config', type=Path); s.add_argument('--out', required=True)
-    s.add_argument('--backend', choices=('ollama', 'scripted')); s.add_argument('--model'); s.add_argument('--host')
+    s.add_argument('--backend', choices=('ollama', 'scripted', 'gemini')); s.add_argument('--model'); s.add_argument('--host')
     s.add_argument('--data-dir', dest='data_dir'); s.add_argument('--max-tasks', dest='max_tasks', type=int)
     s.add_argument('--seeds', type=int, nargs='+'); s.add_argument('--operators', nargs='+')
     s.set_defaults(fn=cmd_generate)
@@ -272,6 +313,13 @@ def parser():
     s.add_argument('--max-attempts', type=int, default=BudgetCaps.attempts)
     s.add_argument('--max-seconds', type=float, default=BudgetCaps.seconds); s.add_argument('--out', required=True)
     model_args(s, model=False); s.set_defaults(fn=cmd_recover)
+
+    s = sub.add_parser('oracle-ceiling'); s.add_argument('--corpus', required=True); s.add_argument('--split', default='train')
+    s.add_argument('--backend', choices=('ollama', 'scripted'), default='ollama'); s.add_argument('--cache-dir')
+    s.add_argument('--out'); s.add_argument('--limit', type=int); s.add_argument('--max-tokens', type=int, default=None)
+    s.add_argument('--token-multiple', type=float, default=2.0); s.add_argument('--max-attempts', type=int, default=BudgetCaps.attempts)
+    s.add_argument('--max-seconds', type=float, default=BudgetCaps.seconds); model_args(s, model=False)
+    s.set_defaults(fn=cmd_oracle_ceiling)
 
     s = sub.add_parser('report'); s.add_argument('--attribution', nargs='*'); s.add_argument('--recovery', nargs='*')
     s.add_argument('--note'); s.add_argument('--out'); s.set_defaults(fn=cmd_report)

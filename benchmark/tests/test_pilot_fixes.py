@@ -173,6 +173,7 @@ class RobustnessAndLockTest(unittest.TestCase):
         self.assertEqual(identity['workflow_version'], WORKFLOW_VERSION)
         self.assertEqual(identity['operators_version'], OPERATORS_VERSION)
         self.assertIn('prompts_digest', identity)
+        self.assertEqual(identity['model_digest'], 'scripted')   # weights digest pins the corpus to its model
 
     def test_planner_can_read_orders_and_specialists_are_told_confirmation_is_done(self):
         self.assertIn('get_order_details', AGENTS['planner']['tools'])

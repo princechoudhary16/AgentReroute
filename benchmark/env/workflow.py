@@ -144,6 +144,7 @@ class Run:
     new_tokens: int
     faults_fired: list
     write_calls: list
+    lenient_responses: int = 0     # completions where the actor's lenient fallback fired this run
 
     def to_dict(self):
         out = {k: v for k, v in self.__dict__.items() if k != 'steps'}
@@ -175,15 +176,17 @@ class UserSimulator:
 
 class Workflow:
     def __init__(self, domain, task, llm, model, seed=0, temperature=0.0, faults=(), directive=None,
-                 user_llm=None, max_steps=60, max_specialist_turns=10, max_invalid=3):
+                 user_llm=None, max_steps=60, max_specialist_turns=10, max_invalid=3, max_no_progress=3):
         self.domain, self.task, self.llm, self.model = domain, task, llm, model
         self.seed, self.temperature = seed, temperature
         self.faults = list(faults)
         self.directive = directive
         self.user = UserSimulator(user_llm or llm, model, task['instruction'], seed, temperature)
         self.max_steps, self.max_specialist_turns, self.max_invalid = max_steps, max_specialist_turns, max_invalid
+        self.max_no_progress = max_no_progress
         self.db = RetailDB(domain.data)
         self.steps, self.user_replies, self.write_calls = [], [], []
+        self.lenient_responses = 0
         self.state_version = 0
         self.resampling = False
         self._applied = False
@@ -227,6 +230,7 @@ class Workflow:
             ctx['input_digest'] = digest(messages)
         completion = self.llm.complete(request(self.model, messages, self.temperature, self._seed(),
                                                agent=agent, step_index=index, task_id=self.task['task_id']))
+        self.lenient_responses += int(completion.lenient)
         try:
             action = parse_json(completion.text)
             action = _validate_action(agent, action)
@@ -307,7 +311,10 @@ class Workflow:
         termination = 'max_steps'
         agent_text = GREETING
         invalid = 0
+        last_fp = last_state = None
+        repeats = 0
         user_text, completion = self.user.respond(agent_text, 1)
+        self.lenient_responses += int(completion.lenient)
         self._add(actor='user', kind='user', content=user_text, tokens=completion.tokens)
         planner_history.append({'role': 'user', 'content': 'USER: ' + user_text})
         if STOP in user_text:
@@ -322,6 +329,16 @@ class Workflow:
                 continue
             invalid = 0
             kind = action['action']
+            if kind in ('tool', 'handoff'):
+                # No-progress guard: the planner emitting the same tool/handoff with the same args while the
+                # DB is unchanged is a deterministic stuck loop (temperature 0 reproduces it forever). Replies
+                # to the user between repeats are not progress, so they neither count nor reset. Specialist
+                # loops stay bounded by max_specialist_turns (the cycles fault relies on them).
+                fp = ((action.get('tool'), json.dumps(action.get('arguments', {}), sort_keys=True)) if kind == 'tool'
+                      else (action['to'], action.get('message', ''), json.dumps(action.get('context', {}), sort_keys=True)))
+                state = self.db.state_hash()
+                repeats = repeats + 1 if (fp == last_fp and state == last_state) else 1
+                last_fp, last_state = fp, state
             if kind == 'tool':
                 result = self._tool('planner', action, planner_history)
                 if action['tool'] == 'transfer_to_human_agents' and not result.startswith('Error'):
@@ -340,16 +357,20 @@ class Workflow:
                 if not self._budget_left():
                     break
                 user_text, completion = self.user.respond(action['content'], len(self.steps) + 1)
+                self.lenient_responses += int(completion.lenient)
                 self._add(actor='user', kind='user', content=user_text, tokens=completion.tokens)
                 if STOP in user_text:
                     termination = 'user_stop'
                     break
                 planner_history.append({'role': 'user', 'content': 'USER: ' + user_text})
+            if termination == 'max_steps' and repeats >= self.max_no_progress:
+                termination = 'no_progress'
         rollback = self.directive.rollback_step if self.directive else 1
         return Run(self.task['task_id'], self.model, self.seed, self.steps, self.db.state_hash(),
                    self.user_replies, termination, sum(s.tokens for s in self.steps),
                    sum(s.tokens for s in self.steps if s.index >= rollback),
-                   [r for s in self.steps for r in s.faults], self.write_calls)
+                   [r for s in self.steps for r in s.faults], self.write_calls,
+                   lenient_responses=self.lenient_responses)
 
 
 def _validate_action(agent, action):

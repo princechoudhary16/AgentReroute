@@ -86,6 +86,7 @@ class HTTPProvider:
                         '/chat/completions?api-version=' + parse.quote(api_version, safe=''))
         else:
             self.url = base_url.rstrip('/') + '/chat/completions'
+        self.base_url = base_url.rstrip('/')
         self.identity = {'provider': provider, 'model': model, 'base_url': base_url,
                          'deployment': deployment, 'api_version': api_version if provider == 'azure' else 'v1',
                          'settings': self.settings, 'client': 'python-urllib', 'python': platform.python_version()}
@@ -132,17 +133,22 @@ class HTTPProvider:
         except (TypeError, ValueError):
             return min(60, self.retry_delay * (2 ** attempt))
 
-    def complete(self, stage, payload):
-        body = {'model': self.model, 'messages': messages(stage, payload),
-                'response_format': {'type': 'json_object'}, **self.settings}
-        encoded = json.dumps(body, ensure_ascii=False).encode()
-        if self.max_input_chars and sum(len(m['content']) for m in body['messages']) > self.max_input_chars:
+    def _send(self, body, url=None, headers=None):
+        """Hardened transport shared by complete(), complete_messages() and generate_content(): POST
+        ``body`` to ``url`` (default self.url) with ``headers`` (default the Cloudflare-safe compat headers
+        + auth), retry 429/5xx with backoff, apply the OpenRouter 400 response_format fallback, enforce the
+        size limit, and return the raw response envelope."""
+        if self.max_input_chars and 'messages' in body \
+                and sum(len(m['content']) for m in body['messages']) > self.max_input_chars:
             raise ProviderError('Configured input limit exceeded; no content was truncated')
-        # Cloudflare in front of OpenRouter answers 403 to the default Python-urllib User-Agent.
-        headers = {'Content-Type': 'application/json', 'User-Agent': 'AgentReroute/1.0',
-                   'HTTP-Referer': 'https://github.com/AgentReroute', 'X-Title': 'AgentReroute'}
-        headers['api-key' if self.provider == 'azure' else 'Authorization'] = (
-            self.api_key if self.provider == 'azure' else 'Bearer ' + self.api_key)
+        encoded = json.dumps(body, ensure_ascii=False).encode()
+        if headers is None:
+            # Cloudflare in front of OpenRouter answers 403 to the default Python-urllib User-Agent.
+            headers = {'Content-Type': 'application/json', 'User-Agent': 'AgentReroute/1.0',
+                       'HTTP-Referer': 'https://github.com/AgentReroute', 'X-Title': 'AgentReroute'}
+            headers['api-key' if self.provider == 'azure' else 'Authorization'] = (
+                self.api_key if self.provider == 'azure' else 'Bearer ' + self.api_key)
+        target = url or self.url
         opener = request.build_opener(NoRedirect())
         start = time.monotonic()
         self.last_raw = None
@@ -151,7 +157,7 @@ class HTTPProvider:
             try:
                 sent += 1
                 self.http_requests += 1
-                req = request.Request(self.url, data=encoded, headers=headers, method='POST')
+                req = request.Request(target, data=encoded, headers=headers, method='POST')
                 with opener.open(req, timeout=self.timeout) as response:
                     content = response.read(20_000_001)
                     if len(content) > 20_000_000:
@@ -163,13 +169,7 @@ class HTTPProvider:
                     'usage': raw.get('usage', {}), 'seconds': time.monotonic() - start,
                     'attempts': sent, 'http_status': status, 'response_format': 'response_format' in body,
                     'timestamp': datetime.now(timezone.utc).isoformat()}
-                choice = raw['choices'][0]
-                if choice.get('finish_reason') not in ('stop', None):
-                    raise ProviderError(f"Incomplete model response: {choice.get('finish_reason')}")
-                message = choice['message']
-                if message.get('refusal'):
-                    raise ProviderError('Model refused diagnostic request')
-                return _parse_json_object(message['content'])
+                return raw
             except error.HTTPError as exc:
                 retry_after = exc.headers.get('Retry-After') if exc.headers else None
                 exc.close()
@@ -187,10 +187,103 @@ class HTTPProvider:
                 if attempt == self.retries:
                     raise ProviderError('Model transport failed after retries') from None
                 delay = self._backoff(attempt)
-            except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
+            except json.JSONDecodeError as exc:
                 raise ProviderError(f'Malformed model JSON response ({type(exc).__name__})') from None
             time.sleep(delay)
             attempt += 1
+
+    def _message(self, raw):
+        """The assistant message from a response envelope, enforcing finish_reason and refusal checks."""
+        try:
+            choice = raw['choices'][0]
+            if choice.get('finish_reason') not in ('stop', None):
+                raise ProviderError(f"Incomplete model response: {choice.get('finish_reason')}")
+            message = choice['message']
+        except (KeyError, IndexError, TypeError) as exc:
+            raise ProviderError(f'Malformed model JSON response ({type(exc).__name__})') from None
+        if message.get('refusal'):
+            raise ProviderError('Model refused diagnostic request')
+        return message
+
+    def complete(self, stage, payload):
+        body = {'model': self.model, 'messages': messages(stage, payload),
+                'response_format': {'type': 'json_object'}, **self.settings}
+        return _parse_json_object(self._message(self._send(body))['content'])
+
+    def complete_messages(self, chat_messages, *, json_mode=True):
+        """General chat over the same hardened transport, for callers that supply their own messages
+        (e.g. the benchmark actor). Returns (text, usage, lenient_info).
+
+        lenient_info is None on a clean reply, else a dict describing why the lenient fallback fired
+        ({finish_reason, refusal, content_null, content_chars, output_tokens}) so the caller can both count
+        and diagnose degraded responses. Lenient by design, unlike complete(): it does not raise on a
+        non-'stop' finish_reason (e.g. length / MAX_TOKENS), a refusal, or a null content; it yields the
+        partial text or ''. Transport errors (HTTP/timeout) still raise."""
+        body = {'model': self.model, 'messages': list(chat_messages), **self.settings}
+        if json_mode:
+            body['response_format'] = {'type': 'json_object'}
+        raw = self._send(body)
+        content = finish = None
+        refusal = False
+        try:
+            choice = raw['choices'][0]
+            message = choice['message']
+            finish = choice.get('finish_reason')
+            content = message.get('content')
+            refusal = bool(message.get('refusal'))
+        except (KeyError, IndexError, TypeError):
+            pass
+        text = content if isinstance(content, str) else ''
+        lenient = finish not in ('stop', None) or refusal or not isinstance(content, str)
+        info = None
+        if lenient:
+            info = {'finish_reason': finish, 'refusal': refusal, 'content_null': content is None,
+                    'content_chars': len(text), 'output_tokens': raw.get('usage', {}).get('completion_tokens')}
+        return text, raw.get('usage', {}), info
+
+    def generate_content(self, chat_messages, *, json_mode=True):
+        """Gemini NATIVE generateContent, for the actor path only (the attributor keeps complete()).
+
+        Maps messages to native contents/parts, concatenates the text of all non-thought parts (skipping any
+        part with thought: true), reads finishReason, and maps usageMetadata including thoughtsTokenCount
+        (billed as output, so it is folded into completion_tokens). Returns (text, usage, lenient_info) with
+        the same leniency contract as complete_messages; transport errors still raise."""
+        system = '\n'.join(m['content'] for m in chat_messages if m.get('role') == 'system')
+        contents = [{'role': 'model' if m['role'] == 'assistant' else 'user', 'parts': [{'text': m['content']}]}
+                    for m in chat_messages if m.get('role') != 'system']
+        body = {'contents': contents}
+        if system:
+            body['systemInstruction'] = {'parts': [{'text': system}]}
+        gen_cfg = {}
+        if 'temperature' in self.settings:
+            gen_cfg['temperature'] = self.settings['temperature']
+        if json_mode:
+            gen_cfg['responseMimeType'] = 'application/json'
+        if gen_cfg:
+            body['generationConfig'] = gen_cfg
+        native_url = (self.base_url[:-len('/openai')] if self.base_url.endswith('/openai') else self.base_url) \
+            + '/models/' + parse.quote(self.model, safe='') + ':generateContent'
+        headers = {'Content-Type': 'application/json', 'User-Agent': 'AgentReroute/1.0', 'x-goog-api-key': self.api_key}
+        raw = self._send(body, url=native_url, headers=headers)
+        cand = (raw.get('candidates') or [{}])[0]
+        finish = cand.get('finishReason')
+        parts = (cand.get('content') or {}).get('parts') or []
+        text = ''.join(p['text'] for p in parts
+                       if isinstance(p, dict) and not p.get('thought') and isinstance(p.get('text'), str))
+        um = raw.get('usageMetadata') or {}
+        prompt = um.get('promptTokenCount') or 0
+        cand_tokens = um.get('candidatesTokenCount') or 0
+        thoughts = um.get('thoughtsTokenCount') or 0
+        usage = {'prompt_tokens': prompt, 'completion_tokens': cand_tokens + thoughts,
+                 'total_tokens': um.get('totalTokenCount') or (prompt + cand_tokens + thoughts)}
+        lenient = finish not in ('STOP', None) or not text
+        info = None
+        if lenient:
+            info = {'finish_reason': finish, 'refusal': finish in ('SAFETY', 'BLOCKLIST', 'PROHIBITED_CONTENT'),
+                    'content_null': not parts, 'content_chars': len(text), 'output_tokens': cand_tokens,
+                    'thoughts_tokens': thoughts,
+                    'has_thought_part': any(isinstance(p, dict) and p.get('thought') for p in parts)}
+        return text, usage, info
 
 
 class OllamaProvider:

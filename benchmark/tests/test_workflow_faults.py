@@ -28,6 +28,31 @@ class WorkflowTest(unittest.TestCase):
                              task['task_id'])
             self.assertEqual(run.termination, 'user_stop')
 
+    def test_no_progress_guard_terminates_a_deterministic_planner_loop(self):
+        from benchmark.env.llm import ScriptedLLM
+        from benchmark.env.tasks import load_domain
+        from benchmark.env.workflow import Workflow
+        domain = load_domain(None)
+        task = domain.task('fixture-cancel')
+
+        def looping(req):                      # planner keeps issuing the same bad id; user never stops
+            if req['meta'].get('agent') == 'user':
+                return '#W1000001'
+            return {'action': 'tool', 'tool': 'get_order_details', 'arguments': {'order_id': 'W1000001'}}
+        run = Workflow(domain, task, ScriptedLLM(looping), 'scripted', max_steps=60).run()
+        self.assertEqual(run.termination, 'no_progress')
+        tool_calls = [s for s in run.steps if s.actor == 'planner' and s.action and s.action['action'] == 'tool']
+        self.assertEqual(len(tool_calls), 3)            # stopped at the 3rd identical call, not at max_steps
+        self.assertLess(len(run.steps), 60)
+
+        ids = (f'W{i}' for i in range(100))
+        def varied(req):                       # distinct args each turn is not a no-progress loop
+            if req['meta'].get('agent') == 'user':
+                return '#W1000001'
+            return {'action': 'tool', 'tool': 'get_order_details', 'arguments': {'order_id': next(ids)}}
+        run2 = Workflow(domain, task, ScriptedLLM(varied), 'scripted', max_steps=8).run()
+        self.assertEqual(run2.termination, 'max_steps')
+
     def test_trace_views(self):
         _, _, run = run_task('fixture-refund-amount')
         full = validate_trace(export_trace(run, 't1', 'retail', 'hi', 'full'))

@@ -288,6 +288,86 @@ class OpenRouterHardeningTests(unittest.TestCase):
                 self.assertEqual(env_key('SOME_KEY'), 'proc')
         self.assertEqual(reg.QueryValueEx.call_count, 1)
 
+    def test_complete_messages_sends_caller_messages_and_returns_text_and_usage(self):
+        msgs = [{'role': 'system', 'content': 'be an agent'}, {'role': 'user', 'content': 'cancel #W1'}]
+        opener = FakeOpener([completion(json.dumps(ANSWER))])
+        provider = HTTPProvider(MODEL, 'https://generativelanguage.googleapis.com/v1beta/openai', 'k',
+                                provider='gemini', retries=0)
+        with mock.patch.object(request, 'build_opener', return_value=opener):
+            text, usage, info = provider.complete_messages(msgs, json_mode=True)
+        self.assertEqual(json.loads(text), ANSWER)
+        self.assertEqual(usage['total_tokens'], 9)
+        self.assertIsNone(info)                                  # clean stop + string content -> not lenient
+        body = json.loads(opener.requests[0].data)
+        self.assertEqual(body['messages'], msgs)                 # caller messages, not agentrx stage prompts
+        self.assertIn('response_format', body)
+        # json_mode=False (the user simulator) returns plain text and sends no response_format.
+        plain = FakeOpener([completion('just text')])
+        with mock.patch.object(request, 'build_opener', return_value=plain):
+            text2, _, info2 = provider.complete_messages(msgs, json_mode=False)
+        self.assertEqual((text2, info2), ('just text', None))
+        self.assertNotIn('response_format', json.loads(plain.requests[0].data))
+        # A null content (Gemini occasionally returns one) becomes '' and is flagged lenient with a reason.
+        nulled = FakeOpener([completion(None)])
+        with mock.patch.object(request, 'build_opener', return_value=nulled):
+            text3, _, info3 = provider.complete_messages(msgs, json_mode=True)
+        self.assertEqual(text3, '')
+        self.assertTrue(info3['content_null'])
+
+    def test_complete_messages_flags_lenient_on_max_tokens_and_malformed(self):
+        provider = HTTPProvider(MODEL, 'https://generativelanguage.googleapis.com/v1beta/openai', 'k',
+                                provider='gemini', retries=0)
+        def resp(finish, content, out_tokens=7):
+            return io.BytesIO(json.dumps({'id': 'g', 'model': MODEL,
+                'usage': {'completion_tokens': out_tokens, 'total_tokens': out_tokens + 1},
+                'choices': [{'finish_reason': finish, 'message': {'content': content}}]}).encode())
+        # MAX_TOKENS (length): partial text is returned, flagged lenient, with the reason captured.
+        mt = FakeOpener([resp('length', '{"action": "repl', out_tokens=4096)])
+        with mock.patch.object(request, 'build_opener', return_value=mt):
+            text, _, info = provider.complete_messages([{'role': 'user', 'content': 'x'}], json_mode=True)
+        self.assertEqual(text, '{"action": "repl')
+        self.assertEqual((info['finish_reason'], info['content_null'], info['output_tokens']),
+                         ('length', False, 4096))
+        self.assertEqual(info['content_chars'], len('{"action": "repl'))     # partial, not null
+        # MALFORMED_FUNCTION_CALL: non-stop finish_reason must not raise; '' + lenient + null content.
+        mf = FakeOpener([resp('function_call_filter: MALFORMED_FUNCTION_CALL', None)])
+        with mock.patch.object(request, 'build_opener', return_value=mf):
+            text2, _, info2 = provider.complete_messages([{'role': 'user', 'content': 'x'}], json_mode=True)
+        self.assertEqual(text2, '')
+        self.assertEqual((info2['finish_reason'], info2['content_null']),
+                         ('function_call_filter: MALFORMED_FUNCTION_CALL', True))
+
+    def test_generate_content_native_skips_thought_parts_and_reads_usage_metadata(self):
+        provider = HTTPProvider('gemini-3.5-flash-lite', 'https://generativelanguage.googleapis.com/v1beta/openai',
+                                'k', provider='gemini', retries=0, settings={'temperature': 0})
+        def native(body):
+            return io.BytesIO(json.dumps(body).encode())
+        # A thought part plus a text part: only the text part is returned; thoughts count as output tokens.
+        good = native({'candidates': [{'finishReason': 'STOP', 'content': {'parts': [
+            {'text': 'internal reasoning', 'thought': True}, {'text': '{"action": "reply"}'}]}}],
+            'usageMetadata': {'promptTokenCount': 100, 'candidatesTokenCount': 6, 'thoughtsTokenCount': 40,
+                              'totalTokenCount': 146}})
+        opener = FakeOpener([good])
+        with mock.patch.object(request, 'build_opener', return_value=opener):
+            text, usage, info = provider.generate_content([{'role': 'system', 'content': 'sys'},
+                                                           {'role': 'user', 'content': 'hi'}], json_mode=True)
+        self.assertEqual(text, '{"action": "reply"}')              # thought part skipped
+        self.assertEqual((usage['prompt_tokens'], usage['completion_tokens']), (100, 46))  # 6 + 40 thoughts
+        self.assertIsNone(info)                                    # STOP + text -> not lenient
+        self.assertIn(':generateContent', opener.requests[0].full_url)
+        self.assertEqual(opener.requests[0].get_header('X-goog-api-key'), 'k')
+        # Thought-only response (no text part): empty text, lenient, with the thought token count recorded.
+        empty = native({'candidates': [{'finishReason': 'STOP', 'content': {'parts': [
+            {'text': 'all thinking', 'thought': True}]}}],
+            'usageMetadata': {'promptTokenCount': 100, 'candidatesTokenCount': 0, 'thoughtsTokenCount': 512,
+                              'totalTokenCount': 612}})
+        with mock.patch.object(request, 'build_opener', return_value=FakeOpener([empty])):
+            text2, usage2, info2 = provider.generate_content([{'role': 'user', 'content': 'hi'}], json_mode=True)
+        self.assertEqual(text2, '')
+        self.assertEqual((info2['thoughts_tokens'], info2['has_thought_part'], info2['output_tokens']),
+                         (512, True, 0))
+        self.assertEqual(usage2['completion_tokens'], 512)         # thoughts billed as output, not reported as zero
+
     def test_400_fallback_is_openai_compatible_only_and_once(self):
         for kind, outcomes in (('openai', [http_error(400)]), ('openai-compatible', [http_error(400)] * 2)):
             opener = FakeOpener(outcomes)

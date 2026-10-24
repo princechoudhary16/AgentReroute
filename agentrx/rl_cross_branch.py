@@ -3,6 +3,10 @@
 Rewards come only from observable verifiers: repair_strategies acceptance plus rollout termination on the
 benchmark path, the orchestrator's fresh-context VerifierResult on the other. Nothing here reads
 runner.ledger, episode rewards, gold_state_hash or benchmark/corpus/gold.
+
+Gold-reading reporting (validation attribution exact-step) lives in ``rl_reporting`` and is called lazily;
+the acceptance-vs-ledger gap logged per epoch is assembled from the harness's finished report and the
+policy's observable log, never handed back to the policy.
 """
 import re
 import tempfile
@@ -129,7 +133,9 @@ class MPRLRecoveryPolicy(RepairStrategyPolicy, RecoveryPolicy):
                          deliver_unaccepted=deliver_unaccepted, engine_factory=self._engine, learn=learn)
         self.provider = provider if use_llm_synthesis else _SeedOnlyProvider()
         self.use_llm_synthesis, self.rl_state_path = use_llm_synthesis, rl_state_path
-        self.rl_judge = rl_judge or (DualLoopRLJudge.load(rl_state_path) if rl_state_path else DualLoopRLJudge())
+        # Frozen evaluation (learn=False) loads the checkpoint read-only so recover() cannot write it back.
+        self.rl_judge = rl_judge or (DualLoopRLJudge.load(rl_state_path, read_only=not learn) if rl_state_path
+                                     else DualLoopRLJudge(read_only=not learn))
         self.engine, self.hypotheses, self.rl_log = None, {}, {}
 
     def _engine(self, task):
@@ -222,23 +228,45 @@ class MPRLOrchestratorSession:
         return result, outcome, telemetry['reward']
 
 
+def _observable_epoch_metrics(policy):
+    """Policy-visible training signals for one epoch, from the policy's own observable log (never the ledger).
+
+    acceptance_rate and mean_reward are over episodes the policy acted on (abstentions are not logged)."""
+    rl = list(policy.rl_log.values())
+    n = len(rl)
+    return {'n_acted': n,
+            'acceptance_rate': (sum(1.0 for r in rl if r['verified']) / n) if n else 0.0,
+            'mean_reward': (sum(r['reward'] for r in rl) / n) if n else 0.0}
+
+
 def train_and_evaluate_benchmark(corpus_dir, train_split='train', test_split='test', epochs=1, rl_state_path=None,
-                                 llm_factory=None, use_llm_synthesis=False, limit=None, provider=None) -> dict:
+                                 llm_factory=None, use_llm_synthesis=False, limit=None, provider=None,
+                                 val_split=None) -> dict:
     """Learn theta and M_i on train_split from observable feedback only, then evaluate frozen on test_split.
 
-    harness_recovery_rate in train_history is the harness's ledger-scored metric, reported for the learning
-    curve and never fed back into the policy.
+    Per epoch, train_history logs the observable signals (mean_reward, acceptance_rate) alongside the gold
+    harness_recovery_rate and their acceptance_minus_ledger_gap - the reward-hacking alarm: observable
+    acceptance climbing away from gold recovery. The gap is assembled here in the reporting layer, after the
+    policy returns; the ledger is never fed back into the policy. With val_split set, also logs frozen
+    attribution exact-step on it for model selection.
     """
     if llm_factory is None:
         from benchmark.env.scripted import scripted_llm as llm_factory
+    from .rl_reporting import attribution_exact_step    # reporting-side (reads gold); kept off the policy path
     policy = MPRLRecoveryPolicy(provider, rl_state_path=rl_state_path, use_llm_synthesis=use_llm_synthesis,
                                 learn=True)
     history = []
     for epoch in range(1, epochs + 1):
         report = run_recovery(corpus_dir, train_split, policy, llm_factory, limit=limit)
+        observable = _observable_epoch_metrics(policy)
+        ledger_recovery_rate = report['metrics']['recovery_rate']['value']
         history.append({'epoch': epoch, 'episodes': policy.rl_judge.episodes,
                         'weights': list(policy.rl_judge.weights),
-                        'harness_recovery_rate': report['metrics']['recovery_rate']['value']})
+                        'harness_recovery_rate': ledger_recovery_rate, **observable,
+                        'acceptance_minus_ledger_gap': observable['acceptance_rate'] - ledger_recovery_rate,
+                        'val_attribution_exact_step': (
+                            attribution_exact_step(corpus_dir, val_split, policy.rl_judge, use_llm_synthesis,
+                                                    provider, llm_factory, limit) if val_split else None)})
     policy.learn = False
     test_report = run_recovery(corpus_dir, test_split, policy, llm_factory, limit=limit)
     return {'train_history': history, 'test_report': test_report, 'learned_weights': list(policy.rl_judge.weights)}

@@ -129,7 +129,11 @@ class DualLoopRLJudge:
     """[C2] linear-softmax policy pi_theta(k, t) over candidate features h_{k,t}, plus prompt memory M_i."""
 
     def __init__(self, weights=None, learning_rate=0.05, temperature=0.5, ucb_alpha=0.1,
-                 baseline_reward=0.0, action_counts=None, memory=None, episodes=0, pairwise_lr=0.15):
+                 baseline_reward=0.0, action_counts=None, memory=None, episodes=0, pairwise_lr=0.15,
+                 read_only=False):
+        # read_only is a load-time guard, not serialized state: a checkpoint loaded for evaluation
+        # refuses save() so a frozen run cannot overwrite the weights it is reading.
+        self.read_only = bool(read_only)
         self.weights = list(weights or THETA0)
         if len(self.weights) != FEATURES:
             raise ValueError(f'RL weights must have {FEATURES} entries')
@@ -233,11 +237,16 @@ class DualLoopRLJudge:
                    data.get('pairwise_lr', 0.15))
 
     def save(self, path):
+        if self.read_only:
+            raise RuntimeError(f'refusing to save a read-only RL checkpoint to {path} '
+                               '(loaded for evaluation; train into a run directory instead)')
         write_json(path, self.to_dict())
 
     @classmethod
-    def load(cls, path):
-        return cls.from_dict(read_json(path)) if Path(path).exists() else cls()
+    def load(cls, path, read_only=False):
+        judge = cls.from_dict(read_json(path)) if Path(path).exists() else cls()
+        judge.read_only = bool(read_only)
+        return judge
 
 
 def _window(trajectory, steps):

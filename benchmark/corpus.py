@@ -103,6 +103,7 @@ def build(gen_dirs, out_dir, ratios=None, heldout_variants=DEFAULT_HELDOUT, natu
     public_ids = {s: [] for s in SPLITS}
     episodes_index, sources, dropped = {}, [], {'heldout_variant_outside_test': 0, 'unlabeled_natural': 0,
                                                  'not_activated': 0}
+    lenient_episodes = 0
     policies = {}
     for gen_dir in gen_dirs:
         meta = read_json(Path(gen_dir) / 'generation.json')
@@ -141,6 +142,7 @@ def build(gen_dirs, out_dir, ratios=None, heldout_variants=DEFAULT_HELDOUT, natu
             public_ids[split].append(tid)
             episodes_index[tid] = {'generation_dir': str(Path(gen_dir).resolve()),
                                    'episode_id': episode['episode_id'], 'split': split}
+            lenient_episodes += int(episode.get('lenient_responses', 0) > 0)
     agentrx = {}
     for split in SPLITS:
         gold[split].sort(key=lambda g: g['trajectory_id'])
@@ -169,7 +171,8 @@ def build(gen_dirs, out_dir, ratios=None, heldout_variants=DEFAULT_HELDOUT, natu
         counts[split] = {'total': len(gold[split]), 'by_label': dict(sorted(by.items()))}
     manifest = {'benchmark': BENCHMARK_NAME, 'version': __version__, 'splits': counts, 'ratios': ratios,
                 'split_policy': 'disjoint by task template; held-out variants only in test',
-                'heldout_variants': list(heldout_variants), 'dropped': dropped, 'sources': sources,
+                'heldout_variants': list(heldout_variants), 'dropped': dropped,
+                'lenient_episodes': lenient_episodes, 'sources': sources,
                 'agentrx_export': agentrx,
                 'gold_hash': digest(gold), 'views': ['full', 'output_only']}
     write_json(out_dir / 'manifest.json', manifest)

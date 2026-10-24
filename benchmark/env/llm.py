@@ -6,6 +6,7 @@ never sent to the model and never part of the cache key; it only helps
 scripted fixtures (and logs) know which agent is speaking.
 """
 import json
+import os
 import time
 import urllib.error
 import urllib.request
@@ -13,6 +14,17 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ..io import digest
+
+
+def _truncate_strings(obj, limit=4000):
+    """Recursively truncate long string values (keeping all keys) so a raw body log stays bounded."""
+    if isinstance(obj, str):
+        return obj if len(obj) <= limit else obj[:limit] + f'...<+{len(obj) - limit} chars>'
+    if isinstance(obj, dict):
+        return {k: _truncate_strings(v, limit) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_truncate_strings(v, limit) for v in obj]
+    return obj
 
 DEFAULT_MODEL = 'qwen2.5:7b'
 DEFAULT_HOST = 'http://localhost:11434'
@@ -25,6 +37,7 @@ class Completion:
     tokens_out: int = 0
     model: str = ''
     cached: bool = False
+    lenient: bool = False        # the actor's lenient path fired (odd finish_reason, refusal, null content)
 
     @property
     def tokens(self):
@@ -121,14 +134,16 @@ class CachedLLM:
         if path.exists():
             self.hits += 1
             data = json.loads(path.read_text(encoding='utf-8'))
-            return Completion(data['text'], data['tokens_in'], data['tokens_out'], data['model'], cached=True)
+            return Completion(data['text'], data['tokens_in'], data['tokens_out'], data['model'], cached=True,
+                              lenient=data.get('lenient', False))
         if self.read_only:
             raise LLMError(f'cache miss in read-only mode for {req["meta"]}')
         self.misses += 1
         result = self.inner.complete(req)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({'text': result.text, 'tokens_in': result.tokens_in,
-                                    'tokens_out': result.tokens_out, 'model': result.model}), encoding='utf-8')
+                                    'tokens_out': result.tokens_out, 'model': result.model,
+                                    'lenient': result.lenient}), encoding='utf-8')
         return result
 
 
@@ -145,6 +160,52 @@ class ScriptedLLM:
         out = self.responder(req)
         text = out if isinstance(out, str) else json.dumps(out)
         return Completion(text, sum(len(m['content']) for m in req['messages']) // 4, len(text) // 4, 'scripted')
+
+
+class GeminiActor:
+    """Benchmark actor backed by agentrx's hardened HTTPProvider (Gemini via its OpenAI-compatible endpoint).
+
+    Reuses that transport and its retry/backoff; adds no new HTTP client. The API key is read from the
+    environment by the provider (never from a config file). CachedLLM wraps this unchanged; model_digest
+    pins the cache to the model id, since a hosted model has no weights digest.
+    """
+    measurement_kind = 'model'
+
+    def __init__(self, model, base_url=None, api_key_env='GEMINI_API_KEY', settings=None, timeout=180, retries=3,
+                 lenient_log=None):
+        from agentrx.providers import HTTPProvider   # lazy: keeps benchmark import-independent of agentrx
+        config = {'provider': 'gemini', 'model': model, 'api_key_env': api_key_env,
+                  'settings': settings or {}, 'timeout': timeout, 'retries': retries}
+        if base_url:
+            config['base_url'] = base_url
+        self.provider = HTTPProvider.from_config(config)
+        self.model = model
+        self.lenient_log = lenient_log      # path: append one JSON line per lenient response, with its cause
+
+    def model_digest(self, model):
+        return f'gemini:{model}'
+
+    def complete(self, req):
+        text, usage, info = self.provider.generate_content(req['messages'], json_mode=req['json'])
+        if info is not None and self.lenient_log:
+            meta = req.get('meta', {})
+            tag = {'agent': meta.get('agent'), 'step_index': meta.get('step_index'), 'task_id': meta.get('task_id')}
+            try:
+                with open(self.lenient_log, 'a', encoding='utf-8') as f:
+                    f.write(json.dumps({**info, **tag}) + '\n')
+            except OSError:
+                pass
+            # The complete decoded response body, pre-parse, for diagnosis (the parser itself is under suspicion).
+            raw = getattr(self.provider, 'last_raw', None)
+            if raw is not None:
+                raw_path = os.path.join(os.path.dirname(self.lenient_log) or '.', 'lenient_raw.jsonl')
+                try:
+                    with open(raw_path, 'a', encoding='utf-8') as f:
+                        f.write(json.dumps({**tag, 'raw': _truncate_strings(raw, 4000)}) + '\n')
+                except OSError:
+                    pass
+        return Completion(text, usage.get('prompt_tokens', 0) or 0, usage.get('completion_tokens', 0) or 0,
+                          self.model, lenient=info is not None)
 
 
 def parse_json(text):

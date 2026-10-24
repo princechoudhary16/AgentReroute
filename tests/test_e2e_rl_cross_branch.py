@@ -181,6 +181,20 @@ class CrossBranchRLTests(unittest.TestCase):
         # No ranked list: the original repetition vote pooling is unchanged.
         self.assertEqual([(h['step_index'], h['confidence']) for h in rows['t-joint']], [(3, 0.5), (5, 0.5)])
 
+    def test_checkpoint_loaded_for_evaluation_refuses_to_save(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'rl_state.json'
+            DualLoopRLJudge(episodes=7).save(path)
+            before = path.read_text(encoding='utf-8')
+            frozen = DualLoopRLJudge.load(path, read_only=True)
+            self.assertEqual(frozen.episodes, 7)
+            with self.assertRaises(RuntimeError):
+                frozen.save(path)
+            self.assertEqual(path.read_text(encoding='utf-8'), before)   # untouched on disk
+            # A recovery policy in evaluation mode loads the checkpoint read-only; training keeps it writable.
+            self.assertTrue(MPRLRecoveryPolicy(rl_state_path=path, learn=False).rl_judge.read_only)
+            self.assertFalse(MPRLRecoveryPolicy(rl_state_path=path, learn=True).rl_judge.read_only)
+
     def test_train_and_evaluate_benchmark_freezes_policy_at_test_time(self):
         with tempfile.TemporaryDirectory() as tmp:
             state = Path(tmp)/'rl_state.json'
@@ -194,6 +208,19 @@ class CrossBranchRLTests(unittest.TestCase):
         self.assertEqual((saved.weights, saved.episodes), (out['learned_weights'], 4))
         self.assertEqual(out['test_report']['split'], 'test')
         self.assertEqual(len(out['test_report']['per_episode']), 2)
+
+    def test_train_history_logs_acceptance_ledger_gap_and_val_attribution(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = train_and_evaluate_benchmark(corpus(), epochs=1, rl_state_path=Path(tmp)/'rl_state.json',
+                                               limit=3, val_split='calibration')
+        epoch = out['train_history'][0]
+        for key in ('mean_reward', 'acceptance_rate', 'n_acted', 'harness_recovery_rate',
+                    'acceptance_minus_ledger_gap', 'val_attribution_exact_step'):
+            self.assertIn(key, epoch)
+        self.assertAlmostEqual(epoch['acceptance_minus_ledger_gap'],
+                               epoch['acceptance_rate'] - epoch['harness_recovery_rate'])
+        self.assertTrue(0.0 <= epoch['acceptance_rate'] <= 1.0)
+        self.assertTrue(0.0 <= epoch['val_attribution_exact_step'] <= 1.0)   # offline_fixture: plumbing only
 
 
 class FaultLabelAndLearningTests(unittest.TestCase):

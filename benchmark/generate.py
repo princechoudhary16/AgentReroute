@@ -20,7 +20,7 @@ traces from it.
 import sys
 from pathlib import Path
 
-from .env.llm import CachedLLM, OllamaClient
+from .env.llm import CachedLLM, GeminiActor, OllamaClient
 from .env.retail import gold_state_hash
 from .env.scripted import scripted_llm
 from .env.tasks import load_domain
@@ -41,8 +41,8 @@ def validate_config(config):
     if unknown:
         raise ValueError(f'unknown config keys: {sorted(unknown)}')
     config = {**DEFAULTS, **config}
-    if config['backend'] not in ('ollama', 'scripted'):
-        raise ValueError('backend must be ollama or scripted')
+    if config['backend'] not in ('ollama', 'scripted', 'gemini'):
+        raise ValueError('backend must be ollama, scripted or gemini')
     if not config['seeds'] or len(set(config['seeds'])) != len(config['seeds']):
         raise ValueError('seeds must be a non-empty list of distinct ints')
     if config['operators'] is not None and set(config['operators']) - set(OPERATORS):
@@ -53,18 +53,27 @@ def validate_config(config):
 
 
 class LLMFactory:
-    """Builds the agent/user LLM per task: a shared cached Ollama client, or the scripted fixture."""
+    """Builds the agent/user LLM per task: a shared cached Ollama or Gemini client, or the scripted fixture."""
 
     def __init__(self, config, out_dir):
         self.config = config
         self.shared = None
+        cache = config['cache_dir'] or str(Path(out_dir) / 'llm_cache')
         if config['backend'] == 'ollama':
-            cache = config['cache_dir'] or str(Path(out_dir) / 'llm_cache')
             self.shared = CachedLLM(OllamaClient(config['host']), cache)
+        elif config['backend'] == 'gemini':
+            actor = GeminiActor(config['model'], settings={'temperature': config['temperature']},
+                                lenient_log=str(Path(out_dir) / 'lenient.jsonl'))
+            self.shared = CachedLLM(actor, cache)
 
     @property
     def measurement_kind(self):
         return 'offline_fixture' if self.config['backend'] == 'scripted' else 'model'
+
+    def model_digest(self, model):
+        """Weights digest, for the settings lock, so a corpus is pinned to the exact model that made it.
+        Scripted runs have no weights."""
+        return self.shared.inner.model_digest(model) if self.shared is not None else 'scripted'
 
     def __call__(self, domain, task):
         return self.shared if self.shared is not None else scripted_llm(domain, task)
@@ -101,7 +110,7 @@ def _episode(eid, task, config, factory, seed, run, result, status, op=None, tim
             'measurement_kind': factory.measurement_kind, 'temperature': config['temperature'],
             'max_steps': config['max_steps'], 'status': status, 'outcome': result,
             'operator': op.spec() if op else None, 'timing': timing, 'site': site, 'label': label,
-            'activation': activation, 'run': run.to_dict()}
+            'activation': activation, 'lenient_responses': run.lenient_responses, 'run': run.to_dict()}
 
 
 def generate(config, out_dir, log=sys.stderr):
@@ -114,16 +123,17 @@ def generate(config, out_dir, log=sys.stderr):
         tasks = [domain.task(t) for t in config['task_ids']]
     if config['max_tasks']:
         tasks = tasks[:config['max_tasks']]
+    factory = LLMFactory(config, out_dir)
     identity = {k: config[k] for k in ('backend', 'model', 'temperature', 'seeds', 'max_steps')}
     identity['domain_source'] = domain.source
     identity['workflow_version'] = WORKFLOW_VERSION
     identity['operators_version'] = OPERATORS_VERSION
     identity['prompts_digest'] = digest({a: system_prompt(a, domain.policy) for a in AGENTS})
+    identity['model_digest'] = factory.model_digest(config['model'])
     meta_path = out_dir / 'generation.json'
     if meta_path.exists() and read_json(meta_path)['identity'] != identity:
         raise ValueError(f'{out_dir} was generated with different settings; use a new output directory')
     write_json(meta_path, {'config': config, 'identity': identity, 'policy_digest': digest(domain.policy)})
-    factory = LLMFactory(config, out_dir)
     done = {row['episode_id'] for row in read_jsonl(out_dir / 'index.jsonl')}
     grid = variants(config['operators'])
     counts = {}
