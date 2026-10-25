@@ -8,7 +8,20 @@ from .io import digest, read_json, write_json
 from .perspectives import FEATURES, ORDER
 from .taxonomy import agent
 
-THETA0 = (0.8, 0.9, 0.85, 1.1, 1.3, 1.2, 1.5, 0.9, 0.7, 1.2)
+# Initial theta over the 10 candidate features, in order: blame per perspective (0-2), violation
+# density per perspective (3-5), python-check share (6), temporal position (7), perspective breadth (8),
+# max density (9).
+#
+# Two deliberate moves from the first vector (..., 1.5, 0.9, 0.7, ...):
+#   f6 1.5 -> 0.85 so a python check cannot drown out an LLM nl_check. This has no effect on a seed-only
+#     run, where every check is a python check and f6 is a constant across candidates, so it is
+#     unmeasurable until constraint synthesis is on (it changes nothing in the external-trace ablation).
+#   f7 0.9 -> 0.45 so temporal position cannot override violation density (1.15-1.35) or breadth (0.90).
+#     On the 29 external tau traces this moves exact step 10.3% -> 13.8% and acc@3 34.5% -> 41.4%.
+# f7 = 0.0 reaches the same 13.8% exact with worse acc@3 (37.9%), and is NOT adopted: picking a weight
+# because it maximises the set we report on is the overfitting this evaluation exists to avoid. Training
+# on corpus-v2 is where theta is supposed to move.
+THETA0 = (0.85, 0.95, 0.90, 1.15, 1.35, 1.25, 0.85, 0.45, 0.90, 1.20)
 
 
 def _snippet(value, limit=500):

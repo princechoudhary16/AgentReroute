@@ -8,7 +8,6 @@ Gold-reading reporting (validation attribution exact-step) lives in ``rl_reporti
 the acceptance-vs-ledger gap logged per epoch is assembled from the harness's finished report and the
 policy's observable log, never handed back to the policy.
 """
-import re
 import tempfile
 from pathlib import Path
 
@@ -27,7 +26,7 @@ from repair_strategies.context import Hypothesis, TaskSpec
 from repair_strategies.engine import RepairEngine
 from repair_strategies.taxonomy import UnknownCategory
 from .io import read_json
-from .perspectives import STUCK_TOOL
+from .perspectives import repeats_earlier_tool_result
 from .pipeline import diagnose_mp_rl
 from .providers import ProviderError
 from .rl_policy import DualLoopRLJudge
@@ -50,7 +49,10 @@ def trace_tools_and_policy(task_view: dict) -> tuple[str, dict]:
 
 def _fault_label(c, steps):
     """(category, mode) for a candidate. The AgentRx category alone loses two refinements that pick the repair
-    ladder: a grounding violation on a handoff is context_propagation, and a stuck/repeated tool loop is a Cycle."""
+    ladder: a grounding violation on a handoff is context_propagation, and a stuck/repeated tool loop is a Cycle.
+
+    The loop test is structural (an identical call returning an identical result) rather than a match on
+    the injector's own "status": "processing" payload, which is what the seed layer used to key on."""
     names = {(v['assertion_name'], v['step_index']) for v in c.get('violated_checks', ())}
     step = steps.get(c['step_index'])
     if step and any(n == 'p3_seed_handoff_and_fact_grounding' for n, _ in names) \
@@ -58,8 +60,7 @@ def _fault_label(c, steps):
         return 'MisinterpretationOfToolOutput', 'context_propagation'
     for name, index in names:
         events = steps[index]['substeps'] if index in steps else []
-        if (name == 'p2_seed_valid_tool_invocation' and any(
-                e.get('role') == 'tool' and re.search(STUCK_TOOL, str(e.get('content', ''))) for e in events)) or (
+        if (name == 'p2_seed_valid_tool_invocation' and repeats_earlier_tool_result(steps, index)) or (
                 name == 'p1_seed_specialist_routing_alignment' and any(e.get('tool_calls') for e in events)):
             return 'Cycle', 'cycles'    # the routing seed fires on a tool-call step only for a 3rd identical call
     return c['category'], from_agentrx(c['category'])[0]

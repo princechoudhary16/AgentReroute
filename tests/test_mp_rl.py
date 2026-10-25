@@ -111,8 +111,11 @@ class PerspectiveTests(unittest.TestCase):
             self.assertEqual(len(checks), seeds * len(trajectory['steps']))
             self.assertFalse([r for r in checks if r['verdict'] == 'ERROR' or
                               (r['verdict'] == 'SKIP' and r['assertion_name'] in floor)])
+            # Step 2 is the invalid invocation (arguments are not an object) and step 4 claims success after
+            # a failed tool. Step 3, the tool error itself, is NOT a violation: a first failure is not yet
+            # evidence of anything, and a seed cannot look ahead to see whether the agent recovers from it.
             self.assertEqual(sorted((r['perspective'], r['step_index']) for r in checks if r['verdict'] == 'VIOL'),
-                             [('P2_TOOL_EXECUTION', 2), ('P2_TOOL_EXECUTION', 3), ('P3_HANDOFF_GROUNDING', 4)])
+                             [('P2_TOOL_EXECUTION', 2), ('P3_HANDOFF_GROUNDING', 4)])
             matrix = compute_blame_matrix(trajectory, checks)
             self.assertGreater(matrix['P2_TOOL_EXECUTION']['assistant'], 0)
             self.assertGreater(matrix['P3_HANDOFF_GROUNDING']['assistant'], 0)
@@ -133,13 +136,19 @@ class PerspectiveTests(unittest.TestCase):
         *_, candidates, top1, ranked, probs, judge = decide(tau_trace())
         # The tool-output VIOL at step 3 is folded into its caller's step 2, never a candidate of its own.
         self.assertEqual([(c['agent'], c['step_index']) for c in candidates], [('assistant', 2), ('assistant', 4)])
-        self.assertEqual([v['step_index'] for v in candidates[0]['violated_checks']], [2, 3])
-        self.assertEqual([r['step_index'] for r in candidates[0]['evidence_refs']], [2, 3])
+        self.assertEqual([v['step_index'] for v in candidates[0]['violated_checks']], [2])
+        self.assertEqual([r['step_index'] for r in candidates[0]['evidence_refs']], [2])
         self.assertTrue(all(len(c['features']) == 10 and c['offset'] == c['actor_offset'] for c in candidates))
         self.assertEqual((top1['agent'], top1['step_index'], top1['dominant_category']),
                          ('assistant', 2, 'InvalidInvocation'))
-        self.assertAlmostEqual(candidates[0]['features'][1], 2 / (3 + 1e-6) * 0.8, places=6)
-        self.assertEqual(candidates[0]['features'][3:], [0.0, 1.0, 0.0, 1.0, 0.8, 1 / 3, 1.0])
+        # P2 blame for 'assistant' = V/(V+S+eps), a pure violation rate with no earliness factor. The
+        # agent owns the P2 rows at steps 2, 3 and 4 (the tool output at 3 folds into its caller), of
+        # which one is VIOL and two SAT. Position is expressed once, in feature 7, not here as well.
+        self.assertAlmostEqual(candidates[0]['features'][1], 1 / (3 + 1e-6), places=6)
+        # density = min(1, violations_here / 2) per perspective, then python-check share, 1 - offset/T,
+        # perspective breadth, max density. One P2 violation here, and it is a python check, so the two
+        # halved terms are 0.5 rather than the 1.0 that two violations produced.
+        self.assertEqual(candidates[0]['features'][3:], [0.0, 0.5, 0.0, 0.5, 0.8, 1 / 3, 0.5])
 
     def test_blame_matrix_3xN_multi_agent_magentic_trace(self):
         trajectory = normalize({'trajectory_id': 'mag-1', 'steps': [
@@ -156,9 +165,13 @@ class PerspectiveTests(unittest.TestCase):
         self.assertEqual(list(matrix), list(ORDER))
         for row in matrix.values():
             self.assertEqual(set(row), {'orchestrator', 'websurfer', 'coder'})
-        self.assertAlmostEqual(matrix['P1_INTENT_PLAN']['coder'], 1 / (1 + 1e-6) * (1 - 3 / 5), places=6)
-        self.assertAlmostEqual(matrix['P1_INTENT_PLAN']['orchestrator'], 1 / (2 + 1e-6) * (1 - 4 / 5), places=6)
-        self.assertAlmostEqual(matrix['P3_HANDOFF_GROUNDING']['websurfer'], 1 / (2 + 1e-6) * (1 - 2 / 5), places=6)
+        # Pure rates: coder is 1 VIOL and 0 SAT, orchestrator and websurfer are 1 VIOL and 1 SAT each.
+        self.assertAlmostEqual(matrix['P1_INTENT_PLAN']['coder'], 1 / (1 + 1e-6), places=6)
+        self.assertAlmostEqual(matrix['P1_INTENT_PLAN']['orchestrator'], 1 / (2 + 1e-6), places=6)
+        self.assertAlmostEqual(matrix['P3_HANDOFF_GROUNDING']['websurfer'], 1 / (2 + 1e-6), places=6)
+        # Orchestrator violates at step 5 and websurfer at step 3, and they now score identically:
+        # blame answers 'how often is this agent in violation', never 'how early'. Position used to
+        # separate these two by a factor of 3 (0.2 against 0.6) before anything looked at the steps.
         self.assertEqual(set(matrix['P2_TOOL_EXECUTION'].values()), {0.0})
         candidates = encode_candidates(trajectory, checks, matrix)
         self.assertEqual({(c['agent'], c['step_index'], c['dominant_category']) for c in candidates}, {
@@ -202,10 +215,13 @@ class RetailSeedTests(unittest.TestCase):
                                              None, context)[0]
         self.assertFalse([r for r in checks if r['verdict'] == 'ERROR'])
         self.assertEqual(sorted((r['assertion_name'], r['step_index']) for r in checks if r['verdict'] == 'VIOL'), [
-            ('p1_seed_nonempty_progress', 12),                      # "has been exchanged" with no exchange_ call
+            ('p1_seed_nonempty_progress', 12),           # concludes an exchange handoff with no exchange_ call
             ('p1_seed_specialist_routing_alignment', 5),            # "cannot proceed"
             ('p1_seed_specialist_routing_alignment', 10),           # 3rd identical get_order_details call
-            ('p2_seed_valid_tool_invocation', 7), ('p2_seed_valid_tool_invocation', 9),   # stuck "processing"
+            # Step 9 repeats step 7's identical (tool, arguments) call for an identical result, which is
+            # what a stuck tool looks like from the trace. Step 7 is the first such result and carries no
+            # prefix evidence at all: flagging it required knowing the injector's own payload string.
+            ('p2_seed_valid_tool_invocation', 9),
             ('p3_seed_handoff_and_fact_grounding', 4),              # handoff context drops #W1000003
             ('p3_seed_handoff_and_fact_grounding', 12)])            # $45.00 never observed
         matrix = compute_blame_matrix(trajectory, checks)
@@ -449,7 +465,7 @@ class RLJudgeTests(unittest.TestCase):
                                                                                   tool_sandbox=FRESH), judge.memory)
         score = verify_and_score_state_change(trajectory, checks, effective, recovery, top1, candidates, probs,
                                               FakeProvider(), CONTEXT, judge)
-        self.assertEqual((score['v_before'], score['v_after'], score['feedback'], score['reward']), (3, 0, '+', 1.0))
+        self.assertEqual((score['v_before'], score['v_after'], score['feedback'], score['reward']), (2, 0, '+', 1.0))
         self.assertTrue(score['layer3']['passed'])
         delta = [w - w0 for w, w0 in zip(judge.weights, THETA0)]
         gradient = score['policy_update']['gradient']
@@ -460,6 +476,29 @@ class RLJudgeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             judge.save(Path(d)/'rl_state.json')
             self.assertEqual(DualLoopRLJudge.load(Path(d)/'rl_state.json').to_dict(), judge.to_dict())
+
+    def test_constraints_used_is_populated_only_when_synthesis_runs(self):
+        """What actually left the Verbal Loop with nothing to learn from.
+
+        The handoff plan reported PromptMemoryBank as silently dead because nothing ever populated
+        ``decision['constraints_used']``. It is populated, in pipeline.diagnose_mp_rl immediately after
+        select_action, filtered to ``origin == 'llm'``. The list was empty throughout Path B and Path C
+        training for a different reason: those runs passed ``evidence=False``, so only seed constraints
+        existed and the origin filter matched none of them. Turning synthesis on is the fix; more wiring
+        would have been dead code. This pins both halves so the diagnosis cannot be re-misread.
+        """
+        trajectory = tau_trace()
+        dynamic = lambda p: {'constraints': [args_constraint()] if p['perspective'] == 'P2_TOOL_EXECUTION' else []}
+        base = {'protocol': 'mp_rl', 'checklist': True, 'recovery_loop': False}
+        for evidence in (True, False):
+            judge = DualLoopRLJudge()
+            provider = (FakeProvider(perspective_global={'constraints': []}, perspective_dynamic=dynamic)
+                        if evidence else FakeProvider())
+            with tempfile.TemporaryDirectory() as d:
+                diagnose_mp_rl(trajectory, '', TOOLS, {**base, 'evidence': evidence}, provider, d, rl_judge=judge)
+            used = judge.pending[str(trajectory['trajectory_id'])]['constraints_used']
+            self.assertEqual(bool(used), evidence, (evidence, used))
+            self.assertTrue(all(c['origin'] == 'llm' for c in used))
 
     def test_end_to_end_diagnose_mp_rl_pipeline(self):
         trajectory = tau_trace()

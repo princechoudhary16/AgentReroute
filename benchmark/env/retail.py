@@ -29,6 +29,9 @@ class ToolError(Exception):
 
 
 def _schema(name, description, **params):
+    # Copy each parameter so the shared constants below can be reused across tools without one
+    # schema's mutation leaking into another's.
+    params = {k: dict(v) for k, v in params.items()}
     required = [k for k, v in params.items() if not v.pop('optional', False)]
     return {'name': name, 'description': description,
             'parameters': {'type': 'object', 'properties': params, 'required': required}}
@@ -36,35 +39,82 @@ def _schema(name, description, **params):
 
 _S, _L = {'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}
 
+
+def _s(description):
+    """A string parameter that states its format contract.
+
+    tau-bench ships a description on every tool parameter, and several are load-bearing rather than
+    decorative. An agent shown only ``{'type': 'string'}`` has no way to know that an order id
+    carries a leading '#', that an item id is not a product id, or that a cancellation reason comes
+    from a closed set. With these dropped, qwen2.5:32b stripped the '#' from a correctly supplied
+    order id on every attempt; the lookup failed, the simulated user began inventing credentials to
+    stay helpful, and the task failed its clean run before any fault could be injected. Every format
+    below is taken from the bundled data files, not from recollection of tau-bench.
+    """
+    return dict(_S, description=description)
+
+
+def _l(description):
+    return dict(_L, description=description)
+
+
+_ORDER_ID = _s("The order id, such as '#W2378156'. It always begins with a '#'; pass it exactly as given, "
+               'including that character.')
+_USER_ID = _s("The user id, such as 'yusuf_rossi_9620'.")
+_PAYMENT_ID = _s("The payment method id, such as 'credit_card_9513926' or 'gift_card_4374071'. Read it from "
+                 'the user or order details rather than guessing it.')
+_ITEM_IDS = _l("The item ids to act on, each a ten-digit string such as '4202497723'. An item id names one "
+               'specific variant and is not the product id. The list may repeat an id when the order holds '
+               'more than one of that variant.')
+_NEW_ITEM_IDS = _l('The item ids of the replacement variants, the same length as item_ids and in the same '
+                   'order. Each must be another variant of the same product as the item it replaces.')
+
+
+def _address():
+    return dict(address1=_s("The first line of the address, such as '763 Broadway'."),
+                address2=_s("The second line of the address, such as 'Suite 135'. Pass an empty string if "
+                            'there is none.'),
+                city=_s("The city, such as 'Philadelphia'."),
+                state=_s("The two-letter state code, such as 'PA'."),
+                country=_s("The country, such as 'USA'."),
+                zip=_s("The zip code, such as '19122'."))
+
+
 TOOL_SCHEMAS = {s['name']: s for s in [
-    _schema('calculate', 'Evaluate an arithmetic expression with + - * / and parentheses.', expression=dict(_S)),
+    _schema('calculate', 'Evaluate an arithmetic expression with + - * / and parentheses.',
+            expression=_s("The arithmetic expression to evaluate, such as '(2 + 3) * 4.5'.")),
     _schema('cancel_pending_order', "Cancel a pending order. Reason is 'no longer needed' or 'ordered by mistake'. "
-            'Refunds go to the original payment methods.', order_id=dict(_S), reason=dict(_S)),
+            'Refunds go to the original payment methods.', order_id=_ORDER_ID,
+            reason=_s("The reason for cancelling, exactly one of 'no longer needed' or 'ordered by mistake'.")),
     _schema('exchange_delivered_order_items', 'Exchange items of a delivered order for other variants of the same '
             'products. The price difference is charged or refunded to payment_method_id.',
-            order_id=dict(_S), item_ids=dict(_L), new_item_ids=dict(_L), payment_method_id=dict(_S)),
-    _schema('find_user_id_by_email', 'Find a user id by email.', email=dict(_S)),
+            order_id=_ORDER_ID, item_ids=_ITEM_IDS, new_item_ids=_NEW_ITEM_IDS, payment_method_id=_PAYMENT_ID),
+    _schema('find_user_id_by_email', 'Find a user id by email.',
+            email=_s("The email of the user, such as 'yusuf.rossi7301@example.com'.")),
     _schema('find_user_id_by_name_zip', 'Find a user id by first name, last name and zip code.',
-            first_name=dict(_S), last_name=dict(_S), zip=dict(_S)),
-    _schema('get_order_details', 'Get the status and details of an order.', order_id=dict(_S)),
-    _schema('get_product_details', 'Get the inventory details of a product and its variants.', product_id=dict(_S)),
-    _schema('get_user_details', 'Get the details of a user, including orders and payment methods.', user_id=dict(_S)),
+            first_name=_s("The first name of the user, such as 'Yusuf'."),
+            last_name=_s("The last name of the user, such as 'Rossi'."),
+            zip=_s("The zip code of the user, such as '19122'.")),
+    _schema('get_order_details', 'Get the status and details of an order.', order_id=_ORDER_ID),
+    _schema('get_product_details', 'Get the inventory details of a product and its variants.',
+            product_id=_s("The product id, such as '6992792935'. A product id names a product type and is not "
+                          'the same as an item id, which names one of its variants.')),
+    _schema('get_user_details', 'Get the details of a user, including orders and payment methods.',
+            user_id=_USER_ID),
     _schema('list_all_product_types', 'List the name and product id of every product type.'),
     _schema('modify_pending_order_address', 'Modify the shipping address of a pending order.',
-            order_id=dict(_S), address1=dict(_S), address2=dict(_S), city=dict(_S), state=dict(_S),
-            country=dict(_S), zip=dict(_S)),
+            order_id=_ORDER_ID, **_address()),
     _schema('modify_pending_order_items', 'Modify items of a pending order to other variants of the same products. '
-            'Can be done once per order.', order_id=dict(_S), item_ids=dict(_L), new_item_ids=dict(_L),
-            payment_method_id=dict(_S)),
+            'Can be done once per order.', order_id=_ORDER_ID, item_ids=_ITEM_IDS, new_item_ids=_NEW_ITEM_IDS,
+            payment_method_id=_PAYMENT_ID),
     _schema('modify_pending_order_payment', 'Change the payment method of a pending order.',
-            order_id=dict(_S), payment_method_id=dict(_S)),
-    _schema('modify_user_address', 'Modify the default address of a user.', user_id=dict(_S), address1=dict(_S),
-            address2=dict(_S), city=dict(_S), state=dict(_S), country=dict(_S), zip=dict(_S)),
+            order_id=_ORDER_ID, payment_method_id=_PAYMENT_ID),
+    _schema('modify_user_address', 'Modify the default address of a user.', user_id=_USER_ID, **_address()),
     _schema('return_delivered_order_items', 'Return items of a delivered order. The refund goes to the original '
-            'payment method or an existing gift card.', order_id=dict(_S), item_ids=dict(_L),
-            payment_method_id=dict(_S)),
+            'payment method or an existing gift card.', order_id=_ORDER_ID, item_ids=_ITEM_IDS,
+            payment_method_id=_PAYMENT_ID),
     _schema('transfer_to_human_agents', 'Transfer the user to a human agent with a summary of the issue.',
-            summary=dict(_S)),
+            summary=_s("A summary of the user's issue for the human agent.")),
 ]}
 
 _OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul, ast.Div: operator.truediv,

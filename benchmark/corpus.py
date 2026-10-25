@@ -102,7 +102,7 @@ def build(gen_dirs, out_dir, ratios=None, heldout_variants=DEFAULT_HELDOUT, natu
     gold = {s: [] for s in SPLITS}
     public_ids = {s: [] for s in SPLITS}
     episodes_index, sources, dropped = {}, [], {'heldout_variant_outside_test': 0, 'unlabeled_natural': 0,
-                                                 'not_activated': 0}
+                                                 'not_activated': 0, 'degraded': 0, 'lenient_response': 0}
     lenient_episodes = 0
     policies = {}
     for gen_dir in gen_dirs:
@@ -110,8 +110,25 @@ def build(gen_dirs, out_dir, ratios=None, heldout_variants=DEFAULT_HELDOUT, natu
         domain = load_domain(meta['config']['data_dir'])
         policies[domain.name] = domain.policy
         sources.append({'generation_dir': str(gen_dir), 'identity': meta['identity']})
+        if sources[0]['identity'] != meta['identity']:
+            differing = sorted(k for k in set(sources[0]['identity']) | set(meta['identity'])
+                               if sources[0]['identity'].get(k) != meta['identity'].get(k))
+            raise ValueError(
+                f'generation directories disagree on {differing}: {sources[0]["generation_dir"]} vs '
+                f'{gen_dir}. Merging them would put episodes made under different settings (model, '
+                f'context window, operator version) into one corpus with nothing recording which was '
+                f'which. Rebuild the odd one out, or build them as separate corpora.')
         for episode in load_episodes(gen_dir):
             status = episode['status']
+            # Counted before any drop: this is the generation's contamination rate, which the actor-hygiene
+            # gate reads. Counting survivors instead would report 0 exactly when the drop is working.
+            lenient_episodes += int(episode.get('lenient_responses', 0) > 0)
+            if episode.get('lenient_responses', 0) > 0:
+                # An unrecovered actor reply leaves an empty action in the trace that no label can
+                # describe. generate() already marks such runs 'degraded'; this also catches a corpus built
+                # from a generation directory made before that status existed.
+                dropped['lenient_response'] += 1
+                continue
             if status == 'not_activated':
                 dropped['not_activated'] += 1
                 continue
@@ -124,6 +141,11 @@ def build(gen_dirs, out_dir, ratios=None, heldout_variants=DEFAULT_HELDOUT, natu
                     'critical_step': label['critical']['step_index'], 'responsible_agent': label['critical']['agent'],
                     'mode': label['critical']['mode'], 'fault_step': label.get('fault_step'),
                     'acceptable_steps': label.get('acceptable_steps', [label['critical']['step_index']])}}
+            if episode['status'] not in INCLUDED_STATUSES:
+                # 'degraded' today, and a backstop for any future generation-side status that carries no
+                # gold. Keeps schema.GOLD_STATUSES the single definition of what a gold record may say.
+                dropped['degraded'] += 1
+                continue
             split = assign_split(episode['task_id'], ratios)
             if episode['operator'] and variant_key(episode['operator']) in heldout_variants and split != 'test':
                 dropped['heldout_variant_outside_test'] += 1
@@ -142,7 +164,6 @@ def build(gen_dirs, out_dir, ratios=None, heldout_variants=DEFAULT_HELDOUT, natu
             public_ids[split].append(tid)
             episodes_index[tid] = {'generation_dir': str(Path(gen_dir).resolve()),
                                    'episode_id': episode['episode_id'], 'split': split}
-            lenient_episodes += int(episode.get('lenient_responses', 0) > 0)
     agentrx = {}
     for split in SPLITS:
         gold[split].sort(key=lambda g: g['trajectory_id'])

@@ -231,7 +231,10 @@ class FaultLabelAndLearningTests(unittest.TestCase):
             return {'step_index': step, 'agent': 'x', 'category': category, 'probability': 0.5,
                     'violated_checks': [{'assertion_name': n, 'step_index': s} for n, s in checks]}
         ranked = [cand(4, 'MisinterpretationOfToolOutput', ('p3_seed_handoff_and_fact_grounding', 4)),
-                  cand(6, 'InvalidInvocation', ('p2_seed_valid_tool_invocation', 7)),           # stuck "processing"
+                  # Step 9 repeats step 7's identical call for an identical result, which is where a
+                  # loop becomes observable. The label test used to point at step 7 because the old
+                  # refinement matched the injector's stuck payload string on a single result.
+                  cand(6, 'InvalidInvocation', ('p2_seed_valid_tool_invocation', 9)),
                   cand(10, 'IntentPlanMisalignment', ('p1_seed_specialist_routing_alignment', 10)),  # 3rd call
                   cand(5, 'IntentPlanMisalignment', ('p1_seed_specialist_routing_alignment', 5)),   # refusal
                   cand(12, 'MisinterpretationOfToolOutput', ('p3_seed_handoff_and_fact_grounding', 12))]  # amount

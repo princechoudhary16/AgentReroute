@@ -25,7 +25,7 @@ import json
 from dataclasses import dataclass, field
 
 from ..io import digest
-from .llm import parse_json, request
+from .llm import ACTION_CONTRACT, TEXT_CONTRACT, parse_json, request
 from .retail import TOOL_SCHEMAS, WRITE_TOOLS, RetailDB
 
 STOP = '###STOP###'
@@ -168,7 +168,8 @@ class UserSimulator:
     def respond(self, agent_text, step_index):
         self.messages.append({'role': 'user', 'content': agent_text})
         completion = self.llm.complete(request(self.model, self.messages, self.temperature, self.seed,
-                                               json_mode=False, agent='user', step_index=step_index))
+                                               json_mode=False, agent='user', step_index=step_index,
+                                               contract=TEXT_CONTRACT))
         text = completion.text.strip()
         self.messages.append({'role': 'assistant', 'content': text})
         return text, completion
@@ -229,7 +230,8 @@ class Workflow:
         if records:  # the digest identifies the context the agent actually saw
             ctx['input_digest'] = digest(messages)
         completion = self.llm.complete(request(self.model, messages, self.temperature, self._seed(),
-                                               agent=agent, step_index=index, task_id=self.task['task_id']))
+                                               agent=agent, step_index=index, task_id=self.task['task_id'],
+                                               contract=ACTION_CONTRACT))
         self.lenient_responses += int(completion.lenient)
         try:
             action = parse_json(completion.text)

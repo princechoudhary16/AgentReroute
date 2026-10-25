@@ -16,6 +16,7 @@
   dashboard         self-contained HTML dashboard
   evaluate          standard suite on a split: baselines, recovery, comparisons, robustness, report, dashboard
   robustness        agent robustness per fault (MAS-FIRE RS, ToolMaze TSR/PRR/RC)
+  train             learn theta and prompt memory on a corpus split, then evaluate frozen
   smoke             offline end-to-end run with scripted agents (no model, no network)
 """
 import argparse
@@ -25,7 +26,8 @@ import time
 from pathlib import Path
 
 from .corpus import build, load_gold, load_public, natural_queue
-from .env.llm import DEFAULT_HOST, DEFAULT_MODEL, CachedLLM, LLMError, OllamaClient, request
+from .env.llm import (DEFAULT_HOST, DEFAULT_MODEL, DEFAULT_NUM_CTX, CachedLLM, GeminiActor, LLMError,
+                      OllamaClient, request)
 from .env.scripted import scripted_llm
 from .env.tasks import fetch_tau_retail
 from .generate import generate
@@ -41,7 +43,33 @@ BASELINES = ('random', 'last_step', 'heuristic', 'llm_judge', 'step_by_step')
 
 
 def _ollama(args, cache):
-    return CachedLLM(OllamaClient(args.host), cache)
+    """Cached Ollama client, for the judge baselines (not an actor: no action contract is declared)."""
+    return CachedLLM(OllamaClient(args.host, num_ctx=getattr(args, 'num_ctx', None) or DEFAULT_NUM_CTX), cache)
+
+
+def _actor(args, cache):
+    """The benchmark actor behind a response cache: local Ollama, or the Gemini bridge.
+
+    The model string must match the corpus being replayed, because CachedLLM keys on it: replaying with
+    a different actor than generation used turns every prefix into a cache miss, which is paid for twice
+    and loses the reproducible prefix that makes an injected run comparable to its clean pair.
+    """
+    if getattr(args, 'backend', 'ollama') == 'gemini':
+        actor = GeminiActor(args.model, settings={'temperature': 0.0},
+                            lenient_log=str(Path(cache).parent / 'lenient.jsonl'))
+    else:
+        actor = OllamaClient(args.host, num_ctx=getattr(args, 'num_ctx', None) or DEFAULT_NUM_CTX)
+    return CachedLLM(actor, cache)
+
+
+def _generation_cache(corpus):
+    """The response cache of the generation behind this corpus, so replays hit instead of re-buying."""
+    try:
+        index = read_json(Path(corpus) / 'gold' / 'episodes.json')
+    except (OSError, ValueError):
+        return None
+    directories = {row['generation_dir'] for row in index.values()}
+    return Path(next(iter(directories))) / 'llm_cache' if len(directories) == 1 else None
 
 
 def cmd_check_ollama(args):
@@ -77,7 +105,7 @@ def cmd_fetch_tau(args):
 
 def cmd_generate(args):
     config = read_json(args.config) if args.config else {}
-    for key in ('backend', 'model', 'host', 'data_dir', 'max_tasks'):
+    for key in ('backend', 'model', 'host', 'data_dir', 'max_tasks', 'num_ctx', 'task_slice'):
         value = getattr(args, key)
         if value is not None:
             config[key] = value
@@ -148,10 +176,12 @@ def cmd_score(args):
     return 0
 
 
-def _llm_factory(args):
+def _llm_factory(args, cache=None):
     if args.backend == 'scripted':
         return scripted_llm
-    shared = _ollama(args, args.cache_dir or Path(args.out).parent / 'llm_cache')
+    cache = args.cache_dir or cache or _generation_cache(getattr(args, 'corpus', None)) \
+        or Path(args.out).parent / 'llm_cache'
+    shared = _actor(args, cache)
     return lambda domain, task: shared
 
 
@@ -196,6 +226,70 @@ def cmd_oracle_ceiling(args):
     if not m['recovery_rate']['value']:
         print('WARNING: oracle recovers nothing - no learned policy can earn reward on this corpus.',
               file=sys.stderr)
+    return 0
+
+
+def _attributor(args, directory):
+    """Attribution-side provider for constraint synthesis, cached per request.
+
+    Separate from the actor on purpose: the actor replays episodes and needs the corpus's own model,
+    while synthesis is the reasoning job and can run on a different, larger one. Both can be the same
+    endpoint. Imported lazily because agentrx.rl_cross_branch imports this package.
+    """
+    from agentrx.providers import CachedProvider, HTTPProvider, OllamaProvider
+    if args.backend == 'gemini':
+        provider = HTTPProvider.from_config({'provider': 'gemini', 'model': args.model,
+                                             'settings': {'temperature': 0.0}})
+    else:
+        provider = OllamaProvider.from_config({'provider': 'ollama', 'model': args.model,
+                                               'base_url': args.host, 'num_ctx': args.num_ctx,
+                                               'settings': {'temperature': 0.0}})
+    return CachedProvider(provider, directory, namespace=f'synthesis:{args.model}')
+
+
+def cmd_train(args):
+    """Learn theta and the prompt memory on one split from observable feedback, then freeze and test.
+
+    The checkpoint is written, so an existing one is refused unless --resume is given: the frozen
+    baseline in checkpoints/ is what published numbers were measured against, and training over it in
+    place would destroy that without any record.
+    """
+    from agentrx.rl_cross_branch import train_and_evaluate_benchmark
+    if args.use_llm_synthesis and args.backend == 'scripted':
+        # The scripted backend is an offline fixture with no attribution provider behind it, and
+        # _attributor would quietly try to reach a model instead.
+        print('error: --use-llm-synthesis needs a model backend (ollama or gemini), not scripted.',
+              file=sys.stderr)
+        return 2
+    out = Path(args.out)
+    checkpoint = Path(args.checkpoint)
+    if checkpoint.exists() and not args.resume:
+        print(f'error: {checkpoint} exists and training writes to it. Pass --resume to continue from it, '
+              f'or choose a new path to keep the existing checkpoint reproducible.', file=sys.stderr)
+        return 2
+    out.mkdir(parents=True, exist_ok=True)
+    cache = args.cache_dir or _generation_cache(args.corpus) or (out / 'llm_cache')
+    provider = _attributor(args, out / 'synthesis_cache') if args.use_llm_synthesis else None
+    print(f'train={args.train_split} val={args.val_split} test={args.test_split} epochs={args.epochs} '
+          f'backend={args.backend} synthesis={args.use_llm_synthesis}\nactor cache: {cache}')
+    result = train_and_evaluate_benchmark(
+        args.corpus, train_split=args.train_split, test_split=args.test_split, epochs=args.epochs,
+        rl_state_path=str(checkpoint), llm_factory=_llm_factory(args, cache),
+        use_llm_synthesis=args.use_llm_synthesis, limit=args.limit, provider=provider,
+        val_split=args.val_split)
+    summary = {'corpus': str(args.corpus), 'backend': args.backend, 'model': args.model,
+               'epochs': args.epochs, 'use_llm_synthesis': args.use_llm_synthesis,
+               'splits': {'train': args.train_split, 'val': args.val_split, 'test': args.test_split},
+               **result}
+    write_json(out / 'train_val_summary.json', summary)
+    for row in result['train_history']:
+        # acceptance_minus_ledger_gap is the reward-hacking alarm: observable acceptance climbing away
+        # from the harness's own recovery rate means the policy is learning to satisfy the cheap check.
+        print(f'  epoch {row["epoch"]}: episodes={row["episodes"]} acted={row["n_acted"]} '
+              f'mean_reward={row["mean_reward"]:.3f} acceptance={row["acceptance_rate"]:.3f} '
+              f'harness_recovery={row["harness_recovery_rate"]} '
+              f'gap={row["acceptance_minus_ledger_gap"]:+.3f} val_exact_step={row["val_attribution_exact_step"]}')
+    print(f'checkpoint -> {checkpoint}\nsummary    -> {out / "train_val_summary.json"}')
     return 0
 
 
@@ -277,7 +371,11 @@ def parser():
     s = sub.add_parser('generate'); s.add_argument('--config', type=Path); s.add_argument('--out', required=True)
     s.add_argument('--backend', choices=('ollama', 'scripted', 'gemini')); s.add_argument('--model'); s.add_argument('--host')
     s.add_argument('--data-dir', dest='data_dir'); s.add_argument('--max-tasks', dest='max_tasks', type=int)
+    s.add_argument('--num-ctx', dest='num_ctx', type=int,
+                   help=f'ollama context window (default {DEFAULT_NUM_CTX}); overflow raises, never truncates')
     s.add_argument('--seeds', type=int, nargs='+'); s.add_argument('--operators', nargs='+')
+    s.add_argument('--task-slice', dest='task_slice',
+                   help='K/N: generate only every Nth task starting at K, for running N processes side by side into N output dirs that build-corpus then merges')
     s.set_defaults(fn=cmd_generate)
 
     s = sub.add_parser('build-corpus'); s.add_argument('--gen', nargs='+', required=True); s.add_argument('--out', required=True)
@@ -304,8 +402,11 @@ def parser():
     s = sub.add_parser('recover'); s.add_argument('--corpus', required=True); s.add_argument('--split', default='test')
     s.add_argument('--policy', choices=sorted(POLICIES), required=True); s.add_argument('--predictions')
     s.add_argument('--oracle', action='store_true'); s.add_argument('--failed-only', action='store_true')
-    s.add_argument('--limit', type=int); s.add_argument('--backend', choices=('ollama', 'scripted'), default='ollama')
-    s.add_argument('--cache-dir'); s.add_argument('--max-tokens', type=int, default=None,
+    s.add_argument('--limit', type=int)
+    s.add_argument('--backend', choices=('ollama', 'gemini', 'scripted'), default='ollama')
+    s.add_argument('--num-ctx', dest='num_ctx', type=int, default=DEFAULT_NUM_CTX)
+    s.add_argument('--cache-dir', help='default: the generation cache behind this corpus, so replays hit')
+    s.add_argument('--max-tokens', type=int, default=None,
                                                   help='fixed per-episode token cap (default: relative)')
     s.add_argument('--token-multiple', type=float, default=BudgetCaps.token_multiple,
                    help='relative cap: this many times the original run tokens')
@@ -315,11 +416,25 @@ def parser():
     model_args(s, model=False); s.set_defaults(fn=cmd_recover)
 
     s = sub.add_parser('oracle-ceiling'); s.add_argument('--corpus', required=True); s.add_argument('--split', default='train')
-    s.add_argument('--backend', choices=('ollama', 'scripted'), default='ollama'); s.add_argument('--cache-dir')
+    s.add_argument('--backend', choices=('ollama', 'gemini', 'scripted'), default='ollama')
+    s.add_argument('--cache-dir'); s.add_argument('--num-ctx', dest='num_ctx', type=int, default=DEFAULT_NUM_CTX)
     s.add_argument('--out'); s.add_argument('--limit', type=int); s.add_argument('--max-tokens', type=int, default=None)
     s.add_argument('--token-multiple', type=float, default=2.0); s.add_argument('--max-attempts', type=int, default=BudgetCaps.attempts)
     s.add_argument('--max-seconds', type=float, default=BudgetCaps.seconds); model_args(s, model=False)
     s.set_defaults(fn=cmd_oracle_ceiling)
+
+    s = sub.add_parser('train'); s.add_argument('--corpus', required=True); s.add_argument('--out', required=True)
+    s.add_argument('--checkpoint', required=True); s.add_argument('--resume', action='store_true')
+    s.add_argument('--backend', choices=('ollama', 'gemini', 'scripted'), default='ollama')
+    s.add_argument('--epochs', type=int, default=2); s.add_argument('--limit', type=int)
+    s.add_argument('--train-split', dest='train_split', default='train')
+    s.add_argument('--val-split', dest='val_split', default='calibration')
+    s.add_argument('--test-split', dest='test_split', default='test')
+    s.add_argument('--use-llm-synthesis', dest='use_llm_synthesis', action='store_true',
+                   help='synthesise LLM constraints; without it only seed checks run and the prompt '
+                        'memory receives nothing (constraints_used filters to origin == llm)')
+    s.add_argument('--cache-dir'); s.add_argument('--num-ctx', dest='num_ctx', type=int, default=DEFAULT_NUM_CTX)
+    model_args(s); s.set_defaults(fn=cmd_train)
 
     s = sub.add_parser('report'); s.add_argument('--attribution', nargs='*'); s.add_argument('--recovery', nargs='*')
     s.add_argument('--note'); s.add_argument('--out'); s.set_defaults(fn=cmd_report)
@@ -327,7 +442,9 @@ def parser():
     s.add_argument('--recovery', nargs='*'); s.add_argument('--out', default='dashboard.html'); s.add_argument('--title')
     s.set_defaults(fn=cmd_dashboard)
     s = sub.add_parser('evaluate'); s.add_argument('--corpus', required=True); s.add_argument('--split', default='test')
-    s.add_argument('--out', required=True); s.add_argument('--backend', choices=('ollama', 'scripted'), default='ollama')
+    s.add_argument('--out', required=True)
+    s.add_argument('--backend', choices=('ollama', 'gemini', 'scripted'), default='ollama')
+    s.add_argument('--num-ctx', dest='num_ctx', type=int, default=DEFAULT_NUM_CTX)
     s.add_argument('--cache-dir', help='LLM cache shared with generation (recommended: the generation cache)')
     s.add_argument('--max-tokens', type=int, default=None); s.add_argument('--token-multiple', type=float, default=2.0)
     s.add_argument('--max-attempts', type=int, default=BudgetCaps.attempts)

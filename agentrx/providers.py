@@ -241,13 +241,19 @@ class HTTPProvider:
                     'content_chars': len(text), 'output_tokens': raw.get('usage', {}).get('completion_tokens')}
         return text, raw.get('usage', {}), info
 
-    def generate_content(self, chat_messages, *, json_mode=True):
+    def generate_content(self, chat_messages, *, json_mode=True, response_schema=None):
         """Gemini NATIVE generateContent, for the actor path only (the attributor keeps complete()).
 
         Maps messages to native contents/parts, concatenates the text of all non-thought parts (skipping any
         part with thought: true), reads finishReason, and maps usageMetadata including thoughtsTokenCount
         (billed as output, so it is folded into completion_tokens). Returns (text, usage, lenient_info) with
-        the same leniency contract as complete_messages; transport errors still raise."""
+        the same leniency contract as complete_messages; transport errors still raise.
+
+        ``response_schema`` adds generationConfig.responseSchema, which constrains decoding to a shape instead
+        of only asking for the JSON mime type. Measured on one tau task (benchmark/runs/threeway.log): mime
+        type alone aborted 4/23 action turns with MALFORMED_RESPONSE or unparseable JSON, no mime type 2/20,
+        and an explicit schema 0/14. Gemini requires the JSON mime type alongside a schema, so a schema
+        without ``json_mode`` is a caller error rather than a silently dropped field."""
         system = '\n'.join(m['content'] for m in chat_messages if m.get('role') == 'system')
         contents = [{'role': 'model' if m['role'] == 'assistant' else 'user', 'parts': [{'text': m['content']}]}
                     for m in chat_messages if m.get('role') != 'system']
@@ -259,6 +265,10 @@ class HTTPProvider:
             gen_cfg['temperature'] = self.settings['temperature']
         if json_mode:
             gen_cfg['responseMimeType'] = 'application/json'
+            if response_schema is not None:
+                gen_cfg['responseSchema'] = response_schema
+        elif response_schema is not None:
+            raise ProviderError('responseSchema requires json_mode: Gemini needs the JSON mime type with a schema')
         if gen_cfg:
             body['generationConfig'] = gen_cfg
         native_url = (self.base_url[:-len('/openai')] if self.base_url.endswith('/openai') else self.base_url) \
