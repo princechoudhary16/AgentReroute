@@ -23,12 +23,42 @@ CORPUS = Path('data/benchmark/cases.json')
 
 def gold_index(path=CORPUS):
     """trajectory_id -> (gold step index, gold category), per domain-agnostic id."""
+    raw = json.loads(Path(path).read_text(encoding='utf-8'))
+    cases = raw.get('cases', []) if isinstance(raw, dict) else raw
     index = {}
-    for case in json.loads(Path(path).read_text(encoding='utf-8')):
+    for case in cases:
         critical = (case.get('gold') or {}).get('critical') or {}
         tid = str(case['gold'].get('trajectory_id') or case['trajectory']['trajectory_id'])
         index[tid] = (critical.get('step_index'), critical.get('category'))
     return index
+
+
+def corpus_for_run(run_dir, override=None):
+    """The corpus a run was scored against, taken from the run itself where possible.
+
+    This used to default to data/benchmark unconditionally. A run over any other corpus then
+    matched no trajectory_id, every gold lookup returned (None, None), and the monitor reported a
+    confident 0.0% for a variant that was actually at 73.7%. The corpus is now derived from the
+    run, and a mismatch is reported instead of being scored as a miss.
+    """
+    if override:
+        return Path(override)
+    try:
+        identity = json.loads((Path(run_dir)/'experiment.json').read_text(encoding='utf-8'))
+        wanted = identity['identity']['corpus_hash']
+    except (OSError, ValueError, KeyError, TypeError):
+        return Path(CORPUS)
+    for manifest in sorted(Path('.').glob('**/manifest.json')):
+        if any(part in ('.git', 'node_modules', 'requests') for part in manifest.parts):
+            continue
+        try:
+            if json.loads(manifest.read_text(encoding='utf-8')).get('corpus_hash') == wanted:
+                candidate = manifest.parent/'cases.json'
+                if candidate.exists():
+                    return candidate
+        except (OSError, ValueError):
+            continue
+    return Path(CORPUS)
 
 
 def tally(run_dir, gold):
@@ -50,13 +80,18 @@ def tally(run_dir, gold):
             # itself silently scored every abstention as a wrong answer instead.
             row['abstain'] += 1
             continue
-        want_step, want_category = gold.get(str(data.get('trajectory_id')), (None, None))
+        tid = str(data.get('trajectory_id'))
+        if tid not in gold:
+            # No gold for this id means the wrong corpus, not a wrong answer. Counted and reported.
+            row['unknown_gold'] = row.get('unknown_gold', 0) + 1
+            continue
+        want_step, want_category = gold[tid]
         row['step'] += prediction.get('step_index') == want_step
         row['category'] += prediction.get('category') == want_category
     return rows
 
 
-def render(run_dir, gold, started):
+def render(run_dir, gold, started, corpus=None):
     rows = tally(run_dir, gold)
     if not rows:
         return f'{run_dir}: no completed traces yet'
@@ -66,7 +101,12 @@ def render(run_dir, gold, started):
         n = row['n']
         out.append(f'{variant:<22}{domain:<10}{n:>5}'
                    f'{100 * row["step"] / n:>9.1f}%{100 * row["category"] / n:>8.1f}%{row["abstain"]:>9}')
+    unknown = sum(r.get('unknown_gold', 0) for r in rows.values())
     done = sum(r['n'] for r in rows.values())
+    if unknown:
+        out.append(f'WARNING: {unknown}/{done} traces have no gold entry in {corpus}. '
+                   f'Those are counted as misses, so every accuracy above is a FLOOR, not the '
+                   f'real value. Pass --cases <the corpus this run scored against>.')
     elapsed = time.time() - started
     if done and elapsed > 0:
         rate = done / (elapsed / 60)
@@ -86,9 +126,14 @@ def main(argv=None):
     if not Path(args.run_dir).exists():
         print(f'{args.run_dir} does not exist yet', file=sys.stderr)
         return 2
-    gold, started = gold_index(args.cases), time.time()
+    corpus = corpus_for_run(args.run_dir, args.cases if args.cases != str(CORPUS) else None)
+    if not corpus.exists():
+        print(f'corpus {corpus} not found', file=sys.stderr)
+        return 2
+    gold, started = gold_index(corpus), time.time()
+    print(f'scoring against {corpus}', flush=True)
     while True:
-        print(render(args.run_dir, gold, started), flush=True)
+        print(render(args.run_dir, gold, started, corpus), flush=True)
         if not args.follow:
             return 0
         print('-' * 68, flush=True)
