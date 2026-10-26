@@ -40,7 +40,18 @@ means a rate-limited arm reports a plausible wrong number instead of failing lou
 | `synth_select_p10` magentic | 24/44 | a 55/45 mixture of theta and the selector |
 
 `analyze_run.py` now flags any arm whose selector failed on 20% or more of traces. Do not quote
-those rows. A clean magentic synthesis number needs a rerun with `tpm_limit` set.
+those rows.
+
+A clean magentic synthesis number was attempted (`configs/gemini_magentic_synth.json`) and could
+not be obtained: all 203 provider calls returned HTTP 402, the billing cap. Nothing in that run is
+usable and its export was moved to `runs/magentic-synth/VOID-all-calls-402-billing.csv` rather than
+kept here. That cell remains open.
+
+Note a second silent degradation, distinct from the selector fallback: when synthesis calls fail,
+`synthesize_perspective_constraints` keeps the deterministic seeds, so a synthesis arm reports what
+looks like a valid seeds-only result rather than a failure. The giveaway is the pool size, which is
+~1.2 candidates on magentic and ~4.5 on tau for seeds, against 5-12 with synthesis working. The
+void run above showed pool 1.23 while configured for synthesis, which is how it was caught.
 
 ## Ablations (`selector-evidence.csv`, same 73 cases, all clean)
 

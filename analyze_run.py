@@ -173,6 +173,11 @@ def main(argv=None):
             flat = [c for x in r for c in x['violations']]
             fb = sum(x['fell_back'] for x in r)
             errs = sum(x.get('selector_error', False) for x in r)
+            # A synthesis arm whose provider calls failed degrades silently to the seed
+            # constraints (synthesize_perspective_constraints keeps the seeds on failure), so the
+            # row looks like a valid seeds-only result instead of a failed synthesis one. The
+            # giveaway is the pool: seeds average ~1.2 candidates on magentic and ~4.5 on tau,
+            # while synthesis reaches 5-12. Judged together with the selector errors.
             mark = ' <-- TAINTED' if errs and errs / n >= 0.2 else ''
             if mark:
                 tainted.append((v, errs, n))
