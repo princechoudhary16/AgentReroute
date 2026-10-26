@@ -1,0 +1,44 @@
+{
+  "name": "gemini-selector",
+  "client": {
+    "provider": "gemini",
+    "model": "gemini-3.1-flash-lite",
+    "api_key_env": "GEMINI_API_KEY",
+    "settings": { "temperature": 0, "max_tokens": 16000 },
+    "timeout": 300,
+    "retries": 6
+  },
+  "repetitions": 1,
+  "domains": ["tau", "magentic"],
+  "limit_per_domain": 44,
+  "variants": [
+    {
+      "name": "mp_rl_select_trace",
+      "evidence": false,
+      "protocol": "mp_rl",
+      "llm_selector": "trace",
+      "selector_pool": 5
+    },
+    {
+      "name": "mp_rl_select_pool",
+      "evidence": false,
+      "protocol": "mp_rl",
+      "llm_selector": "pool",
+      "selector_pool": 5
+    },
+    {
+      "name": "mp_rl_top1",
+      "evidence": false,
+      "protocol": "mp_rl",
+      "recovery_loop": false
+    },
+    {
+      "name": "agentrx",
+      "evidence": true,
+      "checklist": true,
+      "generation": "oneshot",
+      "protocol": "joint",
+      "recovery_loop": false
+    }
+  ]
+}

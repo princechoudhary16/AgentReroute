@@ -12,6 +12,7 @@ from .io import digest, read_json, write_json
 from .pipeline import diagnose, validate_config
 from .prompts import prompt_identity
 from .providers import CachedProvider, HTTPProvider
+from .selector import LessonBank
 from .handoff import validate_handoff, CONFIDENCE_KIND
 
 
@@ -38,7 +39,8 @@ def experiment_variants(config):
         raise ValueError('variants must be a non-empty list')
     result, names = [], set()
     for variant in variants:
-        if set(variant) - {'name','evidence','checklist','generation','protocol','python_timeout','divergence_threshold','max_candidates','recovery_loop','rl_state_path'}:
+        if set(variant) - {'name','evidence','checklist','generation','protocol','python_timeout','divergence_threshold','max_candidates','recovery_loop','repair_cascade','rl_state_path',
+                            'llm_selector','selector_pool','lesson_bank'}:
             raise ValueError('Unsupported variant field')
         name = variant.get('name','')
         if not isinstance(name,str) or not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_.-]*',name) or name in names:
@@ -106,8 +108,11 @@ def run_experiment(corpus_dir, config, output, provider_factory=None):
     prepare = getattr(provider, 'prepare_for_run', None)
     if prepare is not None:
         prepare()
+    banks = {v['lesson_bank']: LessonBank.load(v['lesson_bank']).bank_digest
+             for v in config['variants'] if v.get('lesson_bank')}
     identity = {'config':config,'corpus_hash':manifest['corpus_hash'], 'provider':provider.identity,
-                'prompt_hash':prompt_identity(),'implementation_hash':implementation_hash()}
+                'prompt_hash':prompt_identity(),'implementation_hash':implementation_hash(),
+                'lesson_banks':banks}
     identity_hash = digest(identity)
     output = Path(output)
     metadata_path = output/'experiment.json'

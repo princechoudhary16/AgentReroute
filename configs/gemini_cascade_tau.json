@@ -1,0 +1,42 @@
+{
+  "name": "gemini-cascade-tau",
+  "client": {
+    "provider": "gemini",
+    "model": "gemini-3.1-flash-lite",
+    "api_key_env": "GEMINI_API_KEY",
+    "settings": { "temperature": 0, "max_tokens": 16000 },
+    "timeout": 300,
+    "retries": 6
+  },
+  "repetitions": 1,
+  "domains": ["tau"],
+  "limit_per_domain": 29,
+  "variants": [
+    {
+      "name": "agentrx",
+      "evidence": true,
+      "checklist": true,
+      "generation": "oneshot",
+      "protocol": "joint",
+      "recovery_loop": false
+    },
+    {
+      "name": "mp_rl_top1",
+      "evidence": false,
+      "protocol": "mp_rl",
+      "recovery_loop": false
+    },
+    {
+      "name": "mp_rl_cascade3",
+      "evidence": false,
+      "protocol": "mp_rl",
+      "repair_cascade": 3
+    },
+    {
+      "name": "mp_rl_cascade5",
+      "evidence": false,
+      "protocol": "mp_rl",
+      "repair_cascade": 5
+    }
+  ]
+}

@@ -467,3 +467,43 @@ def verify_and_score_state_change(trajectory, checks, effective_constraints, rec
                                              f"Repair verified as {result['feedback']} (R={result['reward']:.2f})")
         rl_judge.pending.pop(str(trajectory['trajectory_id']), None)
     return result
+
+
+def repair_cascade(trajectory, checks, effective_constraints, ranked, candidates, probs,
+                   policy, tools, provider, context, top_k=3):
+    """[C6] Repair-and-verify cascade over the top-k blamed candidates.
+
+    Walks the ranked candidates in order; for each one it regenerates the step ([C3]) and runs the
+    same 3-layer verifier ([C4]). The first candidate whose repair verifies '+' -- total violations
+    strictly down with no other lens regressed -- becomes the answer. If none verify, the cascade is
+    inconclusive and the caller keeps the ranked top-1.
+
+    This is inference only: no gold label is read, and ``rl_judge`` is deliberately not passed to the
+    verifier, so theta never moves and each trajectory is scored independently of every other.
+    """
+    memory = PromptMemoryBank()          # fresh per trajectory: anti-repeat within, no carry-over across
+    attempts = []
+    for cand in ranked[:max(0, int(top_k))]:
+        entry = {'rank': cand['rank'], 'candidate_index': cand['candidate_index'],
+                 'candidate': {'step_index': cand['step_index'], 'agent': cand['raw_agent'],
+                               'category': cand['dominant_category'],
+                               'perspective': cand['dominant_perspective'],
+                               'probability': cand['probability']}}
+        try:
+            recovery = live_dynamic_recover(trajectory, cand, policy, tools, provider, memory)
+            verification = verify_and_score_state_change(trajectory, checks, effective_constraints, recovery,
+                                                         cand, candidates, probs, provider, context, None)
+        except Exception as exc:
+            entry.update(status='error', error=f'{type(exc).__name__}: {exc}', accepted=False)
+            attempts.append(entry)
+            continue
+        entry.update(status='ok', mode=recovery['mode'], layer1_passed=recovery['layer1_passed'],
+                     feedback=verification['feedback'], reward=verification['reward'],
+                     v_before=verification.get('v_before'), v_after=verification.get('v_after'),
+                     delta_v=verification.get('delta_v'), accepted=verification['feedback'] == '+')
+        attempts.append(entry)
+        if entry['accepted']:
+            return {'status': 'ok', 'resolution': 'verified', 'accepted_rank': cand['rank'],
+                    'chosen': cand, 'attempts': attempts, 'top_k': int(top_k)}
+    return {'status': 'ok', 'resolution': 'exhausted', 'accepted_rank': None,
+            'chosen': ranked[0] if ranked else None, 'attempts': attempts, 'top_k': int(top_k)}

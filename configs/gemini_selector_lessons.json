@@ -1,0 +1,31 @@
+{
+  "name": "gemini-selector-lessons",
+  "client": {
+    "provider": "gemini",
+    "model": "gemini-3.1-flash-lite",
+    "api_key_env": "GEMINI_API_KEY",
+    "settings": { "temperature": 0, "max_tokens": 16000 },
+    "timeout": 300,
+    "retries": 6
+  },
+  "repetitions": 1,
+  "domains": ["tau", "magentic"],
+  "limit_per_domain": 44,
+  "variants": [
+    {
+      "name": "mp_rl_select_trace",
+      "evidence": false,
+      "protocol": "mp_rl",
+      "llm_selector": "trace",
+      "selector_pool": 5
+    },
+    {
+      "name": "mp_rl_select_lessons",
+      "evidence": false,
+      "protocol": "mp_rl",
+      "llm_selector": "trace",
+      "selector_pool": 5,
+      "lesson_bank": "runs/lessons/tau_lessons.json"
+    }
+  ]
+}
