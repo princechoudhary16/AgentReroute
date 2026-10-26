@@ -1,0 +1,143 @@
+#!/usr/bin/env python3
+"""Score a finished experiment the way the report needs it: accuracy with intervals, the recall
+decomposition that explains it, and paired significance against a reference variant.
+
+Raw percentages on 29 traces are misleading: one trace is 3.4 points. So every accuracy carries a
+95% Wilson interval, and every comparison against the reference is an exact paired McNemar test on
+the same trajectories. The recall decomposition splits each variant's accuracy into the part
+explained by whether the true fault was in the candidate pool at all, which is what the
+measurements in this project kept pointing at.
+
+Usage:  python3 analyze_run.py runs/gemini-final [--reference agentrx]
+"""
+import argparse, json, math, sys
+from collections import defaultdict
+from pathlib import Path
+
+REFERENCE_PUBLISHED = {'tau': 31.03, 'magentic': 18.18}
+
+
+def wilson(k, n, z=1.96):
+    if not n:
+        return (0.0, 0.0)
+    p, d = k / n, 1 + z * z / n
+    centre = p + z * z / (2 * n)
+    margin = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+    return (max(0.0, (centre - margin) / d * 100), min(100.0, (centre + margin) / d * 100))
+
+
+def mcnemar(a_hits, b_hits, keys):
+    """Exact two-sided binomial test on discordant pairs. a = reference, b = challenger."""
+    b_wins = sum(1 for k in keys if not a_hits.get(k) and b_hits.get(k))
+    a_wins = sum(1 for k in keys if a_hits.get(k) and not b_hits.get(k))
+    n = a_wins + b_wins
+    if n == 0:
+        return b_wins, a_wins, 1.0
+    tail = sum(math.comb(n, i) for i in range(min(a_wins, b_wins) + 1))
+    return b_wins, a_wins, min(1.0, 2 * tail / 2 ** n)
+
+
+def load(run_dir):
+    """(variant, domain, trajectory_id) -> {hit, gold_in_pool, pool, in_pool_pick}."""
+    rows = {}
+    gold = {}
+    predictions = Path(run_dir) / 'predictions.csv'
+    if predictions.exists():
+        import csv
+        for r in csv.DictReader(open(predictions)):
+            gold[(r['domain'], r['trajectory_id'])] = r['gold_step']
+    for job in sorted((Path(run_dir) / 'jobs').iterdir()):
+        for f in (job / 'rep-0').rglob('result.json'):
+            d = json.loads(f.read_text(encoding='utf-8'))
+            key = (job.name, d['domain'], str(d['trajectory_id']))
+            g = gold.get((d['domain'], str(d['trajectory_id'])))
+            pool = [c['step_index'] for c in d.get('ranked_candidates', [])]
+            pred = (d.get('prediction') or {}).get('step_index')
+            sel = d.get('selection') or {}
+            rows[key] = {'hit': g is not None and str(pred) == str(g),
+                         'gold_in_pool': g is not None and str(g) in {str(x) for x in pool},
+                         'pool': len(pool), 'abstain': pred is None,
+                         'violations': [len(c.get('violated_checks') or [])
+                                        for c in d.get('ranked_candidates', [])],
+                         'fell_back': bool(sel.get('fell_back'))}
+    return rows, gold
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('run_dir')
+    ap.add_argument('--reference', default='agentrx', help='variant every other is compared against')
+    args = ap.parse_args(argv)
+    if not Path(args.run_dir).exists():
+        print(f'{args.run_dir} does not exist', file=sys.stderr)
+        return 2
+    rows, gold = load(args.run_dir)
+    if not rows:
+        print(f'{args.run_dir}: no completed traces yet', file=sys.stderr)
+        return 2
+    if not gold:
+        print('WARNING: predictions.csv absent, so no gold is available yet. '
+              'Accuracies below would all read 0; rerun once the experiment finishes.', file=sys.stderr)
+        return 2
+
+    variants = sorted({k[0] for k in rows})
+    domains = sorted({k[1] for k in rows})
+
+    print(f'\n=== {args.run_dir} ===')
+    for domain in domains:
+        keys = sorted({k[2] for k in rows if k[1] == domain})
+        print(f'\n--- {domain}  (n={len(keys)})'
+              f'{"   agentrx published: %.2f%%" % REFERENCE_PUBLISHED[domain] if domain in REFERENCE_PUBLISHED else ""}')
+        print(f'  {"variant":<20}{"acc":>8}{"95% CI":>16}{"recall":>9}{"in-pool":>10}'
+              f'{"out-pool":>10}{"pool":>7}{"viol/c":>8}')
+        hits = {}
+        for v in variants:
+            present = [k for k in keys if (v, domain, k) in rows]
+            if not present:
+                continue
+            r = [rows[(v, domain, k)] for k in present]
+            n = len(r)
+            k_hit = sum(x['hit'] for x in r)
+            hits[v] = {k: rows[(v, domain, k)]['hit'] for k in present}
+            gip = [x for x in r if x['gold_in_pool']]
+            ngip = [x for x in r if not x['gold_in_pool']]
+            lo, hi = wilson(k_hit, n)
+            flat = [c for x in r for c in x['violations']]
+            print(f'  {v:<20}{100*k_hit/n:>7.1f}%{f"[{lo:.1f}, {hi:.1f}]":>16}'
+                  f'{100*len(gip)/n:>8.1f}%'
+                  f'{(100*sum(x["hit"] for x in gip)/len(gip) if gip else 0):>9.0f}%'
+                  f'{(100*sum(x["hit"] for x in ngip)/len(ngip) if ngip else 0):>9.0f}%'
+                  f'{sum(x["pool"] for x in r)/n:>7.2f}{(sum(flat)/len(flat) if flat else 0):>8.2f}')
+        if args.reference in hits:
+            print(f'\n  paired McNemar against {args.reference} (exact, two-sided):')
+            for v in variants:
+                if v == args.reference or v not in hits:
+                    continue
+                shared = [k for k in keys if k in hits[v] and k in hits[args.reference]]
+                w, l, p = mcnemar(hits[args.reference], hits[v], shared)
+                mark = 'SIGNIFICANT' if p < 0.05 else 'not significant'
+                print(f'    {v:<20} wins {w:>2}, losses {l:>2}, n={len(shared):>3}  p={p:.4f}  {mark}')
+            # Identity, not a forecast: recall*in-pool + (1-recall)*out-pool IS the accuracy. It is
+            # printed to show how much of each variant's score rides on pool recall rather than on
+            # selection quality. The predictive use is cross-variant: take one variant's in-pool and
+            # out-pool rates, substitute another's recall, and you get an estimate worth testing.
+            print('\n  accuracy decomposed by pool recall (identity, not a forecast):')
+            for v in variants:
+                present = [k for k in keys if (v, domain, k) in rows]
+                r = [rows[(v, domain, k)] for k in present]
+                if not r:
+                    continue
+                gip = [x for x in r if x['gold_in_pool']]
+                ngip = [x for x in r if not x['gold_in_pool']]
+                rec = len(gip)/len(r)
+                ip = (sum(x['hit'] for x in gip)/len(gip)) if gip else 0
+                op = (sum(x['hit'] for x in ngip)/len(ngip)) if ngip else 0
+                print(f'    {v:<20}{100*(rec*ip+(1-rec)*op):>7.1f}%  actual '
+                      f'{100*sum(x["hit"] for x in r)/len(r):>5.1f}%')
+    print()
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

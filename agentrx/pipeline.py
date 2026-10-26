@@ -54,8 +54,10 @@ def validate_config(config):
         if result['repair_cascade']:
             raise ValueError('llm_selector and repair_cascade both decide the prediction; enable one')
         if type(result['selector_pool']) is not int or type(result['selector_pool']) is bool \
-                or not 1 <= result['selector_pool'] <= 10:
-            raise ValueError('selector_pool must be an int in 1..10')
+                or not 1 <= result['selector_pool'] <= 20:
+            # Seeds-only pools average 4.5, but synthesis pushes them past 10, and a cap below the
+            # pool size hides gold from the selector entirely.
+            raise ValueError('selector_pool must be an int in 1..20')
         # Selection is inference only, like the cascade: theta is read, never written.
         result['recovery_loop'] = False
     elif result['lesson_bank'] is not None:
