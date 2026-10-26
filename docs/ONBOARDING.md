@@ -1,296 +1,201 @@
 # AgentReroute, from scratch
 
-Written to be read top to bottom by someone who has never seen this repo. Each section assumes
-only the ones before it. Stop at any point and you will still have a coherent picture.
+For a person who has never seen this project. It builds up from the problem, explains each piece as
+it becomes necessary, and is honest about the parts that did not work, because those are where most
+of the learning is. No prior knowledge of the codebase is assumed.
 
-Last updated 2026-10-26.
+## 1. The problem
 
----
+An AI agent is given a job: cancel a customer's order, find a fact on the web, process a return. It
+works through the job in steps, calling tools and reading their output. Sometimes it fails.
 
-## 1. The question
+When it fails, you want to know **which step caused it**. That is harder than it sounds, because
+the step where the failure becomes visible is almost never the step that caused it. An agent that
+misreads an order status at step 21 may not visibly go wrong until it tries to cancel at step 33.
+Every step in between inherits the mistake and looks broken too.
 
-A multi-agent system runs: a planner takes a customer request, hands off to specialists, they
-call tools, something goes wrong, the customer leaves unhappy.
+This is called **fault attribution**. The task: read the trace, name the step and the agent
+responsible. You are scored on exact step match. Naming step 22 when the answer is 21 scores zero.
 
-**Which step caused it?**
+## 2. The method we started from
 
-Not "the run failed", but "step 19, the returns agent, misread the tool output". That is
-*fault attribution*, and it is the whole project.
+A published system called **AgentRx** does this in the most direct way available. It gives one
+language model the entire trajectory and asks: which step is the decisive failure? One call, one
+answer.
 
-## 2. Why it is hard
+It scores 31.03% on tau (a retail customer-service benchmark) and 18.18% on magentic (web
+browsing). Those numbers are the bar. The first thing we did was reproduce them, and we land on
+31.0% and 18.2%, which is how we know our measurement apparatus is honest.
 
-To prove you can find the culprit step, you need failures where the culprit is already known.
+Why look for something better? A single verdict is opaque. It tells you *where*, never *which
+obligation was broken*. Nothing downstream can act on it.
 
-Real failures do not arrive labelled. Nobody annotates production traces with "the mistake
-happened at step 19". So you cannot simply collect failures and check your answers.
+## 3. Our idea: three lenses instead of one verdict
 
-**The way around it: manufacture failures whose cause you chose.** That is the generation phase,
-and it is why half this repo exists.
+Rather than one judge, use three reviewers, each responsible for a different kind of failure:
 
-## 3. Manufacturing labelled failures
+- **Intent and plan**: did the step follow the user's request and the domain policy, and did it
+  make real progress?
+- **Tool execution**: was the call well formed, were required arguments present, did it succeed?
+- **Handoff and grounding**: was every claim traceable to something actually observed?
 
-Start with a task from tau-bench retail, a customer-service benchmark. For example:
+Each reviewer checks **constraints**: concrete obligations that can be settled against the trace.
+"The order id passed to `cancel_pending_order` must appear in an earlier message." Those are
+checkable in Python, deterministically, with no model call at all.
 
-> You are Yusuf Rossi in 19122. You received order #W2378156 and want to exchange the mechanical
-> keyboard for one with clicky switches.
+Crucially, a check only ever sees the steps up to the one being judged. Letting it see the future
+would be cheating, and the code enforces it.
 
-Run the multi-agent system on it. Three outcomes matter:
+When a check fails, you get a **violation**: this step, this agent, this broken obligation, this
+evidence. That structured record is the thing a single judge never produces.
 
-**The clean run.** No interference. Did the system solve the task?
+## 4. From violations to an answer
 
-**Eligibility.** A task is only useful if its clean run *succeeded*. The reason is strict:
+Violations are evidence, not an answer. Several steps usually carry some.
 
-> 1. The system can do this task unaided
-> 2. You broke exactly one thing, at one step
-> 3. It then failed
->
-> Therefore that thing caused the failure.
+**The blame matrix** aggregates them: for each lens and each agent, what fraction of that agent's
+checks failed. **Candidates** are then built, one per (agent, step) with a violation, each
+described by ten numbers: how dense its violations are, how many lenses agree, how early it sits.
 
-Remove leg 1 and the argument collapses. If the system already fails, sabotaging it and watching
-it fail proves nothing. On our corpus only **35 of 115 tasks (30%)** passed their clean run. The
-other 80 were discarded. That is not waste, it is the precondition for a valid label.
+Then something picks one. The original design learned ten weights by reinforcement learning,
+scoring each candidate and taking the highest.
 
-**Injection.** Into an eligible task's trajectory, insert one deliberate fault at one position:
-drop the context on a handoff, misroute to the wrong specialist, return a stale tool result. Then
-replay. The culprit step is now known *by construction*, because you picked it.
+That is where the project got interesting, because it did not work.
 
-### What comes out
+## 5. What went wrong, three times
 
-One recorded attempt is an **episode**. Our corpus has 733 of them:
+### Training the weights made it worse
 
-| status | meaning | useful for training? |
+On a held-out set of 100 traces, untrained weights scored 44% and trained weights scored 36%. A
+paired statistical test gives p = 0.0078, with eight traces broken and none fixed, so this is not
+bad luck.
+
+The cause was the reward. We rewarded the policy when, after repairing the blamed step, the number
+of violations went down. That sounds reasonable and is not: some steps are simply easier to repair
+than others, regardless of whether they caused anything. The policy learned to find those. We
+measured the gap between the reward and real recovery at 17.6 points.
+
+**The lesson**: a reward you can satisfy without solving the task will be satisfied without solving
+the task. We stopped training and kept the untrained weights.
+
+### Repairing the top three changed nothing
+
+If the ranking is unreliable, test it. Take the three most blamed steps, try repairing each, and
+answer with whichever repair holds up.
+
+Accuracy before: 13.8%. After: 13.8%. It moved six answers, and all six moved to another wrong
+step. In the five traces where the correct step was sitting at rank two or three, it picked that
+rank zero times.
+
+The reason is the same shape as before. Ask a model to rewrite any step and it will produce one
+that satisfies more constraints. "Violations went down" is not evidence that this step was the
+fault.
+
+### The diagnosis
+
+Two failures in, we stopped guessing and split the results by a single question: **was the correct
+step even among the candidates?**
+
+| | correct step in the pool | not in the pool |
 |---|---|---|
-| `failed` | the injected fault caused failure | **yes, 322 of these** |
-| `tolerated` | fault injected, system recovered anyway | no causal link |
-| `not_activated` | the fault's precondition never arose | nothing happened |
-| `clean` | the successful baseline | reference |
-| `natural_failure` | a clean run that failed by itself | cause unknown |
+| tau | 70% correct | 16% correct |
+| magentic | 89% correct | 9% correct |
 
-**322 gold-labelled episodes** is the actual dataset.
+The decision stage was never the problem. Give it the right option and it finds it most of the
+time. It simply was not being given the right option: the correct step was in the pool only 41.4%
+of the time on tau and 20.5% on magentic.
 
-> **Checkpoint.** Generation does not train anything. It produces data. If that is clear, continue.
+Everything we had tried improved **ranking**. The binding constraint was **recall**. Three ideas
+aimed at the wrong stage of the pipeline.
 
-## 4. Finding the fault
+## 6. Why recall was so low
 
-Now the other half: given a trajectory and no labels, name the culprit step.
+Something structural, and easy to miss.
 
-### Step 1, run rules over every step
+Our training corpus is multi-agent: a planner routes work to specialist agents. The published tau
+benchmark is a **single assistant** calling tools. Two of our three lenses ask about routing and
+handoff, and on a single-agent trace those questions have no content.
 
-Five hand-written Python predicates, grouped into three viewpoints:
+The numbers are stark. The routing check fires 268 times on our corpus and **zero** times on the
+benchmark. The handoff check, 104 against 8.
 
-- **P1_INTENT_PLAN** (2 rules): did the plan stay coherent?
-- **P2_TOOL_EXECUTION** (1 rule): were tools invoked correctly?
-- **P3_HANDOFF_GROUNDING** (2 rules): did information survive the handoffs?
+So on published tau we effectively run on two checks, and **every candidate carries exactly one
+violation, 130 out of 130**. Nothing is ever corroborated. The features our policy ranks on, like
+"how many lenses agree", are constants. That explains the training failure too: the weights were
+fitted where evidence is corroborated and applied where it never is.
 
-One of them, simplified:
+## 7. What we built instead
 
-```python
-def p2_seed_valid_tool_invocation(trajectory, current_step_index):
-    for call in tool_calls_at(current_step_index):
-        if not isinstance(call.get('arguments'), dict):
-            return False          # malformed invocation
-        if call['name'] not in catalog:
-            return False          # tool that does not exist
-```
+Two changes, in order.
 
-Each rule runs against each step and returns SAT, VIOL or SKIP. **No model is involved.**
+**Put a model in the decision path.** Replace the ten weights with one call that receives the
+trace, the blame matrix, and the candidates with the exact obligations each one broke. It is told
+explicitly that the checks are machine generated, that false positives are common, and that the
+true fault often raised no violation at all. It may name any step, not only a candidate.
 
-A rule only sees `prefix(trajectory, offset)`, the steps up to and including the one being
-checked. It cannot see the future. Without that, a check could flag step 5 because of what
-happened at step 40, which is hindsight, and it would make the problem look easy for the wrong
-reason.
+On tau: 13.8% to 34.5%. Across both benchmarks this beats the learned ranker on nine traces and
+loses on one, p = 0.0215. It is the one statistically solid result in the project.
 
-### Step 2, aggregate into blame
+Letting it range over the whole trace matters: confined to the candidate pool it scores 24.1%,
+free it scores 34.5%. The pool was a ceiling.
 
-For each (viewpoint, agent): `blame = violations / (violations + satisfactions)`. How often does
-this viewpoint find this agent in violation?
+**Then attack recall.** Let each lens write constraints for the trace in front of it instead of
+only using fixed ones. On tau, pool recall rises 41.4% to 48.3% and accuracy reaches **37.9%**,
+past the 31.0% baseline. On magentic the same change nearly doubles recall but inflates the pool to
+twelve candidates, and the extra options distract more than they help.
 
-### Step 3, build candidates
+## 8. Where it ends up
 
-Every agent-owned step with a violation becomes a **candidate**. On tau traces there are about
-4.5 candidates per trace. A violation on a tool output is folded into the agent that called it.
-
-### Step 4, rank them
-
-Each candidate becomes 10 numbers:
-
-```
-f0..f2   blame under P1, P2, P3
-f3..f5   violation density per viewpoint
-f6       how much evidence came from executable checks
-f7       position in the trace
-f8       how many viewpoints flagged it
-f9       peak density
-```
-
-Score each with `theta . h`, softmax, take the highest. That is the prediction.
-
-`theta` is 10 weights. That is the entire learned model.
-
-> **Checkpoint.** With rules alone, this pipeline makes **zero model calls**. Verified: 16,325
-> checks across 80 traces, all of them Python. The LLM is optional and enters later.
-
-## 5. Where the LLM fits
-
-Turn on the `evidence` flag and a model *writes additional constraints* for the specific trace,
-on top of the five hand-written ones. Some are executable; some are natural-language rubrics that
-need a judge call per step.
-
-Crucially: **the model never picks the final step.** It enriches the evidence. `theta` still
-ranks. In both configurations the chain above is what produces the answer.
-
-This distinction matters because almost every accuracy number in this project is quoted without
-it. **Always ask whether `evidence` was on.**
-
-## 6. Training
-
-The 10 weights start at `THETA0 = (0.85, 0.95, 0.90, 1.15, 1.35, 1.25, 0.85, 0.45, 0.90, 1.20)`,
-hand-set. Training adjusts them.
-
-### The constraint that shapes everything
-
-A project rule: **gold labels must never be read in any decision, attribution, repair or RL
-update path.** The system learns from what it can observe, not from the answer key.
-
-So training cannot do the obvious thing (compare the prediction to the truth and minimise error).
-Instead, per episode:
-
-1. Rank candidates, pick one
-2. Attempt a repair at that step
-3. An *observable verifier* judges whether the repair worked
-4. Reward in [-1, 1]
-5. `theta += lr * (R - baseline) * (h_chosen - sum_j p_j h_j)`
-
-That is REINFORCE. The reward is "did a repair here succeed", used as a proxy for "was this the
-right step".
-
-> **Checkpoint.** The thing being trained is the 10-weight ranker. The multi-agent system itself
-> is frozen; it is the subject under observation, not the learner.
-
-### How this differs from image classification
-
-| | ImageNet | here |
+| | AgentRx | ours |
 |---|---|---|
-| classes | fixed 1000 | this trace's ~4.5 candidates, different every time |
-| supervision | the true label | a noisy proxy reward |
-| loss | cross-entropy | REINFORCE, no loss function |
-| training set | 1.2M | 113 episodes |
-| parameters | 25M | **10** |
+| tau, 29 traces | 31.0% | **37.9%** |
+| magentic, 44 traces | 18.2% | **25.0%** |
 
-Ten parameters for 113 examples is a sensible ratio. The model is not too small. The limits are
-the 10 hand-designed features and the candidate pool.
+Ahead on both. Read the next sentence carefully, because it is the one a careless reader gets
+wrong: **neither difference is statistically significant.** With 29 traces, one trace is 3.4
+points, and a four-to-two win gives p = 0.69. The honest claim is parity-to-ahead at about a third
+of the baseline's model calls, plus one solid internal ablation.
 
-## 7. Where the project stands
+One cell is open. The magentic synthesis run was destroyed first by rate limiting and then by a
+spend cap, so that number is unmeasured rather than bad.
 
-### The ceiling
-
-`theta` reorders candidates. It cannot pick a step that was never a candidate. So measure how
-often the gold step is in the list at all:
-
-| | top-1 | recall | mean pool |
-|---|---|---|---|
-| external tau | 13.8% | **41.4%** | 4.5 |
-| external magentic | 20.5% | **20.5%** | 1.2 |
-
-Reading this:
-
-- **tau**: the answer is present 41.4% of the time and `theta` finds it 13.8%. Random choice in
-  that pool is ~9.2%. So there are 27.6 points available to a better ranker.
-- **magentic**: top-1, acc@3 and recall are identical because when gold is present it is the
-  *only* candidate. **`theta` cannot change magentic by a single point.** magentic needs better
-  constraints, not better ranking. These are different problems and must not be reported together.
-
-### Training made it worse
-
-One epoch, 138 episodes, synthesis off:
+## 9. Running it yourself
 
 ```
-corpus-v2 test split, n=100
-  untrained THETA0   44/100 = 44.00%
-  trained            36/100 = 36.00%      -8.00 points
-  McNemar p = 0.0078
+python3 -m agentrx.cli test                       # 212 tests, about 40 seconds
+python3 analyze_run.py results/final-evidence.csv # every reported table, from committed evidence
 ```
 
-Not a trade: the trained policy won **zero** cases that THETA0 lost. Only losses.
-
-### Why, and why it matters
-
-The epoch summary:
+Reproducing a run needs a `GEMINI_API_KEY` in your environment, never in a config file:
 
 ```
-acceptance_rate         0.565     what the policy optimises
-harness_recovery_rate   0.389     what actually recovered
-gap                    +0.176
+python3 -m agentrx.cli run --corpus data/benchmark --config configs/gemini_final.json --out runs/final --preflight
+python3 -m agentrx.cli run --corpus data/benchmark --config configs/gemini_final.json --out runs/final
+python3 export_evidence.py runs/final results/final-evidence.csv
 ```
 
-The observable verifier drifted 17.6 points above real recovery. The policy optimised the proxy
-and got worse at the task. The weights show how: it cut `blame P1` by 82% and `temporal position`
-by 42%, features that help attribution but apparently do not help pass the acceptance check.
+`--preflight` checks the corpus, the config and your credentials without spending anything.
 
-**This is reward hacking, observed end to end with the instrumentation to prove it.** A proxy
-reward diverged from the true objective, a policy chased the proxy, and measured performance fell
-with statistical significance on held-out data. For a project about AI behaviour and safety, that
-is a stronger result than a few points of accuracy.
+## 10. How to read the repository
 
-### On the baseline comparison
+| path | what it holds |
+|---|---|
+| `agentrx/perspectives.py` | the three lenses, the seed constraints, the blame matrix |
+| `agentrx/selector.py` | the model call that decides, and its fallbacks |
+| `agentrx/rl_policy.py` | the linear policy, the repair loop, the verifier |
+| `agentrx/pipeline.py` | `diagnose_mp_rl`, which wires the stages together |
+| `benchmark/` | corpus generation, the fault injector, scoring |
+| `results/` | the committed evidence and what is and is not reportable |
+| `configs/` | one config per reported result |
+| `docs/AGENT-BRIEF.md` | the dense version, for an AI assistant working on the code |
 
-The published agentrx figures, 31.03% tau and 18.18% magentic, were produced with
-`gemini-3.1-flash-lite`. Run on a local `qwen2.5:32b`, agentrx returned `Inconclusive` on all
-three traces tried so far.
+## 11. A few terms
 
-So the often-quoted "31.03% versus 13.79%" compares a frontier model against **no model at all**.
-It is not a like-for-like comparison and should not be presented as one. The matched-model run is
-still incomplete.
-
-## 8. Running it
-
-```bash
-# tests first: 343 should pass
-python3 -m unittest discover -s tests -t .
-python3 -m unittest discover -s benchmark/tests -t .
-
-# attribution, no GPU needed, seeds only
-python3 -m agentrx run --config configs/<cfg>.json --out runs/<name>
-python3 watch_run.py runs/<name> --follow     # live accuracy while it runs
-
-# training, resumable, prints a line per episode
-python3 -m benchmark train --corpus benchmark/runs/corpus-v2 --out runs/train-v2 \
-  --checkpoint runs/train-v2/rl_state_v2.json --backend ollama --model qwen2.5:32b \
-  --num-ctx 32768 --epochs 1 --val-split calibration
-```
-
-The training line reads:
-
-```
-[ep  14/138]  11.6m  49.8s/ep  eta 102.9m | R +0.304 | accept 0.50 | |dtheta| 0.1736 | tr-0ecc...
-```
-
-`accept` is the proxy reward rate, `|dtheta|` is how far the weights have moved. If `accept`
-climbs well above the gold recovery rate, that is the reward-hacking alarm and you should stop.
-
-### Things that will bite you
-
-- **GPU access.** The 32B model runs on a remote node reached by an SSH tunnel. A local Ollama can
-  win port 11434 and answer instead. If you see "model not found", the wrong server replied.
-- **`num_ctx` must be 32768** for agentrx. Its one-shot prompt overflows 16384 on long traces.
-  That also caps `OLLAMA_NUM_PARALLEL` at 2 on a 45 GiB card.
-- **The corpus cannot be regenerated identically.** Ollama's batching makes concurrent requests
-  non-deterministic, so `temperature 0` does not give reproducibility. The committed files are the
-  only record.
-
-## 9. What to do next
-
-**Measured and settled:** the corpus, the recall ceiling, the training degradation, the reward gap.
-
-**Open, in priority order:**
-
-1. **Does synthesis raise recall?** It is the only lever that can lift tau past 41.4%. About 87
-   model calls per trace, so roughly 3 hours for all 29 tau traces.
-2. **agentrx on a matched model, properly.** Three traces is not a result.
-3. **The reward proxy.** The +0.176 gap is the core problem. Fixing it means a better observable
-   verifier, since using gold in the update path is forbidden by design.
-4. **magentic needs constraint work.** Pool size 1.2 means ranking is irrelevant there.
-
-> **Final checkpoint.** If you take one thing: every accuracy number in this project must be quoted
-> with its `evidence` flag, its dataset, and its n. Most of the confusion so far came from
-> comparing numbers that were not comparable.
+- **Trace / trajectory**: the full record of an agent run, step by step.
+- **Step**: one turn, usually an agent message plus any tool call and its output.
+- **Gold**: the ground-truth answer. Never visible to any decision the system makes.
+- **Constraint / check**: an obligation evaluated at a step. A **violation** is a failed one.
+- **Candidate**: a (step, agent) pair carrying at least one violation.
+- **Pool recall**: how often the correct step is among the candidates. The binding constraint.
+- **McNemar test**: compares two methods on the same traces by counting where they disagree. The
+  right test here, because both methods see identical inputs.

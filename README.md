@@ -6,6 +6,35 @@ This branch implements **AgentRx-style fault attribution**: analyze a saved agen
 run, check its actions, and identify the first unrecovered failure, responsible
 agent, and supporting evidence.
 
+## Result
+
+Published benchmark (`data/benchmark`), gemini-3.1-flash-lite at temperature 0.
+
+| domain | AgentRx baseline | ours |
+|---|---|---|
+| tau, n = 29 | 31.0% | **37.9%** |
+| magentic, n = 44 | 18.2% | **25.0%** |
+
+Both baseline figures reproduce the published 31.03% and 18.18%, which is the control that makes
+the rest meaningful. Neither margin reaches statistical significance at these sample sizes: one tau
+trace is 3.4 points. The solid result is the ablation, where a model reading structured evidence
+beats the linear ranker on nine traces against one, McNemar p = 0.0215.
+
+Reproduce every reported table from committed evidence, no API key required:
+
+```
+python3 analyze_run.py results/final-evidence.csv
+```
+
+## Start here
+
+| if you are | read |
+|---|---|
+| new to the project | [docs/ONBOARDING.md](docs/ONBOARDING.md) |
+| an AI assistant working on the code | [docs/AGENT-BRIEF.md](docs/AGENT-BRIEF.md) |
+| checking the numbers | [results/README.md](results/README.md) |
+| after the write-up | [docs/Project-Report.docx](docs/Project-Report.docx) |
+
 ## Packages
 
 | Package | Role |
