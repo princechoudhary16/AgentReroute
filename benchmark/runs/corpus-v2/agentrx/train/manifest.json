@@ -1,0 +1,8 @@
+{
+  "format_version": 1,
+  "corpus_hash": "a70f4cdbf7b8f12c0f3daba8515080b21e3842cd2a90be12964d0cee9ad3e80d",
+  "available_total": 113,
+  "source_url": "agentreroute-bench",
+  "measurement_scope": "agentreroute-bench:train",
+  "note": "Exported for the faultattribution branch. Native domain is the multi-agent retail workflow, labelled 'tau' because that loader accepts only AgentRx domains. Categories are mapped from the seven modes with taxonomy.to_agentrx and are lossy."
+}
