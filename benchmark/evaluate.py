@@ -13,7 +13,7 @@
 import sys
 from pathlib import Path
 
-from .corpus import load_gold, load_public
+from .corpus import generation_dir, load_gold, load_public
 from .io import read_json, write_json
 from .scoring.attribution import score_attribution
 from .scoring.baselines import heuristic_baseline, last_step_baseline, llm_judge_baseline, random_baseline
@@ -71,7 +71,8 @@ def evaluate(corpus_dir, split, llm_factory, out_dir, judge_llm=None, judge_mode
     comparisons = [compare(r, baseline) for r in recovery if r is not baseline]
     write_json(out_dir / 'comparisons.json', comparisons)
 
-    gen_dirs = sorted({Path(v['generation_dir']) for v in read_json(corpus_dir / 'gold' / 'episodes.json').values()})
+    gen_dirs = sorted({generation_dir(v, corpus_dir)
+                       for v in read_json(corpus_dir / 'gold' / 'episodes.json').values()})
     robust = robustness([e for d in gen_dirs for e in load_episodes(d)])
     write_json(out_dir / 'robustness.json', robust)
 

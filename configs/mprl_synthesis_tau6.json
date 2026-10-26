@@ -1,0 +1,27 @@
+{
+  "name": "mprl-synthesis-tau6",
+  "client": {
+    "provider": "ollama",
+    "model": "qwen2.5:32b",
+    "num_ctx": 32768,
+    "settings": {
+      "temperature": 0
+    },
+    "timeout": 300,
+    "retries": 6,
+    "base_url": "http://localhost:11434"
+  },
+  "repetitions": 1,
+  "domains": [
+    "tau"
+  ],
+  "variants": [
+    {
+      "name": "mp_rl_llm",
+      "evidence": true,
+      "protocol": "mp_rl",
+      "recovery_loop": false
+    }
+  ],
+  "limit_per_domain": 6
+}

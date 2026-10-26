@@ -113,6 +113,7 @@ class RepairStrategyPolicy:
                 log.attempts.append({'strategy': plan.strategy_id, 'rollback_step': plan.rollback_step,
                                      'rollout': rollout.rollout_id, 'accepted': accepted,
                                      'termination': rollout.termination, 'degraded': list(lowered.degraded),
+                                     'rejected_by': [f.kind for f in report.failures],
                                      'failures': [f.detail for f in report.failures]})
                 if self.learn:
                     engine.record_outcome(plan, accepted, rollout_trace)

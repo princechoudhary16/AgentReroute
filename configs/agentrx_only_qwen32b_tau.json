@@ -1,0 +1,28 @@
+{
+  "name": "agentrx-only-qwen32b-tau",
+  "client": {
+    "provider": "ollama",
+    "model": "qwen2.5:32b",
+    "num_ctx": 32768,
+    "settings": {
+      "temperature": 0
+    },
+    "timeout": 300,
+    "retries": 6,
+    "base_url": "http://localhost:11434"
+  },
+  "repetitions": 1,
+  "domains": [
+    "tau"
+  ],
+  "variants": [
+    {
+      "name": "agentrx",
+      "evidence": true,
+      "checklist": true,
+      "generation": "oneshot",
+      "protocol": "joint",
+      "recovery_loop": false
+    }
+  ]
+}

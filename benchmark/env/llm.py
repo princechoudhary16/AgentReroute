@@ -304,13 +304,27 @@ class CachedLLM:
     """Disk cache in front of a client. Identical requests return identical completions,
     which makes prefix replay deterministic. Keyed by model digest, messages and options."""
 
-    def __init__(self, inner, cache_dir, read_only=False):
+    def __init__(self, inner, cache_dir, read_only=False, fallbacks=()):
         self.inner, self.read_only = inner, read_only
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
+        # Read-only caches consulted on a miss, never written to. A corpus merged from several
+        # generation runs has one cache per run, and every actor response in them was already paid
+        # for; without this, training re-buys all of them. Entries are content-addressed, so a hit
+        # from any of them is byte-identical to what this cache would have stored. They stay
+        # read-only so training cannot mutate a generation artifact.
+        self.fallbacks = [Path(d) for d in fallbacks if Path(d).exists()]
         self.measurement_kind = getattr(inner, 'measurement_kind', 'model')
-        self.hits = self.misses = 0
+        self.hits = self.misses = self.fallback_hits = 0
         self.refused_writes = self.stale_poison = self.poisoned_hits = 0
+
+    def _read(self, directory, key):
+        path = Path(directory) / key[:2] / f'{key}.json'
+        if not path.exists():
+            return None
+        data = json.loads(path.read_text(encoding='utf-8'))
+        return Completion(data['text'], data['tokens_in'], data['tokens_out'], data['model'], cached=True,
+                          lenient=data.get('lenient', False))
 
     def key(self, req):
         model_digest = self.inner.model_digest(req['model']) if hasattr(self.inner, 'model_digest') else ''
@@ -346,23 +360,37 @@ class CachedLLM:
                 self.poisoned_hits += 1
                 return cached
             self.stale_poison += 1          # written before this guard existed; re-fetch and overwrite it
-        elif self.read_only:
-            raise LLMError(f'cache miss in read-only mode for {req["meta"]}')
+        else:
+            for directory in self.fallbacks:
+                spare = self._read(directory, key)
+                if spare is not None and self.usable(spare, req):
+                    self.hits += 1
+                    self.fallback_hits += 1
+                    if not self.read_only:
+                        self._store(path, spare)      # promote, so the next lookup is a direct hit
+                    return spare
+            if self.read_only:
+                raise LLMError(f'cache miss in read-only mode for {req["meta"]}')
         self.misses += 1
         result = self.inner.complete(req)
         if not self.usable(result, req):
             self.refused_writes += 1        # never persist an unusable turn: that is how corpus-v1 rotted
             return result
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps({'text': result.text, 'tokens_in': result.tokens_in,
-                                    'tokens_out': result.tokens_out, 'model': result.model,
-                                    'lenient': result.lenient}), encoding='utf-8')
+        self._store(path, result)
         return result
+
+    @staticmethod
+    def _store(path, completion):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({'text': completion.text, 'tokens_in': completion.tokens_in,
+                                    'tokens_out': completion.tokens_out, 'model': completion.model,
+                                    'lenient': completion.lenient}), encoding='utf-8')
 
     def stats(self):
         """Cache counters for the generation summary."""
-        return {'hits': self.hits, 'misses': self.misses, 'refused_writes': self.refused_writes,
-                'stale_poison': self.stale_poison, 'poisoned_hits': self.poisoned_hits}
+        return {'hits': self.hits, 'misses': self.misses, 'fallback_hits': self.fallback_hits,
+                'refused_writes': self.refused_writes, 'stale_poison': self.stale_poison,
+                'poisoned_hits': self.poisoned_hits}
 
 
 class ScriptedLLM:

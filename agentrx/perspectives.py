@@ -1,7 +1,10 @@
 """Phase 2 multi-perspective tracing: [B1] split, [B2] seeded+synthesized checks, [B3] blame, [B4] features."""
 import builtins
 import copy
+import itertools
 import json
+import os
+from concurrent.futures import ThreadPoolExecutor
 from collections import Counter
 from functools import lru_cache
 from .constraints import _python, check_constraint, constraint_fingerprint, guard_matches, prefix, validate_constraint
@@ -605,27 +608,106 @@ def _check_seed_inprocess(raw, trajectory, offset):
     return result
 
 
+def _unowned(trajectory, offset):
+    """Whether this offset has no autonomous agent owner, so any verdict on it is discarded downstream.
+
+    compute_blame_matrix only counts checks whose step_actor is one of the agents, and encode_candidates
+    drops violations whose actor is in NON_AGENTS. A tool output folds back to its calling agent and
+    still counts; a user or system turn has no owner at all, so evaluating it cannot change the blame
+    matrix, the candidate pool or any feature. For an nl_check that is a model call bought and thrown
+    away, roughly 18% of them on this corpus.
+    """
+    return step_actor(trajectory, offset)[0] in NON_AGENTS
+
+
+# One judge call per guarded step, and each is independent: check_constraint builds its own
+# prefix(trajectory, offset) and shares nothing but the provider, whose per-call diagnostics are
+# thread-local and whose cache writes are atomic and content-addressed. Running them concurrently
+# changes no verdict, only how long they take. Default 4 to match OLLAMA_NUM_PARALLEL on the A40;
+# 1 restores strictly sequential execution.
+CHECK_WORKERS = max(1, int(os.environ.get('AGENTRX_CHECK_WORKERS', '4')))
+
+
 def _check_all(c, trajectory, provider, context):
-    rows = []
-    for offset in range(len(trajectory['steps'])):
-        row = (_check_seed_inprocess(c, trajectory, offset) if c.get('origin') == 'seed' else
-               check_constraint(c, trajectory, offset, provider, context))
+    steps = trajectory['steps']
+    rows = [None] * len(steps)
+    seed = c.get('origin') == 'seed'
+    semantic = not seed and c.get('check_type') != 'python_check'
+    deferred = []
+    for offset in range(len(steps)):
+        if semantic and _unowned(trajectory, offset):
+            # Dead by construction, so skip the call. Marked so the all-SKIP relaxation test below can
+            # tell "never evaluated" from "evaluated and the guard did not match".
+            rows[offset] = {'step_index': steps[offset]['index'], 'verdict': 'SKIP', 'unowned': True,
+                            'assertion_name': c.get('assertion_name', '<invalid>')}
+        elif seed:
+            rows[offset] = _check_seed_inprocess(c, trajectory, offset)
+        elif semantic:
+            deferred.append(offset)          # model-backed: run these together below
+        else:
+            rows[offset] = check_constraint(c, trajectory, offset, provider, context)   # local python_check
+    workers = min(CHECK_WORKERS, len(deferred))
+    if workers > 1:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            for offset, row in zip(deferred, pool.map(
+                    lambda o: check_constraint(c, trajectory, o, provider, context), deferred)):
+                rows[offset] = row
+    else:
+        for offset in deferred:
+            rows[offset] = check_constraint(c, trajectory, offset, provider, context)
+    for offset, row in enumerate(rows):
         row['offset'] = offset
-        rows.append(row)
     return rows
 
 
+def _minimal_relaxation(c, trajectory):
+    """The fewest guard fields to wildcard so this constraint matches at least one step, or None.
+
+    The guard is structural, so this costs no model calls: guard_matches is pure Python. That matters
+    because check_constraint only pays for an LLM call on steps whose guard matches. Wildcarding the
+    whole trigger to ANY_EVENT makes it match every step, so a constraint that cost nothing becomes one
+    that costs T calls on a T-step trace, and each of those calls carries prefix(trajectory, offset),
+    making the real cost quadratic in T. The usual cause is a name mismatch in a single field (the LLM
+    writes role_name "retail_agent" where the trace says "assistant"), so relaxing only the field that
+    actually blocked the match keeps the constraint at a fraction of the cost.
+
+    Smallest subset wins; among equals, the one matching the fewest steps. Wildcarding every field is
+    the last combination tried, so coverage is never worse than the blanket relaxation it replaces.
+    """
+    trigger = c.get('event_trigger') or {}
+    fields = [k for k, v in trigger.items() if v not in (None, '*')]
+    steps = trajectory['steps']
+    for size in range(1, len(fields) + 1):
+        best = None
+        for combo in itertools.combinations(fields, size):
+            probe = copy.deepcopy(c)
+            for key in combo:
+                probe['event_trigger'][key] = '*'
+            matched = sum(1 for step in steps if guard_matches(probe, step))
+            if matched and (best is None or matched < best[0]):
+                probe['relaxed_fields'] = list(combo)
+                best = (matched, probe)
+        if best is not None:
+            return best[1]
+    return None
+
+
 def run_perspective_checks(perspective_id, constraints, trajectory, provider, context):
-    """[A3_Pi]: strict guarded checks; an LLM constraint that SKIPs every step has its whole guard relaxed once (Trap 1).
+    """[A3_Pi]: strict guarded checks; an LLM constraint that SKIPs every step has its guard relaxed once (Trap 1).
 
     Returns (checks, effective_constraints), the latter holding relaxed copies where relaxation happened.
     """
     checks, effective = [], []
     for c in constraints:
         rows = _check_all(c, trajectory, provider, context)
-        if c.get('origin') != 'seed' and rows and all(r['verdict'] == 'SKIP' for r in rows):
-            c = copy.deepcopy(c)
-            c['event_trigger'] = dict(ANY_EVENT)  # e.g. role_name "retail_agent" when the trace says "assistant"
+        evaluated = [r for r in rows if not r.get('unowned')]
+        if c.get('origin') != 'seed' and evaluated and all(r['verdict'] == 'SKIP' for r in evaluated):
+            relaxed = _minimal_relaxation(c, trajectory)
+            if relaxed is None:
+                effective.append(c)
+                checks.extend(rows)
+                continue
+            c = relaxed
             c['relaxed'] = True
             rows = _check_all(c, trajectory, provider, context)
         for row in rows:

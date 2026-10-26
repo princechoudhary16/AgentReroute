@@ -6,7 +6,7 @@ the gold labels are never fed back to a policy under training.
 """
 from pathlib import Path
 
-from benchmark.corpus import load_gold, load_public
+from benchmark.corpus import generation_dir, load_gold, load_public
 from benchmark.scoring.recovery import _EpisodeRunner
 
 from .io import read_json
@@ -35,7 +35,7 @@ def attribution_exact_step(corpus_dir, split, judge, use_llm_synthesis, provider
     hits = 0
     for tid in failed:
         ref = index[tid]
-        gen_dir = Path(ref['generation_dir'])
+        gen_dir = generation_dir(ref, corpus_dir)
         episode = read_json(gen_dir / 'episodes' / f'{ref["episode_id"]}.json')
         gen_config = read_json(gen_dir / 'generation.json')['config']
         runner = _EpisodeRunner(episode, gen_config, llm_factory)

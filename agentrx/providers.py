@@ -5,12 +5,48 @@ import os
 import platform
 import re
 import sys
+import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib import error, parse, request
 from .io import digest, read_json, write_json
 from .prompts import messages, prompt_identity, ranked_response_schema
+
+
+class _PerCallDiagnostics:
+    """``last_raw`` / ``last_telemetry`` held per thread rather than per instance.
+
+    CachedProvider reads them immediately after provider.complete() to record what the model actually
+    returned. They describe one call, so with several checks of the same constraint running at once on
+    one provider, a plain attribute lets one thread record another thread's raw response against its
+    own cache entry. The results themselves are unaffected (the response is returned directly), but the
+    stored diagnostics would be silently wrong, which is worse than having none. Thread-local keeps each
+    call's diagnostics with that call, and reads as an ordinary attribute at every existing call site.
+    """
+
+    @property
+    def _diagnostics(self):
+        local = self.__dict__.get('_diagnostics_local')
+        if local is None:
+            local = self.__dict__['_diagnostics_local'] = threading.local()
+        return local
+
+    @property
+    def last_raw(self):
+        return getattr(self._diagnostics, 'raw', None)
+
+    @last_raw.setter
+    def last_raw(self, value):
+        self._diagnostics.raw = value
+
+    @property
+    def last_telemetry(self):
+        return getattr(self._diagnostics, 'telemetry', {})
+
+    @last_telemetry.setter
+    def last_telemetry(self, value):
+        self._diagnostics.telemetry = value
 
 
 class ProviderError(RuntimeError):
@@ -59,7 +95,7 @@ class NoRedirect(request.HTTPRedirectHandler):
         raise ProviderError('Model endpoint redirect rejected; configure its final URL')
 
 
-class HTTPProvider:
+class HTTPProvider(_PerCallDiagnostics):
     measurement_kind = 'model_measurement'
 
     def __init__(self, model, base_url, api_key, provider='openai', deployment=None,
@@ -296,7 +332,7 @@ class HTTPProvider:
         return text, usage, info
 
 
-class OllamaProvider:
+class OllamaProvider(_PerCallDiagnostics):
     """Local Ollama via the native /api/chat endpoint (no credential, explicit context window).
 
     The OpenAI-compatible endpoint cannot set num_ctx and Ollama silently truncates prompts
@@ -442,7 +478,7 @@ class OllamaProvider:
         return answer
 
 
-class ReplayProvider:
+class ReplayProvider(_PerCallDiagnostics):
     """Explicit fixture replay for offline smoke tests, never benchmark evidence."""
     measurement_kind = 'offline_fixture'
     def __init__(self, path):

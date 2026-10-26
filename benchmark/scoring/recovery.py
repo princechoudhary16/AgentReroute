@@ -19,7 +19,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..corpus import load_gold, load_public
+from ..corpus import generation_dir, load_gold, load_public
 from ..env.retail import TOOL_SCHEMAS, gold_state_hash
 from ..env.tasks import load_domain
 from ..env.workflow import AGENTS, Directive, Workflow, export_trace, outcome
@@ -280,11 +280,22 @@ def oracle_hypotheses(gold):
 
 
 def run_recovery(corpus_dir, split, policy, llm_factory, caps=None, hypotheses=None, oracle=False,
-                 include_controls=True, limit=None):
+                 include_controls=True, limit=None, skip=(), control_sample=None, on_episode=None):
     """Evaluate ``policy`` on the replayable episodes of ``split``.
 
     ``hypotheses``: {tid: [hypothesis, ...]} from an attribution submission.
     ``oracle``: pass gold attribution instead (upper bound condition).
+    ``control_sample``: keep at most this many non-failed (clean/tolerated) episodes. Attribution runs
+    full constraint synthesis BEFORE deciding to abstain, so a control episode costs a full episode of
+    LLM calls and usually yields no gradient at all. Training keeps a sample of them, because they carry
+    the only signal against intervening on healthy runs, and drops the rest. Frozen evaluation passes
+    None and scores every control.
+    ``on_episode``: called as on_episode(done, total, tid, row) after each episode, for a live progress
+    line. Training passes one so a multi-hour run reports as it goes instead of only at the end; frozen
+    evaluation leaves it None.
+    ``skip``: trajectory ids an interrupted training run already applied to theta. They are dropped from
+    the work list so their gradients are not applied twice, which means a resumed epoch's aggregate
+    metrics cover only the episodes this process ran. Frozen evaluation never passes it.
     """
     corpus_dir = Path(corpus_dir)
     caps = caps or BudgetCaps()
@@ -294,12 +305,17 @@ def run_recovery(corpus_dir, split, policy, llm_factory, caps=None, hypotheses=N
     rows = []
     selected = [tid for tid in sorted(gold) if tid in index
                 and (gold[tid]['status'] == 'failed' or include_controls)]
+    if control_sample is not None:
+        controls = [tid for tid in selected if gold[tid]['status'] != 'failed'][:control_sample]
+        keep = set(controls)
+        selected = [tid for tid in selected if gold[tid]['status'] == 'failed' or tid in keep]
     if limit:
         selected = selected[:limit]
+    selected = [tid for tid in selected if tid not in set(skip)]
     for tid in selected:
         g = gold[tid]
         ref = index[tid]
-        gen_dir = Path(ref['generation_dir'])
+        gen_dir = generation_dir(ref, corpus_dir)
         episode = read_json(gen_dir / 'episodes' / f'{ref["episode_id"]}.json')
         gen_config = read_json(gen_dir / 'generation.json')['config']
         runner = _EpisodeRunner(episode, gen_config, llm_factory)
@@ -333,6 +349,8 @@ def run_recovery(corpus_dir, split, policy, llm_factory, caps=None, hypotheses=N
                      'collateral_writes': collateral, 'original_tokens': original_tokens,
                      'token_cap': episode_caps.tokens,
                      'cost_vs_original': round(env.spent['tokens'] / max(1, original_tokens), 4)})
+        if on_episode is not None:
+            on_episode(len(rows), len(selected), tid, rows[-1])
     return summarize(policy.name + (':oracle' if oracle else ''), split, rows, caps)
 
 

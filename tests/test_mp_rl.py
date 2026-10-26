@@ -318,12 +318,34 @@ class LiveLLMRegressionTests(unittest.TestCase):
         fallback = encode_candidates(trajectory, system_only, compute_blame_matrix(trajectory, system_only))
         self.assertEqual([(c['agent'], c['step_index'], c['violated_checks']) for c in fallback], [('assistant', 3, [])])
 
-    def test_relaxes_whole_guard_when_role_name_never_matches(self):
+    def test_relaxes_only_the_guard_field_that_blocked_the_match(self):
+        """Trap 1 still fires, but no longer discards the scope the constraint was actually about.
+
+        The guard names a role the trace never uses, so every step SKIPs and the constraint would
+        contribute nothing. It is still relaxed, but only on role_name; the cancel_.* tool scope is the
+        substance of the constraint and survives. Wildcarding the whole trigger used to raise VIOL on
+        the user turns at steps 1 and 5, which the constraint never claimed to cover, and for an
+        nl_check it also bought one LLM judge call on every step of the trace.
+        """
         trajectory = tau_trace()
         wrong_role = {**python_constraint(['return False'], {'role_name': 'retail_agent', 'tool_name': 'cancel_.*'}),
                       'origin': 'llm'}
         rows, effective = run_perspective_checks('P1_INTENT_PLAN', [wrong_role], trajectory, None, CONTEXT)
-        self.assertEqual(effective[0]['event_trigger'], ANY_EVENT)
+        self.assertTrue(effective[0]['relaxed'])
+        self.assertEqual(effective[0]['relaxed_fields'], ['role_name'])
+        self.assertEqual(effective[0]['event_trigger'], {'role_name': '*', 'tool_name': 'cancel_.*'})
+        # step 2 calls cancel_pending_order and step 3 is its result; the rest are out of the guard's scope
+        self.assertEqual([r['verdict'] for r in rows], ['SKIP', 'VIOL', 'VIOL', 'SKIP', 'SKIP'])
+
+    def test_wildcards_the_whole_guard_when_no_narrower_relaxation_matches(self):
+        """The original Trap 1 coverage survives: a constraint is never left contributing nothing."""
+        trajectory = tau_trace()
+        unmatchable = {**python_constraint(['return False'],
+                                           {'role_name': 'retail_agent', 'tool_name': 'nonexistent_.*'}),
+                       'origin': 'llm'}
+        rows, effective = run_perspective_checks('P1_INTENT_PLAN', [unmatchable], trajectory, None, CONTEXT)
+        self.assertEqual(effective[0]['event_trigger'], {'role_name': '*', 'tool_name': '*'})
+        self.assertEqual(sorted(effective[0]['relaxed_fields']), ['role_name', 'tool_name'])
         self.assertEqual([r['verdict'] for r in rows], ['VIOL'] * 5)
         provider = FakeProvider(perspective_global={'constraints': []}, perspective_dynamic={'constraints': []})
         synthesize_perspective_constraints('P1_INTENT_PLAN', trajectory, '', TOOLS, provider)

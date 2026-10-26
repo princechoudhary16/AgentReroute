@@ -13,6 +13,7 @@ Layout of a built corpus::
 Splits are disjoint by task template. Held-out fault variants appear only in
 ``test``; episodes using them on other splits are dropped (and counted).
 """
+import os
 from pathlib import Path
 
 from . import BENCHMARK_NAME, __version__
@@ -29,6 +30,32 @@ DEFAULT_HELDOUT = ('tool_error[cell=explicit_persistent]', 'stale_output[cell=si
                    'drop_context[persistence=persistent,variant=truncate]', 'misread_value[target=claim]',
                    'policy_contradiction[directive=skip_verification]', 'misroute[persistence=persistent]')
 INCLUDED_STATUSES = ('failed', 'tolerated', 'clean')
+
+
+def _corpus_relative(gen_dir, corpus_dir):
+    """``gen_dir`` written relative to the corpus that will cite it, as a POSIX path.
+
+    A built corpus is a research artifact: it gets copied between machines and handed to collaborators.
+    Storing the absolute path of whichever machine built it means the recovery harness resolves nothing
+    anywhere else, which is a build-time footgun with a run-time error message. Generation directories
+    sit beside the corpus under runs/, so the relative form is stable under moving or cloning the repo.
+    Separators are normalised so a corpus built on Windows is readable on Linux and the reverse.
+    """
+    try:
+        relative = os.path.relpath(Path(gen_dir).resolve(), Path(corpus_dir).resolve())
+    except ValueError:
+        return str(Path(gen_dir).resolve())      # different Windows drives: no relative path exists
+    return relative.replace(os.sep, '/')
+
+
+def generation_dir(stored, corpus_dir):
+    """Resolve a gold index entry's generation directory against the corpus that cites it.
+
+    Accepts the index row or the bare stored string. Corpora built before paths became relative hold
+    absolute ones, which are returned unchanged, so an existing corpus keeps working.
+    """
+    path = Path(stored['generation_dir'] if isinstance(stored, dict) else stored)
+    return path if path.is_absolute() else Path(corpus_dir) / path
 
 
 def variant_key(operator):
@@ -162,7 +189,7 @@ def build(gen_dirs, out_dir, ratios=None, heldout_variants=DEFAULT_HELDOUT, natu
             validate_gold(record, trace)
             gold[split].append(record)
             public_ids[split].append(tid)
-            episodes_index[tid] = {'generation_dir': str(Path(gen_dir).resolve()),
+            episodes_index[tid] = {'generation_dir': _corpus_relative(gen_dir, out_dir),
                                    'episode_id': episode['episode_id'], 'split': split}
     agentrx = {}
     for split in SPLITS:

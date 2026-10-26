@@ -143,7 +143,7 @@ class DualLoopRLJudge:
 
     def __init__(self, weights=None, learning_rate=0.05, temperature=0.5, ucb_alpha=0.1,
                  baseline_reward=0.0, action_counts=None, memory=None, episodes=0, pairwise_lr=0.15,
-                 read_only=False):
+                 read_only=False, progress=None):
         # read_only is a load-time guard, not serialized state: a checkpoint loaded for evaluation
         # refuses save() so a frozen run cannot overwrite the weights it is reading.
         self.read_only = bool(read_only)
@@ -156,6 +156,11 @@ class DualLoopRLJudge:
         self.memory = memory or PromptMemoryBank()
         # ponytail: in-process only, not serialized; persist if record_recovery_outcome must survive restarts.
         self.pending = {}
+        # Opaque to the policy; the training loop owns its meaning. It rides inside this checkpoint
+        # rather than a sibling file so one atomic write covers both theta and the record of which
+        # episodes produced it. Two files would leave a window where an interruption between them
+        # replays an episode whose gradient is already in theta.
+        self.progress = dict(progress or {})
 
     @staticmethod
     def action_key(candidate):
@@ -240,14 +245,15 @@ class DualLoopRLJudge:
         return {'version': 1, 'weights': list(self.weights), 'learning_rate': self.learning_rate,
                 'temperature': self.temperature, 'ucb_alpha': self.ucb_alpha,
                 'baseline_reward': self.baseline_reward, 'action_counts': dict(self.action_counts),
-                'episodes': self.episodes, 'pairwise_lr': self.pairwise_lr, 'memory': self.memory.to_dict()}
+                'episodes': self.episodes, 'pairwise_lr': self.pairwise_lr, 'memory': self.memory.to_dict(),
+                'progress': self.progress}
 
     @classmethod
     def from_dict(cls, data):
         return cls(data['weights'], data.get('learning_rate', 0.05), data.get('temperature', 0.5),
                    data.get('ucb_alpha', 0.1), data.get('baseline_reward', 0.0), data.get('action_counts'),
                    PromptMemoryBank.from_dict(data.get('memory', {})), data.get('episodes', 0),
-                   data.get('pairwise_lr', 0.15))
+                   data.get('pairwise_lr', 0.15), progress=data.get('progress'))
 
     def save(self, path):
         if self.read_only:

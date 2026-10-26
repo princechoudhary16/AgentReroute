@@ -25,7 +25,7 @@ import sys
 import time
 from pathlib import Path
 
-from .corpus import build, load_gold, load_public, natural_queue
+from .corpus import build, generation_dir, load_gold, load_public, natural_queue
 from .env.llm import (DEFAULT_HOST, DEFAULT_MODEL, DEFAULT_NUM_CTX, CachedLLM, GeminiActor, LLMError,
                       OllamaClient, request)
 from .env.scripted import scripted_llm
@@ -47,7 +47,7 @@ def _ollama(args, cache):
     return CachedLLM(OllamaClient(args.host, num_ctx=getattr(args, 'num_ctx', None) or DEFAULT_NUM_CTX), cache)
 
 
-def _actor(args, cache):
+def _actor(args, cache, fallbacks=()):
     """The benchmark actor behind a response cache: local Ollama, or the Gemini bridge.
 
     The model string must match the corpus being replayed, because CachedLLM keys on it: replaying with
@@ -59,17 +59,24 @@ def _actor(args, cache):
                             lenient_log=str(Path(cache).parent / 'lenient.jsonl'))
     else:
         actor = OllamaClient(args.host, num_ctx=getattr(args, 'num_ctx', None) or DEFAULT_NUM_CTX)
-    return CachedLLM(actor, cache)
+    return CachedLLM(actor, cache, fallbacks=fallbacks)
 
 
-def _generation_cache(corpus):
-    """The response cache of the generation behind this corpus, so replays hit instead of re-buying."""
+def _generation_caches(corpus):
+    """Every generation cache behind this corpus, so replays hit instead of re-buying actor tokens.
+
+    A corpus merged from several generation runs has one cache per run. This used to return a single
+    directory and gave up entirely when there was more than one, so training against a merged corpus
+    started from an empty cache and paid again for responses generation had already bought. They are
+    handed to CachedLLM as read-only fallbacks rather than as the write target, so training cannot
+    mutate a generation artifact.
+    """
     try:
         index = read_json(Path(corpus) / 'gold' / 'episodes.json')
-    except (OSError, ValueError):
-        return None
-    directories = {row['generation_dir'] for row in index.values()}
-    return Path(next(iter(directories))) / 'llm_cache' if len(directories) == 1 else None
+    except (OSError, ValueError, TypeError):
+        return []
+    caches = {generation_dir(row, corpus) / 'llm_cache' for row in index.values()}
+    return sorted(c for c in caches if c.exists())
 
 
 def cmd_check_ollama(args):
@@ -179,9 +186,8 @@ def cmd_score(args):
 def _llm_factory(args, cache=None):
     if args.backend == 'scripted':
         return scripted_llm
-    cache = args.cache_dir or cache or _generation_cache(getattr(args, 'corpus', None)) \
-        or Path(args.out).parent / 'llm_cache'
-    shared = _actor(args, cache)
+    cache = args.cache_dir or cache or Path(args.out).parent / 'llm_cache'
+    shared = _actor(args, cache, fallbacks=_generation_caches(getattr(args, 'corpus', None)))
     return lambda domain, task: shared
 
 
@@ -268,15 +274,19 @@ def cmd_train(args):
               f'or choose a new path to keep the existing checkpoint reproducible.', file=sys.stderr)
         return 2
     out.mkdir(parents=True, exist_ok=True)
-    cache = args.cache_dir or _generation_cache(args.corpus) or (out / 'llm_cache')
+    cache = args.cache_dir or (out / 'llm_cache')
+    reused = _generation_caches(args.corpus)
     provider = _attributor(args, out / 'synthesis_cache') if args.use_llm_synthesis else None
     print(f'train={args.train_split} val={args.val_split} test={args.test_split} epochs={args.epochs} '
-          f'backend={args.backend} synthesis={args.use_llm_synthesis}\nactor cache: {cache}')
+          f'backend={args.backend} synthesis={args.use_llm_synthesis}\nactor cache: {cache}\n'
+          f'reusing {len(reused)} generation cache(s): {", ".join(str(c) for c in reused) or "none"}')
     result = train_and_evaluate_benchmark(
         args.corpus, train_split=args.train_split, test_split=args.test_split, epochs=args.epochs,
         rl_state_path=str(checkpoint), llm_factory=_llm_factory(args, cache),
         use_llm_synthesis=args.use_llm_synthesis, limit=args.limit, provider=provider,
-        val_split=args.val_split)
+        val_split=args.val_split, control_sample=args.control_sample,
+        stop_above=args.stop_above, val_every=args.val_every, val_limit=args.val_limit,
+        show_progress=not args.quiet)
     summary = {'corpus': str(args.corpus), 'backend': args.backend, 'model': args.model,
                'epochs': args.epochs, 'use_llm_synthesis': args.use_llm_synthesis,
                'splits': {'train': args.train_split, 'val': args.val_split, 'test': args.test_split},
@@ -427,6 +437,18 @@ def parser():
     s.add_argument('--checkpoint', required=True); s.add_argument('--resume', action='store_true')
     s.add_argument('--backend', choices=('ollama', 'gemini', 'scripted'), default='ollama')
     s.add_argument('--epochs', type=int, default=2); s.add_argument('--limit', type=int)
+    s.add_argument('--stop-above', type=float,
+                   help='stop once validation exact-step beats this. Measure the bar on the SAME data: '
+                        'run agentrx over <corpus>/agentrx/<val-split>/cases.json, not its published '
+                        'number from another dataset.')
+    s.add_argument('--val-every', type=int, default=0,
+                   help='evaluate validation every N training episodes (0 = only at epoch end). '
+                        'Each evaluation costs a pass over the validation split, so keep N large.')
+    s.add_argument('--val-limit', type=int, help='cap episodes per mid-epoch validation pass')
+    s.add_argument('--quiet', action='store_true', help='suppress the per-episode progress line')
+    s.add_argument('--control-sample', type=int, default=25,
+                   help='clean/tolerated episodes to train on (they cost a full episode of synthesis '
+                        'and usually yield no gradient); 0 trains on faults only. Test scores all.')
     s.add_argument('--train-split', dest='train_split', default='train')
     s.add_argument('--val-split', dest='val_split', default='calibration')
     s.add_argument('--test-split', dest='test_split', default='test')

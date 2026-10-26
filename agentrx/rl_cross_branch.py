@@ -8,7 +8,11 @@ Gold-reading reporting (validation attribution exact-step) lives in ``rl_reporti
 the acceptance-vs-ledger gap logged per epoch is assembled from the harness's finished report and the
 policy's observable log, never handed back to the policy.
 """
+import collections
+import math
+import sys
 import tempfile
+import time
 from pathlib import Path
 
 from benchmark.env.workflow import Directive
@@ -29,7 +33,7 @@ from .io import read_json
 from .perspectives import repeats_earlier_tool_result
 from .pipeline import diagnose_mp_rl
 from .providers import ProviderError
-from .rl_policy import DualLoopRLJudge
+from .rl_policy import THETA0, DualLoopRLJudge
 
 
 class _SeedOnlyProvider:
@@ -138,6 +142,7 @@ class MPRLRecoveryPolicy(RepairStrategyPolicy, RecoveryPolicy):
         self.rl_judge = rl_judge or (DualLoopRLJudge.load(rl_state_path, read_only=not learn) if rl_state_path
                                      else DualLoopRLJudge(read_only=not learn))
         self.engine, self.hypotheses, self.rl_log = None, {}, {}
+        self.epoch = None          # set by the training loop; None means do not record consumption
 
     def _engine(self, task):
         self.engine = _CreditEngine(task)
@@ -179,9 +184,20 @@ class MPRLRecoveryPolicy(RepairStrategyPolicy, RecoveryPolicy):
         telemetry = self.rl_judge.record_recovery_outcome(tid, step, verified=verified, verifier_score_before=0.0,
                                                           verifier_score_after=after, stopped_early=stopped,
                                                           failed_steps=failed)
+        # Which acceptance check rejected the repair. AcceptanceReport.passed is a conjunction over up
+        # to 11 kinds, so a run sitting at accept 0.00 is uninformative without knowing which one fires.
+        rejected = [kind for a in self.log[tid].attempts for kind in a.get('rejected_by', [])]
         self.rl_log[tid] = {'verified': verified, 'score_after': after, 'stopped_early': stopped,
                             'credited_step': step, 'failed_steps': telemetry['pairwise_steps'],
-                            'reward': telemetry['reward']}
+                            'reward': telemetry['reward'], 'rejected_by': rejected}
+        if self.epoch is not None:
+            # Recorded before the save, into the dict that save() serializes, so theta and the ledger of
+            # what produced it land in one atomic write and cannot disagree after an interruption. Only
+            # this path records: the early returns above made no policy update, so replaying those
+            # episodes on resume costs time but cannot double-count a gradient.
+            consumed = self.rl_judge.progress.setdefault('epoch_consumed', {}).setdefault(str(self.epoch), [])
+            if tid not in consumed:
+                consumed.append(tid)
         if self.rl_state_path:
             self.rl_judge.save(self.rl_state_path)
         return decision
@@ -240,9 +256,18 @@ def _observable_epoch_metrics(policy):
             'mean_reward': (sum(r['reward'] for r in rl) / n) if n else 0.0}
 
 
+class ReachedTarget(Exception):
+    """Raised from the per-episode callback to stop training once validation clears the target."""
+
+    def __init__(self, score, episodes):
+        super().__init__(f'validation {score:.4f} cleared the target after {episodes} episode(s)')
+        self.score, self.episodes = score, episodes
+
+
 def train_and_evaluate_benchmark(corpus_dir, train_split='train', test_split='test', epochs=1, rl_state_path=None,
                                  llm_factory=None, use_llm_synthesis=False, limit=None, provider=None,
-                                 val_split=None) -> dict:
+                                 val_split=None, control_sample=25, stop_above=None, val_every=0,
+                                 val_limit=None, show_progress=True) -> dict:
     """Learn theta and M_i on train_split from observable feedback only, then evaluate frozen on test_split.
 
     Per epoch, train_history logs the observable signals (mean_reward, acceptance_rate) alongside the gold
@@ -250,24 +275,106 @@ def train_and_evaluate_benchmark(corpus_dir, train_split='train', test_split='te
     acceptance climbing away from gold recovery. The gap is assembled here in the reporting layer, after the
     policy returns; the ledger is never fed back into the policy. With val_split set, also logs frozen
     attribution exact-step on it for model selection.
+
+    ``control_sample`` caps how many clean/tolerated episodes training sees. Attribution runs full
+    constraint synthesis before it decides to abstain, so each control costs a whole episode of LLM
+    calls and usually returns no gradient; on this corpus that is 120 of 233 train episodes. A sample
+    is kept rather than none, because controls carry the only signal against intervening on a healthy
+    run. The frozen test evaluation always scores every control.
+
+    Resume: the checkpoint carries a ledger of which episodes each epoch has already trained on, written
+    in the same atomic save as theta. A restart skips completed epochs outright and, inside a partly
+    finished epoch, skips the episodes whose gradients theta already holds. Without that ledger a restart
+    silently applied them a second time. A resumed epoch's aggregate metrics therefore cover only the
+    episodes that process ran, and the row says so in resumed_from_episode; the authoritative numbers come
+    from the frozen test evaluation, which always runs its whole split in one pass. ``epochs`` is left out
+    of the resume identity on purpose, so raising it continues an existing run rather than being refused.
     """
     if llm_factory is None:
         from benchmark.env.scripted import scripted_llm as llm_factory
     from .rl_reporting import attribution_exact_step    # reporting-side (reads gold); kept off the policy path
     policy = MPRLRecoveryPolicy(provider, rl_state_path=rl_state_path, use_llm_synthesis=use_llm_synthesis,
                                 learn=True)
-    history = []
+    progress = policy.rl_judge.progress
+    identity = {'corpus': str(corpus_dir), 'train': train_split, 'val': val_split, 'test': test_split,
+                'limit': limit, 'use_llm_synthesis': bool(use_llm_synthesis),
+                'control_sample': control_sample}
+    recorded = progress.get('identity')
+    if recorded is not None and recorded != identity:
+        raise ValueError(f'this checkpoint was trained on different settings ({recorded} != {identity}); '
+                         'resuming would fold two different runs into one theta. Use a new checkpoint path.')
+    progress['identity'] = identity
+    history = list(progress.get('history', []))
+    done = {row['epoch'] for row in history}
     for epoch in range(1, epochs + 1):
-        report = run_recovery(corpus_dir, train_split, policy, llm_factory, limit=limit)
+        if epoch in done:
+            continue                        # this epoch's gradients are already in theta
+        policy.epoch = epoch
+        consumed = progress.setdefault('epoch_consumed', {}).setdefault(str(epoch), [])
+        resumed_from = len(consumed)
+        started_at = time.monotonic()
+
+        def episode_line(done_n, total, tid, row, _start=started_at):
+            """Live per-episode telemetry, and the validation early stop.
+
+            A training run here is hours long, so reporting only at the end means a corrupted reward
+            signal or a stalled policy is discovered after the compute is spent rather than in the
+            first few minutes.
+            """
+            rl = list(policy.rl_log.values())
+            mean_reward = sum(r['reward'] for r in rl) / len(rl) if rl else 0.0
+            accepted = sum(1.0 for r in rl if r['verified']) / len(rl) if rl else 0.0
+            drift = math.sqrt(sum((w - t) ** 2 for w, t in zip(policy.rl_judge.weights, THETA0)))
+            elapsed = time.monotonic() - _start
+            per_episode = elapsed / max(done_n, 1)
+            rejects = collections.Counter(k for r in rl for k in r.get('rejected_by', ()))
+            worst = f' | rejected_by {rejects.most_common(1)[0][0]}' if rejects else ''
+            if show_progress:
+                print(f'  [ep {done_n:>3}/{total}] {elapsed / 60:5.1f}m  {per_episode:5.1f}s/ep  '
+                      f'eta {per_episode * (total - done_n) / 60:5.1f}m | R {mean_reward:+.3f} | '
+                      f'accept {accepted:.2f} | |dtheta| {drift:.4f}{worst} | {tid}',
+                      file=sys.stderr, flush=True)
+            if val_every and stop_above is not None and val_split and done_n % val_every == 0:
+                score = attribution_exact_step(corpus_dir, val_split, policy.rl_judge, use_llm_synthesis,
+                                               provider, llm_factory, val_limit)
+                if show_progress:
+                    print(f'  [val @ {done_n}] exact_step={score} target>{stop_above}',
+                          file=sys.stderr, flush=True)
+                if score is not None and score > stop_above:
+                    raise ReachedTarget(score, done_n)
+
+        reached = None
+        try:
+            report = run_recovery(corpus_dir, train_split, policy, llm_factory, limit=limit, skip=consumed,
+                                  control_sample=control_sample, on_episode=episode_line)
+        except ReachedTarget as hit:
+            # The consumed ledger was written per episode, so theta and the record of what produced it
+            # are already consistent; the epoch simply has no aggregate report.
+            reached, report = hit, None
         observable = _observable_epoch_metrics(policy)
-        ledger_recovery_rate = report['metrics']['recovery_rate']['value']
+        ledger_recovery_rate = report['metrics']['recovery_rate']['value'] if report else None
         history.append({'epoch': epoch, 'episodes': policy.rl_judge.episodes,
                         'weights': list(policy.rl_judge.weights),
                         'harness_recovery_rate': ledger_recovery_rate, **observable,
-                        'acceptance_minus_ledger_gap': observable['acceptance_rate'] - ledger_recovery_rate,
+                        # None when the epoch ran no episodes at all, which a resume can hit if the last
+                        # episode was saved before the epoch itself was recorded as done.
+                        'acceptance_minus_ledger_gap': (None if ledger_recovery_rate is None else
+                                                        observable['acceptance_rate'] - ledger_recovery_rate),
+                        'resumed_from_episode': resumed_from,
+                        'stopped_on_target': None if reached is None else
+                                             {'score': reached.score, 'after_episodes': reached.episodes},
                         'val_attribution_exact_step': (
+                            reached.score if reached is not None else
                             attribution_exact_step(corpus_dir, val_split, policy.rl_judge, use_llm_synthesis,
                                                     provider, llm_factory, limit) if val_split else None)})
+        progress['history'] = history
+        if rl_state_path:
+            policy.rl_judge.save(rl_state_path)
+        if reached is not None:
+            if show_progress:
+                print(f'  stopping: {reached}', file=sys.stderr, flush=True)
+            break
+    policy.epoch = None
     policy.learn = False
     test_report = run_recovery(corpus_dir, test_split, policy, llm_factory, limit=limit)
     return {'train_history': history, 'test_report': test_report, 'learned_weights': list(policy.rl_judge.weights)}
