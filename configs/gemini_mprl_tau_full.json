@@ -1,0 +1,26 @@
+{
+  "name": "gemini-mprl-tau-full",
+  "client": {
+    "provider": "gemini",
+    "model": "gemini-3.1-flash-lite",
+    "api_key_env": "GEMINI_API_KEY",
+    "settings": {
+      "temperature": 0,
+      "max_tokens": 16000
+    },
+    "timeout": 300,
+    "retries": 6
+  },
+  "repetitions": 1,
+  "domains": [
+    "tau"
+  ],
+  "variants": [
+    {
+      "name": "mp_rl_llm",
+      "evidence": true,
+      "protocol": "mp_rl",
+      "recovery_loop": false
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 """JSON model clients and persistent request-level provenance without API secrets."""
+import collections
 import copy
 import json
 import os
@@ -100,7 +101,7 @@ class HTTPProvider(_PerCallDiagnostics):
 
     def __init__(self, model, base_url, api_key, provider='openai', deployment=None,
                  api_version='2024-10-21', settings=None, timeout=180, retries=3,
-                 retry_delay=1, max_input_chars=None):
+                 retry_delay=1, max_input_chars=None, tpm_limit=None):
         url = parse.urlparse(base_url)
         if url.scheme not in ('http', 'https') or not url.hostname or url.username or url.password or url.query or url.fragment:
             raise ProviderError('Invalid model base URL (no credentials/query/fragment allowed)')
@@ -115,6 +116,8 @@ class HTTPProvider(_PerCallDiagnostics):
             raise ProviderError('Unsupported sampling setting')
         self.timeout, self.retries, self.retry_delay = timeout, retries, retry_delay
         self.max_input_chars = max_input_chars
+        self.tpm_limit = tpm_limit      # input tokens per minute to stay under; None disables pacing
+        self._spent = collections.deque()   # (monotonic second, estimated input tokens)
         if provider == 'azure':
             if not deployment:
                 raise ProviderError('Azure needs AZURE_OPENAI_DEPLOYMENT')
@@ -160,7 +163,33 @@ class HTTPProvider(_PerCallDiagnostics):
                    deployment=config.get('deployment') or os.environ.get('AZURE_OPENAI_DEPLOYMENT'),
                    api_version=config.get('api_version', os.environ.get('AZURE_OPENAI_API_VERSION', '2024-10-21')),
                    settings=config.get('settings'), timeout=config.get('timeout', 180),
-                   retries=config.get('retries', 3), max_input_chars=config.get('max_input_chars'))
+                   retries=config.get('retries', 3), max_input_chars=config.get('max_input_chars'),
+                   tpm_limit=config.get('tpm_limit'))
+
+    def _pace(self, n_chars):
+        """Block until this request fits a rolling 60s input-token budget.
+
+        Gemini rate-limits on tokens per minute, not requests. A run can sit at 2% of its request
+        allowance and still be refused, because each synthesis call carries the whole trajectory.
+        Measured on this project: ~22k input tokens per call, median 13k, tail 96k. A fixed delay
+        therefore either throttles the small calls for nothing or lets a run of large ones through,
+        so this tracks what was actually sent in the last minute and waits only when the next call
+        would not fit.
+
+        Tokens are estimated at 4 chars each, which runs slightly high and errs toward waiting.
+        Retries are paced too, since a 429 retry spends the same budget.
+        """
+        if not self.tpm_limit:
+            return
+        estimate = max(1, n_chars // 4)
+        while True:
+            now = time.monotonic()
+            while self._spent and now - self._spent[0][0] >= 60.0:
+                self._spent.popleft()
+            if not self._spent or sum(t for _, t in self._spent) + estimate <= self.tpm_limit:
+                break
+            time.sleep(min(60.0, max(0.05, 60.0 - (now - self._spent[0][0]))))
+        self._spent.append((time.monotonic(), estimate))
 
     def _backoff(self, attempt, retry_after=None):
         """Seconds before the next attempt: a numeric Retry-After header, else exponential; both capped at 60."""
@@ -192,6 +221,7 @@ class HTTPProvider(_PerCallDiagnostics):
         while True:
             try:
                 sent += 1
+                self._pace(len(encoded))
                 self.http_requests += 1
                 req = request.Request(target, data=encoded, headers=headers, method='POST')
                 with opener.open(req, timeout=self.timeout) as response:

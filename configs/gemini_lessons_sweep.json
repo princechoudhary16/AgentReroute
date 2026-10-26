@@ -9,7 +9,8 @@
       "max_tokens": 16000
     },
     "timeout": 300,
-    "retries": 6
+    "retries": 6,
+    "tpm_limit": 2800000
   },
   "repetitions": 1,
   "domains": [

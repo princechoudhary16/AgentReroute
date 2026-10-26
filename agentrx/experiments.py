@@ -18,7 +18,7 @@ from .handoff import validate_handoff, CONFIDENCE_KIND
 
 CLIENT_KEYS = {'provider','model','base_url','api_key_env','deployment','api_version','settings',
                'timeout','retries','max_input_chars','replay_file','base_url_env','model_env',
-               'num_ctx','think','keep_alive'}
+               'num_ctx','think','keep_alive', 'tpm_limit'}
 
 
 def experiment_variants(config):
