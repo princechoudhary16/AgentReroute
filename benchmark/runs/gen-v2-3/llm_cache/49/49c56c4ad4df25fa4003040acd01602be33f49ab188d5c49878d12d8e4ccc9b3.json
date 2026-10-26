@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"get_product_details\", \"arguments\": {\"product_id\": \"helmet\"}}", "tokens_in": 3107, "tokens_out": 26, "model": "qwen2.5:32b", "lenient": false}

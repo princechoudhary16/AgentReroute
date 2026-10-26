@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I'm encountering an issue locating your order details. Could you please confirm the order ID is #W9502127 and provide your email address so I can locate your order details and proceed with the return?\"}", "tokens_in": 3850, "tokens_out": 57, "model": "qwen2.5:32b", "lenient": false}

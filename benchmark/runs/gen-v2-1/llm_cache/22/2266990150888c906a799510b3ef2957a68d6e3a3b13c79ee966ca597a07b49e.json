@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"get_user_details\", \"arguments\": {\"user_id\": \"ivan_johnson_6036\"}}", "tokens_in": 2783, "tokens_out": 33, "model": "qwen2.5:32b", "lenient": false}

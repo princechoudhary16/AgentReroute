@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"handoff\", \"to\": \"returns_agent\", \"message\": \"User wants to return order #W7773202\", \"context\": {\"user_id\": \"amelia_silva_7726\", \"order_id\": \"#W7773202\", \"items\": [\"#W7773202\"], \"payment_method\": \"gift_card_3491931\"}}", "tokens_in": 6780, "tokens_out": 97, "model": "qwen2.5:32b", "lenient": false}

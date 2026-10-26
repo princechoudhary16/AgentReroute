@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"list_all_product_types\", \"arguments\": {}, \"context\": {\"user_id\": \"yusuf_rossi_9620\"}, \"content\": \"\"}", "tokens_in": 3530, "tokens_out": 45, "model": "qwen2.5:32b", "lenient": false}

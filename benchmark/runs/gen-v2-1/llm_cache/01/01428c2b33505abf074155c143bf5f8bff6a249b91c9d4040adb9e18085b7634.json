@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"The order could not be found. Please provide the correct order ID to proceed with the return.\"}", "tokens_in": 2679, "tokens_out": 31, "model": "qwen2.5:32b", "lenient": false}

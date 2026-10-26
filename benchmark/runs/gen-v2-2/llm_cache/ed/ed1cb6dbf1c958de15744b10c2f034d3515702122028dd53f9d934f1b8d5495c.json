@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"The user details could not be found. Please provide the user ID or authenticate the user again.\"}", "tokens_in": 2640, "tokens_out": 31, "model": "qwen2.5:32b", "lenient": false}

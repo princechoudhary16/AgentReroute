@@ -1,0 +1,57 @@
+{
+  "config": {
+    "name": "generation",
+    "data_dir": "benchmark/data/tau_retail",
+    "backend": "ollama",
+    "model": "qwen2.5:32b",
+    "host": "http://localhost:11434",
+    "temperature": 0.0,
+    "seeds": [
+      0
+    ],
+    "operators": null,
+    "timings": [
+      "early",
+      "middle",
+      "late"
+    ],
+    "task_ids": null,
+    "max_tasks": 115,
+    "max_steps": 60,
+    "cache_dir": null,
+    "actor_response_schema": true,
+    "num_ctx": 16384,
+    "task_slice": "2/4"
+  },
+  "identity": {
+    "backend": "ollama",
+    "model": "qwen2.5:32b",
+    "temperature": 0.0,
+    "seeds": [
+      0
+    ],
+    "max_steps": 60,
+    "domain_source": {
+      "kind": "tau-bench",
+      "repo": "sierra-research/tau-bench",
+      "ref": "main",
+      "commit": "59a200c6d575d595120f1cb70fea53cef0632f6b",
+      "files": {
+        "users.json": "6f4fd104cc5e80b92166c4035315c31532c6cea52a90dcdf18425ee7f87c2b82",
+        "orders.json": "2598a12586d28f2d6bd16bc86f4c800029b6af18e0abb5c475ef5c869c11ced1",
+        "products.json": "a9eabcc1a9742c5f5288c2779acce52b9308423383ed24706bbaf0889f762a0f",
+        "policy.md": "d539fd2a46a8b8dd2e934ff9ed92f43e9f6b56bc7a718db8d2803ba8ad8f6bf7",
+        "tasks_test.py": "6f09468923c6cfb6162e94fe659264d6aee70816c18d51278fb4a581db7765a4"
+      },
+      "n_tasks": 115,
+      "license": "MIT (tau-bench)"
+    },
+    "workflow_version": 2,
+    "operators_version": 3,
+    "prompts_digest": "567b2ff3d9737f2bcf768eb248937ee149ecf6724cd7cea1c9c5df8f70614183",
+    "actor_response_schema": true,
+    "num_ctx": 16384,
+    "model_digest": "e7249b94677fa4b92c87eeffcc1b63f795a19f130b705b8ce099cc4c89e0ea8e"
+  },
+  "policy_digest": "eeeb5e9dba227c2180db4c8611a9f5e3c093c0170691ffaef6a89dd64d50c90c"
+}

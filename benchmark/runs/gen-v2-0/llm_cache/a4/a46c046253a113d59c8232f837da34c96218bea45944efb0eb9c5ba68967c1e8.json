@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I'm sorry, but I couldn't find the order with the ID you provided. Could you please double-check the order ID and provide it again?\"}", "tokens_in": 2863, "tokens_out": 42, "model": "qwen2.5:32b", "lenient": false}

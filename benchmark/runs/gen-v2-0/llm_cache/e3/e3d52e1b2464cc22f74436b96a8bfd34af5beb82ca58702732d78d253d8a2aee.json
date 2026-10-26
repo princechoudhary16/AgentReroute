@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"The returns have been processed successfully. The total refund amount of $1841.04 will be credited to your credit card. You will receive an email with instructions on how to return the items. Thank you for your patience!\"}", "tokens_in": 6111, "tokens_out": 60, "model": "qwen2.5:32b", "lenient": false}

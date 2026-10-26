@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"modify_user_address\", \"arguments\": {\"user_id\": \"yusuf_rossi_9620\", \"address1\": \"943 Maple Drive\", \"address2\": \"Suite 356\", \"city\": \"Chicago\", \"state\": \"IL\", \"country\": \"USA\", \"zip\": \"60621\"}}", "tokens_in": 3204, "tokens_out": 85, "model": "qwen2.5:32b", "lenient": false}

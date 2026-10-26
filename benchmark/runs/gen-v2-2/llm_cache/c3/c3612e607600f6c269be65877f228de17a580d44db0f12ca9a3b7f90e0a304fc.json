@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I'm sorry, but the order ID #123456 could not be found. Could you please verify the order ID and provide it again? This will help us proceed with your request.\"}", "tokens_in": 3747, "tokens_out": 53, "model": "qwen2.5:32b", "lenient": false}

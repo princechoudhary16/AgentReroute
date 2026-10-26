@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I encountered an error while processing your request. Please try again later, and I'll be happy to assist you then.\"}", "tokens_in": 3309, "tokens_out": 36, "model": "qwen2.5:32b", "lenient": false}

@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"unknown\"}, \"content\": \"I need the specific order id to proceed with the exchange request.\"}", "tokens_in": 2604, "tokens_out": 43, "model": "qwen2.5:32b", "lenient": false}

@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"The shipping address for your order has been successfully updated to your default address: 159 Hickory Lane, Suite 995, Charlotte, NC, USA, 28243. Your order will now be shipped to this address. Is there anything else you need assistance with?\"}", "tokens_in": 3491, "tokens_out": 73, "model": "qwen2.5:32b", "lenient": false}

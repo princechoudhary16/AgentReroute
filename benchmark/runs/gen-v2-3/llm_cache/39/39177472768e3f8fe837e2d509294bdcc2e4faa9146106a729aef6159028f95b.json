@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"calculate\", \"arguments\": {\"expression\": \"236.57 - 260.56\"}}", "tokens_in": 3253, "tokens_out": 35, "model": "qwen2.5:32b", "lenient": false}

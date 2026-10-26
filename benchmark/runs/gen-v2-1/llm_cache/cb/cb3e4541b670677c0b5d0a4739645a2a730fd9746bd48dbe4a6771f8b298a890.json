@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I encountered an issue while processing your request. Could you please confirm the order ID for the perfume you want to exchange? If you're unsure, you can find it in your order confirmation email.\"}", "tokens_in": 3244, "tokens_out": 51, "model": "qwen2.5:32b", "lenient": false}

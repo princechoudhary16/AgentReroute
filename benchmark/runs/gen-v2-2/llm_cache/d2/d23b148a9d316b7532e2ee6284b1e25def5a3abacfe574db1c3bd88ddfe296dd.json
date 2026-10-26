@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"get_user_details\", \"arguments\": {\"user_id\": \"daiki_sanchez_3253\"}, \"context\": {\"user_id\": \"daiki_sanchez_3253\"}, \"content\": \"\"}", "tokens_in": 2514, "tokens_out": 58, "model": "qwen2.5:32b", "lenient": false}

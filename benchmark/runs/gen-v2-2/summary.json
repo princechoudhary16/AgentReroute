@@ -1,0 +1,24 @@
+{
+  "episodes_written": {
+    "natural_failure": 17,
+    "clean": 2,
+    "failed": 11,
+    "not_activated": 1,
+    "tolerated": 14
+  },
+  "tasks": 29,
+  "cache": {
+    "hits": 599,
+    "misses": 647,
+    "refused_writes": 0,
+    "stale_poison": 0,
+    "poisoned_hits": 0
+  },
+  "actor": {
+    "draws": 647,
+    "repaired": 0,
+    "unrecovered": 0,
+    "num_ctx": 16384,
+    "response_schema": true
+  }
+}

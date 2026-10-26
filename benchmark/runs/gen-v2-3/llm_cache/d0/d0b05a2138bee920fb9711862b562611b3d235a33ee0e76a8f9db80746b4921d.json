@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"transfer_to_human_agents\", \"arguments\": {\"summary\": \"User needs details about a bluetooth speaker from their last order, including price and battery life.\"}}", "tokens_in": 3183, "tokens_out": 42, "model": "qwen2.5:32b", "lenient": false}

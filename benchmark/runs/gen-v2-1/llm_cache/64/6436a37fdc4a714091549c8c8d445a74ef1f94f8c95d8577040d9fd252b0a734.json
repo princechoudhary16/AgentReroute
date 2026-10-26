@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I understand your concern. To proceed, I need the order ID and the new address details. Could you please provide the order ID and the address details from your other order? This is necessary to ensure the correct address is used.\"}", "tokens_in": 3996, "tokens_out": 58, "model": "qwen2.5:32b", "lenient": false}

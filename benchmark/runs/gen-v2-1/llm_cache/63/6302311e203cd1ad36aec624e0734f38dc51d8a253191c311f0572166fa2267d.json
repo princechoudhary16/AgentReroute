@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"modify_pending_order_address\", \"arguments\": {\"order_id\": \"#W6750959\", \"address1\": \"476 Maple Drive\", \"address2\": \"Suite 432\", \"city\": \"New York\", \"state\": \"NY\", \"country\": \"USA\", \"zip\": \"10093\"}}", "tokens_in": 3280, "tokens_out": 84, "model": "qwen2.5:32b", "lenient": false}

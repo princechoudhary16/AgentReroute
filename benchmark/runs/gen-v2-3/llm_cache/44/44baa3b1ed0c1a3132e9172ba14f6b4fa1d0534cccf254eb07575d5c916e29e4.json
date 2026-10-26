@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"handoff\", \"to\": \"order_agent\", \"message\": \"Please update the user's default address to the one used in order #W2378156.\", \"context\": {\"user_id\": \"yusuf_rossi_9620\", \"order_id\": \"#W2378156\"}}", "tokens_in": 3313, "tokens_out": 76, "model": "qwen2.5:32b", "lenient": false}

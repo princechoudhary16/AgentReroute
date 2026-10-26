@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I found your previous order #W4219264, but it seems to have the same address as your current default address in Seattle. Could you please provide the address details for your order in New York?\"}", "tokens_in": 3817, "tokens_out": 57, "model": "qwen2.5:32b", "lenient": false}

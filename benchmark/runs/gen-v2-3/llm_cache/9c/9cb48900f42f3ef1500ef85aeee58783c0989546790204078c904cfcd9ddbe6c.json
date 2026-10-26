@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"The request is missing details. Please provide the specific changes the user wants to make (address, payment method, or items) and the order ID.\"}", "tokens_in": 3172, "tokens_out": 42, "model": "qwen2.5:32b", "lenient": false}

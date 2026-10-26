@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"Your order #W8835847 has been cancelled. The total amount will be refunded to your original payment method, the gift card, immediately. If you have any further questions or need assistance with anything else, feel free to reach out.\"}", "tokens_in": 5501, "tokens_out": 64, "model": "qwen2.5:32b", "lenient": false}

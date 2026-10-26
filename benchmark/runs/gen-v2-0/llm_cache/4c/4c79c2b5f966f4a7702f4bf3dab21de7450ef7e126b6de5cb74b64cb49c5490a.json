@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"The request does not specify the order ID, item IDs, or payment method ID required to process the return. Additional information is needed.\"}", "tokens_in": 2542, "tokens_out": 39, "model": "qwen2.5:32b", "lenient": false}

@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"#W5838674\"}, \"context\": {\"user_id\": \"ivan_hernandez_6923\", \"order_id\": \"#W5838674\"}, \"content\": \"\"}", "tokens_in": 2780, "tokens_out": 69, "model": "qwen2.5:32b", "lenient": false}

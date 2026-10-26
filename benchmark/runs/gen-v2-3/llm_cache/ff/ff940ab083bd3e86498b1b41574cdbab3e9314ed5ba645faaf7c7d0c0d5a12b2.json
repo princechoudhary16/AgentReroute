@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"#W7800651\"}, \"context\": {\"user_id\": \"mei_kovacs_8020\"}, \"content\": \"\"}", "tokens_in": 3513, "tokens_out": 56, "model": "qwen2.5:32b", "lenient": false}

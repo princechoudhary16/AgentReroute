@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"handoff\", \"to\": \"order_agent\", \"message\": \"Change the shipping address for order #W6750959 to the address from order #W3407479.\", \"context\": {\"user_id\": \"yusuf_li_7255\", \"order_id\": \"#W6750959\"}}", "tokens_in": 3932, "tokens_out": 81, "model": "qwen2.5:32b", "lenient": false}

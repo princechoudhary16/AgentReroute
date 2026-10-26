@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I found a previous order with a New York address. The address is 144 Lakeview Drive, Suite 925, New York, NY, 10228. Is this the address you want to use for your pending order?\"}", "tokens_in": 3954, "tokens_out": 65, "model": "qwen2.5:32b", "lenient": false}

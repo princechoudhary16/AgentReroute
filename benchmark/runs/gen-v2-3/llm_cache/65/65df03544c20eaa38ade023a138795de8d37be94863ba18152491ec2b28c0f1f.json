@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"get_user_details\", \"arguments\": {\"user_id\": \"sofia_hernandez_5364\"}, \"context\": {\"user_id\": \"sofia_hernandez_5364\"}, \"content\": \"I'll check your recent orders to find the separate grill order. Please give me a moment.\"}", "tokens_in": 6978, "tokens_out": 79, "model": "qwen2.5:32b", "lenient": false}

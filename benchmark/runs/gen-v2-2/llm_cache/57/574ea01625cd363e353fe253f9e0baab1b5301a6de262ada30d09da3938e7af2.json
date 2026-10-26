@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"handoff\", \"to\": \"product_agent\", \"message\": \"User wants to know about the price and battery life of a bluetooth speaker they recently ordered.\", \"context\": {\"first_name\": \"Chen\", \"last_name\": \"Johnson\", \"zip\": \"77004\"}}", "tokens_in": 2378, "tokens_out": 65, "model": "qwen2.5:32b", "lenient": false}

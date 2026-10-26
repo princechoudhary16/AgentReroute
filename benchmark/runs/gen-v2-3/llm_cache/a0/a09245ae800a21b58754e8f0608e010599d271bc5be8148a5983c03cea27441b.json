@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"modify_user_address\", \"arguments\": {\"user_id\": \"lucas_santos_6600\", \"address1\": \"943 Maple Drive\", \"address2\": \"Suite 356\", \"city\": \"Chicago\", \"state\": \"IL\", \"country\": \"USA\", \"zip\": \"60621\"}}", "tokens_in": 3219, "tokens_out": 84, "model": "qwen2.5:32b", "lenient": false}

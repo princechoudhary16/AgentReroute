@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"The request to change the shipping address is incomplete. Please provide the order ID and the new address details.\"}", "tokens_in": 3171, "tokens_out": 33, "model": "qwen2.5:32b", "lenient": false}

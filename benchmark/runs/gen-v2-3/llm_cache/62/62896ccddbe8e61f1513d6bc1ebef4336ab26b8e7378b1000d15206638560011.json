@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"There seems to be an issue retrieving the product details for the item ID 12345. Please try again later or contact support for further assistance.\"}", "tokens_in": 4270, "tokens_out": 44, "model": "qwen2.5:32b", "lenient": false}

@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"[omitted]\"}, \"content\": \"Retrieving order details to proceed with the return process.\"}", "tokens_in": 2619, "tokens_out": 43, "model": "qwen2.5:32b", "lenient": false}

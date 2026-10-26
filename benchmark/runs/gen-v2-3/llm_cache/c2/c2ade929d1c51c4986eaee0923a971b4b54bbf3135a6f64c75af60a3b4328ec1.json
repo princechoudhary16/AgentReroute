@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"return_order\", \"arguments\": {\"order_id\": \"#W5490111\", \"items\": [\"4579334072\", \"1421289881\", \"6117189161\", \"4947717507\"], \"payment_method\": \"paypal_9497703\"}}", "tokens_in": 1890, "tokens_out": 97, "model": "qwen2.5:32b", "lenient": false}

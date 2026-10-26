@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"handoff\", \"to\": \"order_agent\", \"message\": \"User wants to cancel\", \"context\": {\"user_id\": \"amelia_silva_7726\", \"order_id\": \"#W7342738\"}}", "tokens_in": 6754, "tokens_out": 57, "model": "qwen2.5:32b", "lenient": false}

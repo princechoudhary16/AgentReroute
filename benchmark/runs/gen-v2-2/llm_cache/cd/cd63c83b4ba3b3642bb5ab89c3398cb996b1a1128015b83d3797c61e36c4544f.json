@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"modify_user_address\", \"arguments\": {\"user_id\": \"mei_patel_7272\", \"address1\": \"445 Maple Drive\", \"address2\": \"Suite 394\", \"city\": \"Fort Worth\", \"state\": \"TX\", \"country\": \"USA\", \"zip\": \"76165\"}}", "tokens_in": 3223, "tokens_out": 84, "model": "qwen2.5:32b", "lenient": false}

@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"There seems to be a delay in retrieving the order details. Please try again shortly.\"}", "tokens_in": 3182, "tokens_out": 29, "model": "qwen2.5:32b", "lenient": false}

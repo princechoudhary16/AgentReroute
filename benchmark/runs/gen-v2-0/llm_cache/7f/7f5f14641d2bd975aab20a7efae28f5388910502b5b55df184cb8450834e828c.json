@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"There was an error processing the return request because the payment method was not found. Please check the payment method details and try again.\"}", "tokens_in": 2716, "tokens_out": 38, "model": "qwen2.5:32b", "lenient": false}

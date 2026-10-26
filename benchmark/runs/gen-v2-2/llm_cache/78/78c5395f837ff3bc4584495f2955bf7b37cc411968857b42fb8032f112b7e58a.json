@@ -1,0 +1,1 @@
+{"text": "Sure, let's assume the order ID is 123456. Can you check the price of the bluetooth speaker with this order ID? If it's over $300, I'd like to cancel it. Also, please check if there are any bluetooth speakers available for less than $100 and add the cheapest one to my order.", "tokens_in": 905, "tokens_out": 75, "model": "qwen2.5:32b", "lenient": false}

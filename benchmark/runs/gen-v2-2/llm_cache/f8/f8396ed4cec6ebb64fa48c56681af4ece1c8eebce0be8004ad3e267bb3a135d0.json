@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"handoff\", \"to\": \"order_agent\", \"message\": \"Please revert the user address back to the original address in Denver, 80280.\", \"context\": {\"user_id\": \"ethan_garcia_1261\"}}", "tokens_in": 2664, "tokens_out": 58, "model": "qwen2.5:32b", "lenient": false}

@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"The order #W7342738 has been cancelled successfully. The total amount has been refunded to the original payment method, gift_card_3491931.\"}", "tokens_in": 3817, "tokens_out": 51, "model": "qwen2.5:32b", "lenient": false}

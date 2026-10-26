@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"modify_user_address\", \"arguments\": {\"user_id\": \"yusuf_rossi_9620\", \"address1\": \"763 Broadway\", \"address2\": \"Suite 135\", \"city\": \"Philadelphia\", \"state\": \"PA\", \"country\": \"USA\", \"zip\": \"19122\"}}", "tokens_in": 3866, "tokens_out": 84, "model": "qwen2.5:32b", "lenient": false}

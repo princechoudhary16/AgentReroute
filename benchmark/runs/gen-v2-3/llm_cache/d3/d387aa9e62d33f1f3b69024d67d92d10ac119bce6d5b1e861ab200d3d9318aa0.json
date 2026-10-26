@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"There was an error in processing the return request. The payment method should be either the original payment method or a gift card. Please ensure the correct payment method is provided and try again.\"}", "tokens_in": 2905, "tokens_out": 49, "model": "qwen2.5:32b", "lenient": false}

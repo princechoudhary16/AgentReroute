@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"find_user_id_by_name_zip\", \"arguments\": {\"first_name\": \"Ethan\", \"last_name\": \"Garcia\", \"zip\": \"80280\"}, \"context\": {}, \"content\": \"\"}", "tokens_in": 2394, "tokens_out": 57, "model": "qwen2.5:32b", "lenient": false}

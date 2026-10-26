@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"modify_user_address\", \"arguments\": {\"user_id\": \"ethan_garcia_1261\", \"address1\": \"101 Highway\", \"address2\": \"\", \"city\": \"New York\", \"state\": \"NY\", \"country\": \"USA\", \"zip\": \"10001\"}}", "tokens_in": 3204, "tokens_out": 78, "model": "qwen2.5:32b", "lenient": false}

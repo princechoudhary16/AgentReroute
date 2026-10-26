@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"#W9502127\"}, \"context\": {}, \"content\": \"\"}", "tokens_in": 2584, "tokens_out": 41, "model": "qwen2.5:32b", "lenient": false}

@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"The return for order #W4597054 has been processed and the refund will be credited to the original payment method, gift_card_3491931. The user will receive an email with instructions on how to return the items.\"}", "tokens_in": 1828, "tokens_out": 66, "model": "qwen2.5:32b", "lenient": false}
