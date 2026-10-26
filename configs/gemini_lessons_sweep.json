@@ -1,0 +1,53 @@
+{
+  "name": "gemini-lessons-sweep",
+  "client": {
+    "provider": "gemini",
+    "model": "gemini-3.1-flash-lite",
+    "api_key_env": "GEMINI_API_KEY",
+    "settings": { "temperature": 0, "max_tokens": 16000 },
+    "timeout": 300,
+    "retries": 6
+  },
+  "repetitions": 1,
+  "domains": ["tau"],
+  "limit_per_domain": 43,
+  "variants": [
+    {
+      "name": "no_bank",
+      "evidence": false,
+      "protocol": "mp_rl",
+      "llm_selector": "trace",
+      "selector_pool": 5
+    },
+    {
+      "name": "bank_support1_cap8",
+      "evidence": false,
+      "protocol": "mp_rl",
+      "llm_selector": "trace",
+      "selector_pool": 5,
+      "lesson_bank": "runs/lessons/tau_lessons.json",
+      "lesson_min_confirmed": 1,
+      "lesson_limit": 8
+    },
+    {
+      "name": "bank_support2_cap4",
+      "evidence": false,
+      "protocol": "mp_rl",
+      "llm_selector": "trace",
+      "selector_pool": 5,
+      "lesson_bank": "runs/lessons/tau_lessons.json",
+      "lesson_min_confirmed": 2,
+      "lesson_limit": 4
+    },
+    {
+      "name": "bank_support2_cap2",
+      "evidence": false,
+      "protocol": "mp_rl",
+      "llm_selector": "trace",
+      "selector_pool": 5,
+      "lesson_bank": "runs/lessons/tau_lessons.json",
+      "lesson_min_confirmed": 2,
+      "lesson_limit": 2
+    }
+  ]
+}

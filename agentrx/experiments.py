@@ -40,7 +40,8 @@ def experiment_variants(config):
     result, names = [], set()
     for variant in variants:
         if set(variant) - {'name','evidence','checklist','generation','protocol','python_timeout','divergence_threshold','max_candidates','recovery_loop','repair_cascade','rl_state_path',
-                            'llm_selector','selector_pool','lesson_bank'}:
+                            'llm_selector','selector_pool','lesson_bank','lesson_limit',
+                            'lesson_min_confirmed'}:
             raise ValueError('Unsupported variant field')
         name = variant.get('name','')
         if not isinstance(name,str) or not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_.-]*',name) or name in names:

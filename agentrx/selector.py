@@ -108,12 +108,24 @@ class LessonBank:
         self.lessons = kept
         return self
 
-    def retrieve(self, categories, limit=8):
-        """Lessons for the categories in play, most-confirmed first. No model call."""
+    def retrieve(self, categories, limit=8, min_confirmed=1):
+        """Lessons for the categories in play, most-confirmed first. No model call.
+
+        ``min_confirmed`` is a support threshold: a lesson written from a single training episode
+        is one observation and is usually noise, while one confirmed across k episodes is k-fold
+        evidence. ``limit`` is the capacity cap. Both act at retrieval time, so one bank file
+        supports a whole capacity sweep without rebuilding.
+        """
         wanted = {c for c in categories if c}
-        hits = [x for x in self.lessons if x.get('category') in wanted] or list(self.lessons)
-        hits.sort(key=lambda x: -x.get('confirmed', 1))
+        pool = [x for x in self.lessons if x.get('confirmed', 1) >= max(1, int(min_confirmed))]
+        hits = [x for x in pool if x.get('category') in wanted] or pool
+        hits.sort(key=lambda x: (-x.get('confirmed', 1), str(x.get('signal', ''))))
         return [{k: x.get(k) for k in LESSON_KEYS} for x in hits[:max(0, int(limit))]]
+
+    def support_profile(self):
+        """How many lessons survive each support threshold: the capacity curve, for the report."""
+        counts = [x.get('confirmed', 1) for x in self.lessons]
+        return {t: sum(1 for c in counts if c >= t) for t in (1, 2, 3, 4, 5)}
 
     def __len__(self):
         return len(self.lessons)
@@ -140,7 +152,8 @@ def select_payload(trajectory, blame, ranked, scope, pool, lessons):
             'lessons': list(lessons)}
 
 
-def llm_select(trajectory, blame, ranked, provider, scope='trace', pool=5, bank=None, lesson_limit=8):
+def llm_select(trajectory, blame, ranked, provider, scope='trace', pool=5, bank=None, lesson_limit=8,
+               lesson_min_confirmed=1):
     """One model call that picks the decisive fault. Falls back to the ranked top-1 on any failure.
 
     Returns (prediction, log). The prediction is already validated against the trajectory, so a
@@ -148,6 +161,7 @@ def llm_select(trajectory, blame, ranked, provider, scope='trace', pool=5, bank=
     """
     top1 = ranked[0] if ranked else None
     log = {'scope': scope, 'pool': int(pool), 'status': 'ok', 'lessons_used': 0,
+           'lesson_limit': int(lesson_limit), 'lesson_min_confirmed': int(lesson_min_confirmed),
            'bank_digest': bank.bank_digest if bank is not None else None}
     if top1 is None:
         log['status'] = 'no_candidates'
@@ -157,7 +171,8 @@ def llm_select(trajectory, blame, ranked, provider, scope='trace', pool=5, bank=
                                     'evidence_refs': top1['evidence_refs']}, trajectory)
     lessons = []
     if bank is not None and len(bank):
-        lessons = bank.retrieve({c['dominant_category'] for c in ranked[:max(1, int(pool))]}, lesson_limit)
+        lessons = bank.retrieve({c['dominant_category'] for c in ranked[:max(1, int(pool))]},
+                                lesson_limit, lesson_min_confirmed)
     log['lessons_used'] = len(lessons)
     try:
         answer = provider.complete('mp_rl_select', select_payload(trajectory, blame, ranked, scope, pool, lessons))
@@ -250,6 +265,10 @@ def build_lesson_bank(cases, config, provider, out_path, per_category=4, limit=N
                 stats['rejected_leakage'] += 1
                 stats['rejection_reasons'][reason] = stats['rejection_reasons'].get(reason, 0) + 1
                 if on_case: on_case(stats, trajectory, f'REJECTED ({reason})')
-    bank.prune().save(out_path)
-    stats.update(bank_size=len(bank), bank_digest=bank.bank_digest, out=str(out_path))
+    # Deliberately NOT pruned here: the bank stores every distinct lesson with its support count,
+    # and lesson_limit / lesson_min_confirmed choose the capacity at evaluation time. Pruning at
+    # build time would bake one capacity in and force a rebuild per point of the sweep.
+    bank.save(out_path)
+    stats.update(bank_size=len(bank), bank_digest=bank.bank_digest, out=str(out_path),
+                 support_profile=bank.support_profile())
     return bank, stats
