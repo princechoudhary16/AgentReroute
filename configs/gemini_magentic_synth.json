@@ -1,0 +1,24 @@
+{
+  "name": "gemini-magentic-synth",
+  "client": {
+    "provider": "gemini",
+    "model": "gemini-3.1-flash-lite",
+    "api_key_env": "GEMINI_API_KEY",
+    "settings": { "temperature": 0, "max_tokens": 16000 },
+    "timeout": 300,
+    "retries": 6,
+    "tpm_limit": 2800000
+  },
+  "repetitions": 1,
+  "domains": ["magentic"],
+  "limit_per_domain": 44,
+  "variants": [
+    {
+      "name": "synth_select_p10",
+      "evidence": true,
+      "protocol": "mp_rl",
+      "llm_selector": "trace",
+      "selector_pool": 10
+    }
+  ]
+}
