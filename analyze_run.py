@@ -70,6 +70,28 @@ def gold_from_corpus(run_dir):
     return {}, None
 
 
+def load_evidence(csv_path):
+    """Rebuild the same rows from an export_evidence.py CSV.
+
+    Per-job result.json files run to ~800 KB each, so a 4-variant run is ~230 MB and re-reading it
+    for every analysis is slow and cannot be committed. The exported CSV carries exactly the fields
+    used below, so the committed evidence reproduces every table on its own.
+    """
+    import csv as _csv
+    rows, gold = {}, {}
+    for r in _csv.DictReader(open(csv_path, encoding='utf-8')):
+        key = (r['variant'], r['domain'], r['trajectory_id'])
+        gold[(r['domain'], r['trajectory_id'])] = r['gold_step']
+        rows[key] = {'hit': r['hit'] == '1',
+                     'gold_in_pool': r['gold_in_pool'] == '1',
+                     'pool': int(r['pool_size'] or 0),
+                     'abstain': r['abstained'] == '1',
+                     'violations': [int(x) for x in (r['violations_per_candidate'] or '').split()],
+                     'fell_back': r['selector_fell_back'] == 'True',
+                     'selector_error': r['selector_status'] == 'error'}
+    return rows, gold
+
+
 def load(run_dir):
     """(variant, domain, trajectory_id) -> {hit, gold_in_pool, pool, in_pool_pick}."""
     rows = {}
@@ -94,20 +116,24 @@ def load(run_dir):
                          'pool': len(pool), 'abstain': pred is None,
                          'violations': [len(c.get('violated_checks') or [])
                                         for c in d.get('ranked_candidates', [])],
-                         'fell_back': bool(sel.get('fell_back'))}
+                         'fell_back': bool(sel.get('fell_back')),
+                         'selector_error': sel.get('status') == 'error'}
     return rows, gold
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('run_dir')
+    ap.add_argument('run_dir', help='a run directory, or an export_evidence.py CSV')
     ap.add_argument('--reference', default='agentrx', help='variant every other is compared against')
     args = ap.parse_args(argv)
     if not Path(args.run_dir).exists():
         print(f'{args.run_dir} does not exist', file=sys.stderr)
         return 2
-    rows, gold = load(args.run_dir)
+    if args.run_dir.endswith('.csv'):
+        rows, gold = load_evidence(args.run_dir)
+    else:
+        rows, gold = load(args.run_dir)
     if not rows:
         print(f'{args.run_dir}: no completed traces yet', file=sys.stderr)
         return 2
@@ -130,7 +156,8 @@ def main(argv=None):
         print(f'\n--- {domain}  (n={len(keys)})'
               f'{"   agentrx published: %.2f%%" % REFERENCE_PUBLISHED[domain] if domain in REFERENCE_PUBLISHED else ""}')
         print(f'  {"variant":<20}{"acc":>8}{"95% CI":>16}{"recall":>9}{"in-pool":>10}'
-              f'{"out-pool":>10}{"pool":>7}{"viol/c":>8}')
+              f'{"out-pool":>10}{"pool":>7}{"viol/c":>8}{"fellback":>10}')
+        tainted = []
         hits = {}
         for v in variants:
             present = [k for k in keys if (v, domain, k) in rows]
@@ -144,11 +171,23 @@ def main(argv=None):
             ngip = [x for x in r if not x['gold_in_pool']]
             lo, hi = wilson(k_hit, n)
             flat = [c for x in r for c in x['violations']]
+            fb = sum(x['fell_back'] for x in r)
+            errs = sum(x.get('selector_error', False) for x in r)
+            mark = ' <-- TAINTED' if errs and errs / n >= 0.2 else ''
+            if mark:
+                tainted.append((v, errs, n))
             print(f'  {v:<20}{100*k_hit/n:>7.1f}%{f"[{lo:.1f}, {hi:.1f}]":>16}'
                   f'{100*len(gip)/n:>8.1f}%'
                   f'{(100*sum(x["hit"] for x in gip)/len(gip) if gip else 0):>9.0f}%'
                   f'{(100*sum(x["hit"] for x in ngip)/len(ngip) if ngip else 0):>9.0f}%'
-                  f'{sum(x["pool"] for x in r)/n:>7.2f}{(sum(flat)/len(flat) if flat else 0):>8.2f}')
+                  f'{sum(x["pool"] for x in r)/n:>7.2f}{(sum(flat)/len(flat) if flat else 0):>8.2f}'
+                  f'{f"{fb}/{n}":>10}{mark}')
+        if tainted:
+            print()
+            for v, errs, n in tainted:
+                print(f'  DO NOT REPORT {v}: the selector call FAILED on {errs}/{n} traces '
+                      f'(transport errors, e.g. rate limiting). Those traces silently fell back to '
+                      f'the theta top-1 ranking, so this row measures theta, not the selector.')
         if args.reference in hits:
             print(f'\n  paired McNemar against {args.reference} (exact, two-sided):')
             for v in variants:

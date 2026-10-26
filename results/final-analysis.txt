@@ -1,0 +1,44 @@
+
+=== results/final-evidence.csv ===
+
+--- magentic  (n=44)   agentrx published: 18.18%
+  variant                  acc          95% CI   recall   in-pool  out-pool   pool  viol/c  fellback
+  agentrx                18.2%     [9.5, 32.0]     0.0%        0%       18%   0.00    0.00      0/44
+  seeds_select           25.0%    [14.6, 39.4]    20.5%       89%        9%   1.23    0.44      0/44
+  synth_select_p10       20.5%    [11.2, 34.5]    38.6%       53%        0%  12.09    1.24     24/44 <-- TAINTED
+  synth_select_p5        20.5%    [11.2, 34.5]    20.5%      100%        0%   1.23    0.44     44/44 <-- TAINTED
+
+  DO NOT REPORT synth_select_p10: the selector call FAILED on 24/44 traces (transport errors, e.g. rate limiting). Those traces silently fell back to the theta top-1 ranking, so this row measures theta, not the selector.
+  DO NOT REPORT synth_select_p5: the selector call FAILED on 44/44 traces (transport errors, e.g. rate limiting). Those traces silently fell back to the theta top-1 ranking, so this row measures theta, not the selector.
+
+  paired McNemar against agentrx (exact, two-sided):
+    seeds_select         wins  3, losses  0, n= 44  p=0.2500  not significant
+    synth_select_p10     wins  3, losses  2, n= 44  p=1.0000  not significant
+    synth_select_p5      wins  3, losses  2, n= 44  p=1.0000  not significant
+
+  accuracy decomposed by pool recall (identity, not a forecast):
+    agentrx                18.2%  actual  18.2%
+    seeds_select           25.0%  actual  25.0%
+    synth_select_p10       20.5%  actual  20.5%
+    synth_select_p5        20.5%  actual  20.5%
+
+--- tau  (n=29)   agentrx published: 31.03%
+  variant                  acc          95% CI   recall   in-pool  out-pool   pool  viol/c  fellback
+  agentrx                31.0%    [17.3, 49.2]     0.0%        0%       31%   0.00    0.00      0/29
+  seeds_select           34.5%    [19.9, 52.7]    41.4%       67%       12%   4.48    1.00      3/29
+  synth_select_p10       37.9%    [22.7, 56.0]    48.3%       71%        7%   5.34    1.26      3/29
+  synth_select_p5        13.8%     [5.5, 30.6]    41.4%       33%        0%   4.48    1.00     29/29 <-- TAINTED
+
+  DO NOT REPORT synth_select_p5: the selector call FAILED on 29/29 traces (transport errors, e.g. rate limiting). Those traces silently fell back to the theta top-1 ranking, so this row measures theta, not the selector.
+
+  paired McNemar against agentrx (exact, two-sided):
+    seeds_select         wins  3, losses  2, n= 29  p=1.0000  not significant
+    synth_select_p10     wins  4, losses  2, n= 29  p=0.6875  not significant
+    synth_select_p5      wins  1, losses  6, n= 29  p=0.1250  not significant
+
+  accuracy decomposed by pool recall (identity, not a forecast):
+    agentrx                31.0%  actual  31.0%
+    seeds_select           34.5%  actual  34.5%
+    synth_select_p10       37.9%  actual  37.9%
+    synth_select_p5        13.8%  actual  13.8%
+
