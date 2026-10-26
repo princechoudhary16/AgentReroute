@@ -37,10 +37,45 @@ def mcnemar(a_hits, b_hits, keys):
     return b_wins, a_wins, min(1.0, 2 * tail / 2 ** n)
 
 
+def gold_from_corpus(run_dir):
+    """Gold straight from the corpus the run was scored against, so this works MID-RUN.
+
+    predictions.csv is only written when the experiment finishes, and the recall column is the
+    early kill signal for a long run, so waiting for it defeats the purpose.
+    """
+    try:
+        identity = json.loads((Path(run_dir)/'experiment.json').read_text(encoding='utf-8'))
+        wanted = identity['identity']['corpus_hash']
+    except (OSError, ValueError, KeyError, TypeError):
+        return {}, None
+    for manifest in sorted(Path('.').glob('**/manifest.json')):
+        if any(part in ('.git', 'node_modules', 'requests', 'jobs') for part in manifest.parts):
+            continue
+        try:
+            if json.loads(manifest.read_text(encoding='utf-8')).get('corpus_hash') != wanted:
+                continue
+        except (OSError, ValueError):
+            continue
+        cases_path = manifest.parent/'cases.json'
+        if not cases_path.exists():
+            continue
+        raw = json.loads(cases_path.read_text(encoding='utf-8'))
+        cases = raw.get('cases', []) if isinstance(raw, dict) else raw
+        out = {}
+        for case in cases:
+            critical = (case.get('gold') or {}).get('critical') or {}
+            out[(case['trajectory']['domain'], str(case['trajectory']['trajectory_id']))] = \
+                str(critical.get('step_index'))
+        return out, cases_path
+    return {}, None
+
+
 def load(run_dir):
     """(variant, domain, trajectory_id) -> {hit, gold_in_pool, pool, in_pool_pick}."""
     rows = {}
-    gold = {}
+    gold, source = gold_from_corpus(run_dir)
+    if gold:
+        print(f'gold from {source}', file=sys.stderr)
     predictions = Path(run_dir) / 'predictions.csv'
     if predictions.exists():
         import csv
@@ -77,9 +112,14 @@ def main(argv=None):
         print(f'{args.run_dir}: no completed traces yet', file=sys.stderr)
         return 2
     if not gold:
-        print('WARNING: predictions.csv absent, so no gold is available yet. '
-              'Accuracies below would all read 0; rerun once the experiment finishes.', file=sys.stderr)
+        print('WARNING: no gold found for this run, from predictions.csv or from the corpus. '
+              'Every accuracy would read 0, so refusing to print one.', file=sys.stderr)
         return 2
+    incomplete = {v: sum(1 for k in rows if k[0] == v) for v in sorted({k[0] for k in rows})}
+    if any(n < max(incomplete.values()) for n in incomplete.values()):
+        print(f'NOTE: run in progress, traces per variant: {incomplete}. '
+              'Read the recall column; accuracies on partial arms are not comparable yet.',
+              file=sys.stderr)
 
     variants = sorted({k[0] for k in rows})
     domains = sorted({k[1] for k in rows})
