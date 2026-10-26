@@ -131,20 +131,35 @@ class LessonBank:
         return len(self.lessons)
 
 
-def _candidate_view(candidate):
-    """Compact candidate for the prompt: the evidence, not the feature vector."""
-    checks = candidate.get('violated_checks', [])[:6]
-    return {'rank': candidate.get('rank'), 'step_index': candidate['step_index'],
-            'agent': candidate['raw_agent'], 'suggested_category': candidate['dominant_category'],
-            'dominant_perspective': candidate['dominant_perspective'],
+def candidate_category(candidate):
+    """Category of a candidate in either shape (see ``_candidate_view``)."""
+    return candidate.get('dominant_category') or candidate.get('category')
+
+
+def _candidate_view(candidate, rank=None):
+    """Compact candidate for the prompt: the evidence, not the feature vector.
+
+    Accepts a candidate in either of the two shapes this codebase produces. ``encode_candidates``
+    emits ``dominant_category``/``dominant_perspective`` and ``select_action`` adds ``rank``, while
+    ``pipeline._compact`` rewrites those to ``category``/``perspective`` and drops ``rank`` before
+    they reach ``result['ranked_candidates']``. ``llm_select`` is handed the raw list and
+    ``write_lesson`` the compacted one, so reading only one spelling raised KeyError on every
+    lesson and silently produced an empty bank.
+    """
+    checks = candidate.get('violated_checks') or []
+    return {'rank': candidate.get('rank', rank), 'step_index': candidate['step_index'],
+            'agent': candidate.get('raw_agent') or candidate.get('agent'),
+            'suggested_category': candidate_category(candidate),
+            'dominant_perspective': candidate.get('dominant_perspective') or candidate.get('perspective'),
             'policy_probability': round(float(candidate.get('probability', 0.0)), 4),
             'violations': [{'perspective': c.get('perspective'), 'check': c.get('assertion_name'),
                             'step_index': c.get('step_index'),
-                            'detail': str(c.get('reason') or c.get('detail') or '')[:280]} for c in checks]}
+                            'detail': str(c.get('reason') or c.get('detail') or '')[:280]}
+                           for c in checks[:6]]}
 
 
 def select_payload(trajectory, blame, ranked, scope, pool, lessons):
-    candidates = [_candidate_view(c) for c in ranked[:max(1, int(pool))]]
+    candidates = [_candidate_view(c, i) for i, c in enumerate(ranked[:max(1, int(pool))], 1)]
     return {'trajectory': trajectory, 'scope': scope,
             'analysis': {'blame_matrix': blame, 'ranked_candidates': candidates,
                          'pool_note': ('The true fault may be absent from this pool; on the measured '
@@ -171,7 +186,7 @@ def llm_select(trajectory, blame, ranked, provider, scope='trace', pool=5, bank=
                                     'evidence_refs': top1['evidence_refs']}, trajectory)
     lessons = []
     if bank is not None and len(bank):
-        lessons = bank.retrieve({c['dominant_category'] for c in ranked[:max(1, int(pool))]},
+        lessons = bank.retrieve({candidate_category(c) for c in ranked[:max(1, int(pool))]},
                                 lesson_limit, lesson_min_confirmed)
     log['lessons_used'] = len(lessons)
     try:
@@ -207,7 +222,7 @@ def write_lesson(trajectory, gold, prediction, ranked, provider):
                             'agent': prediction and prediction.get('agent'),
                             'category': prediction and prediction.get('category'),
                             'rationale': prediction and prediction.get('rationale')},
-               'ranked_candidates': [_candidate_view(c) for c in ranked[:5]]}
+               'ranked_candidates': [_candidate_view(c, i) for i, c in enumerate(ranked[:5], 1)]}
     answer = provider.complete('mp_rl_lesson', payload)
     lesson = answer.get('lesson') if isinstance(answer, dict) else None
     if not isinstance(lesson, dict):
