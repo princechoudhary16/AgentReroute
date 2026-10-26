@@ -25,6 +25,7 @@ from pathlib import Path
 
 from .io import digest, read_json, write_json
 from .predictions import validate_prediction
+from .taxonomy import category as canonical_category
 from .providers import ProviderError
 
 # The fault injector's own operator vocabulary. A lesson that names one of these is describing how
@@ -77,7 +78,8 @@ class LessonBank:
 
     def save(self, path):
         write_json(path, {'per_category': self.per_category, 'bank_digest': self.bank_digest,
-                          'count': len(self.lessons), 'lessons': self.lessons})
+                          'count': len(self.lessons), 'support_profile': self.support_profile(),
+                          'category_counts': self.category_counts(), 'lessons': self.lessons})
 
     @property
     def bank_digest(self):
@@ -108,24 +110,48 @@ class LessonBank:
         self.lessons = kept
         return self
 
-    def retrieve(self, categories, limit=8, min_confirmed=1):
-        """Lessons for the categories in play, most-confirmed first. No model call.
+    def support(self, lesson):
+        """Independent training episodes attesting this lesson's CATEGORY.
 
-        ``min_confirmed`` is a support threshold: a lesson written from a single training episode
-        is one observation and is usually noise, while one confirmed across k episodes is k-fold
-        evidence. ``limit`` is the capacity cap. Both act at retrieval time, so one bank file
-        supports a whole capacity sweep without rebuilding.
+        Free-text lessons almost never match each other exactly, so ``confirmed`` (exact-duplicate
+        merges) came out 1 for all 46 lessons of the first real build. The attestation that does
+        exist is categorical: 20 of those 46 episodes failed the same way. So support is counted
+        per category, and ``min_confirmed`` reads as "only use lessons from failure modes seen at
+        least N times in training", which is a frequency prior rather than a claim about one
+        lesson's wording.
+        """
+        return max(int(lesson.get('category_support', 0)), int(lesson.get('confirmed', 1)))
+
+    def recount_support(self):
+        """Stamp each lesson with how many episodes produced a lesson in its category."""
+        totals = {}
+        for lesson in self.lessons:
+            totals[lesson.get('category')] = totals.get(lesson.get('category'), 0) + lesson.get('confirmed', 1)
+        for lesson in self.lessons:
+            lesson['category_support'] = totals.get(lesson.get('category'), 0)
+        return self
+
+    def retrieve(self, categories, limit=8, min_confirmed=1):
+        """Lessons for the categories in play, best attested first. No model call.
+
+        ``min_confirmed`` thresholds on category support (see ``support``) and ``limit`` is the
+        capacity cap. Both act at retrieval time, so one bank file serves a whole capacity sweep
+        with no rebuild. Lessons are drawn only from the categories actually in play; falling back
+        to the entire bank would hand the model guidance for failure modes it is not looking at.
         """
         wanted = {c for c in categories if c}
-        pool = [x for x in self.lessons if x.get('confirmed', 1) >= max(1, int(min_confirmed))]
-        hits = [x for x in pool if x.get('category') in wanted] or pool
-        hits.sort(key=lambda x: (-x.get('confirmed', 1), str(x.get('signal', ''))))
+        floor = max(1, int(min_confirmed))
+        hits = [x for x in self.lessons if x.get('category') in wanted and self.support(x) >= floor]
+        hits.sort(key=lambda x: (-self.support(x), str(x.get('signal', ''))))
         return [{k: x.get(k) for k in LESSON_KEYS} for x in hits[:max(0, int(limit))]]
 
     def support_profile(self):
         """How many lessons survive each support threshold: the capacity curve, for the report."""
-        counts = [x.get('confirmed', 1) for x in self.lessons]
-        return {t: sum(1 for c in counts if c >= t) for t in (1, 2, 3, 4, 5)}
+        return {t: sum(1 for x in self.lessons if self.support(x) >= t) for t in (1, 2, 3, 5, 10, 20)}
+
+    def category_counts(self):
+        return {c: sum(1 for x in self.lessons if x.get('category') == c)
+                for c in sorted({x.get('category') for x in self.lessons})}
 
     def __len__(self):
         return len(self.lessons)
@@ -210,6 +236,19 @@ def llm_select(trajectory, blame, ranked, provider, scope='trace', pool=5, bank=
     return prediction, log
 
 
+def normalize_lesson(lesson):
+    """Canonicalise the lesson's category, or return None when the model invented one.
+
+    The first real build produced 'Intent/PlanAdherenceFailure', which is not in the taxonomy. Stored
+    unvalidated it can never match a candidate's category, so it is retrieval-dead weight.
+    """
+    try:
+        label = canonical_category(lesson.get('category'))
+    except (ValueError, KeyError, TypeError):
+        return None
+    return {**lesson, 'category': label}
+
+
 def write_lesson(trajectory, gold, prediction, ranked, provider):
     """Offline, train-split only: show the model its miss and the gold label, ask for one lesson.
 
@@ -247,7 +286,7 @@ def build_lesson_bank(cases, config, provider, out_path, per_category=4, limit=N
 
     bank = LessonBank((), per_category)
     stats = {'cases': 0, 'hits': 0, 'misses': 0, 'lessons_written': 0,
-             'rejected_leakage': 0, 'rejection_reasons': {}, 'errors': 0}
+             'rejected_leakage': 0, 'rejected_category': 0, 'rejection_reasons': {}, 'errors': 0}
     selected = list(cases)[:limit] if limit else list(cases)
     with tempfile.TemporaryDirectory() as artifacts:
         for case in selected:
@@ -272,6 +311,14 @@ def build_lesson_bank(cases, config, provider, out_path, per_category=4, limit=N
                 stats['errors'] += 1
                 if on_case: on_case(stats, trajectory, f'lesson error: {type(exc).__name__}: {exc}')
                 continue
+            normalized = normalize_lesson(lesson)
+            if normalized is None:
+                stats['rejected_category'] += 1
+                reason = f"category {lesson.get('category')!r} is not in the taxonomy"
+                stats['rejection_reasons'][reason] = stats['rejection_reasons'].get(reason, 0) + 1
+                if on_case: on_case(stats, trajectory, f'REJECTED ({reason})')
+                continue
+            lesson = normalized
             reason = bank.add(lesson)
             if reason is None:
                 stats['lessons_written'] += 1
@@ -283,7 +330,7 @@ def build_lesson_bank(cases, config, provider, out_path, per_category=4, limit=N
     # Deliberately NOT pruned here: the bank stores every distinct lesson with its support count,
     # and lesson_limit / lesson_min_confirmed choose the capacity at evaluation time. Pruning at
     # build time would bake one capacity in and force a rebuild per point of the sweep.
-    bank.save(out_path)
+    bank.recount_support().save(out_path)
     stats.update(bank_size=len(bank), bank_digest=bank.bank_digest, out=str(out_path),
-                 support_profile=bank.support_profile())
+                 support_profile=bank.support_profile(), category_counts=bank.category_counts())
     return bank, stats
