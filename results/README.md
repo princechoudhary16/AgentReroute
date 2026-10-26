@@ -42,6 +42,24 @@ means a rate-limited arm reports a plausible wrong number instead of failing lou
 `analyze_run.py` now flags any arm whose selector failed on 20% or more of traces. Do not quote
 those rows. A clean magentic synthesis number needs a rerun with `tpm_limit` set.
 
+## Ablations (`selector-evidence.csv`, same 73 cases, all clean)
+
+Isolates what the LLM selector contributes over the linear policy, and what the candidate pool
+costs when the selector is confined to it.
+
+| domain | variant | accuracy | what it isolates |
+|---|---|---|---|
+| tau | mp_rl_top1 | 13.8% | theta ranking alone, zero model calls |
+| tau | mp_rl_select_pool | 24.1% | selector confined to the candidate pool |
+| tau | mp_rl_select_trace | 34.5% | selector free to pick any step |
+| magentic | mp_rl_top1 | 20.5% | theta ranking alone |
+| magentic | mp_rl_select_pool | 20.5% | pool size is 1.23, so there is nothing to choose between |
+| magentic | mp_rl_select_trace | 25.0% | selector free to pick any step |
+
+Putting a model in the decision path beats theta ranking significantly: 9 wins to 1 across both
+domains, McNemar p=0.0215. Confining it to the pool costs 10.4 points on tau, which is the pool
+recall ceiling (41.4%) binding.
+
 ## The mechanism behind the numbers
 
 Accuracy tracks candidate-pool recall, not selection quality. The selector is strong when the true
