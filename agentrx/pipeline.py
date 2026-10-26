@@ -10,13 +10,12 @@ from .perspectives import (PERSPECTIVES, compute_blame_matrix, encode_candidates
 from .predictions import validate_prediction, validate_candidates
 from .rl_policy import (DualLoopRLJudge, live_dynamic_recover, repair_cascade,
                         verify_and_score_state_change)
-from .selector import LessonBank, llm_select
+from .selector import llm_select
 from .taxonomy import category, agent
 
 DEFAULTS = {'evidence': True, 'checklist': True, 'generation': 'stepwise', 'protocol': 'joint',
             'python_timeout': 3, 'recovery_loop': True, 'repair_cascade': 0,
-            'llm_selector': False, 'selector_pool': 5, 'lesson_bank': None,
-            'lesson_limit': 8, 'lesson_min_confirmed': 1}
+            'llm_selector': False, 'selector_pool': 5}
 
 
 def validate_config(config):
@@ -60,14 +59,7 @@ def validate_config(config):
             raise ValueError('selector_pool must be an int in 1..20')
         # Selection is inference only, like the cascade: theta is read, never written.
         result['recovery_loop'] = False
-    elif result['lesson_bank'] is not None:
-        raise ValueError('lesson_bank requires llm_selector')
-    for key, hi in (('lesson_limit', 64), ('lesson_min_confirmed', 20)):
-        if type(result[key]) is not int or type(result[key]) is bool or not 1 <= result[key] <= hi:
-            raise ValueError(f'{key} must be an int in 1..{hi}')
-    if result['lesson_bank'] is not None and (not isinstance(result['lesson_bank'], str)
-                                              or not result['lesson_bank'].strip()):
-        raise ValueError('lesson_bank must be a non-empty string path')
+
     if result.get('rl_state_path') is not None and (not isinstance(result['rl_state_path'], str) or not result['rl_state_path'].strip()):
         raise ValueError('rl_state_path must be a non-empty string')
     return result
@@ -262,11 +254,8 @@ def diagnose_mp_rl(trajectory, policy, tools, config, provider, artifacts, rl_ju
             # One model call decides the attribution, with the perspective analysis as evidence.
             # Reads no gold; theta is frozen. Any failure degrades to the ranked top-1 rather
             # than voiding the prediction.
-            bank = LessonBank.load(config['lesson_bank']) if config['lesson_bank'] else None
             chosen, selection = llm_select(trajectory, blame, ranked, provider,
-                                           scope=config['llm_selector'], pool=config['selector_pool'],
-                                           bank=bank, lesson_limit=config['lesson_limit'],
-                                           lesson_min_confirmed=config['lesson_min_confirmed'])
+                                           scope=config['llm_selector'], pool=config['selector_pool'])
             if chosen is not None:
                 result['prediction'] = chosen
             result['selection'] = selection

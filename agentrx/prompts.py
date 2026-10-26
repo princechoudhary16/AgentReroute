@@ -5,7 +5,7 @@ from .taxonomy import taxonomy, CATEGORIES
 
 PROMPT_VERSION = 'agentrx-reconstruction-v1'
 PHASE2_STAGES = ('perspective_global', 'perspective_dynamic', 'perspective_repair', 'tool_sandbox',
-                 'mp_rl_select', 'mp_rl_lesson')
+                 'mp_rl_select')
 CONSTRAINT_SCHEMA = {
     'assertion_name': 'unique_snake_case', 'taxonomy_targets': ['InvalidInvocation'],
     'constraint_type': 'SCHEMA|PROTOCOL|RELATIONAL_POST|PROVENANCE|TEMPORAL|CAPABILITY|ANY',
@@ -76,19 +76,6 @@ SELECTION = (
     '"category": taxonomy identifier, "rationale": evidence-grounded explanation including recovery '
     'and why the ranked candidates were accepted or rejected, '
     '"evidence_refs": [{"step_index": original integer, "substep_index": original integer}]}. '
-)
-
-LESSON = (
-    'Write one transferable lesson for a fault-attribution model that just mis-attributed a failure. '
-    'You are shown the trajectory, the candidates it considered, the step it chose, and the true '
-    'fault. Return {"lesson": {"category": "<taxonomy identifier of the true fault>", '
-    '"perspective": "P1_INTENT_PLAN|P2_TOOL_EXECUTION|P3_HANDOFF_GROUNDING", '
-    '"signal": "<the observable signal in a trace that identifies this kind of true fault>", '
-    '"trap": "<why the chosen step looked plausible, and how to tell the two apart>"}}. '
-    'Describe failure BEHAVIOUR only, for a reader who has never seen this trace. Never mention '
-    'record identifiers, order numbers, item ids, payment ids, trajectory ids, or the names of '
-    'fault-injection operators: a lesson naming those describes one case and will not transfer. '
-    'At most two sentences per field. '
 )
 
 RANKED_JUDGING = (
@@ -204,11 +191,6 @@ def messages(stage, payload):
             'SCOPE: you may select ANY step in the trajectory. The ranked candidates are evidence, '
             'not a restriction; select a step outside them when the trace points elsewhere. ')
         instruction += 'Taxonomy identifiers: ' + json.dumps(taxonomy(False)) + '. '
-        if payload.get('lessons'):
-            instruction += ('LESSONS FROM PAST MIS-ATTRIBUTIONS (behavioural guidance, not facts about '
-                            'this trace): ' + json.dumps(payload['lessons']))
-    elif stage == 'mp_rl_lesson':
-        instruction = LESSON + 'Taxonomy identifiers: ' + json.dumps(taxonomy(False)) + '. '
     elif stage == 'tool_sandbox':
         instruction = (
             'You are the Dynamic MAS Environment / Peer-Agent Sandbox. Given the trajectory prefix ending at the '
@@ -226,7 +208,6 @@ def messages(stage, payload):
 def prompt_identity():
     # Include actual prompt constants and resource contents, not only a manual version.
     return digest({'version': PROMPT_VERSION, 'common': COMMON, 'generation': GENERATION,
-                   'judge': JUDGING, 'ranked_judge': RANKED_JUDGING, 'selection': SELECTION,
-                   'lesson': LESSON, 'schema': CONSTRAINT_SCHEMA, 'taxonomy': taxonomy(True),
+                   'judge': JUDGING, 'ranked_judge': RANKED_JUDGING, 'selection': SELECTION, 'schema': CONSTRAINT_SCHEMA, 'taxonomy': taxonomy(True),
                    'semantic_template': messages('semantic', {})[0]['content'],
                    'phase2_templates': {stage: messages(stage, {})[0]['content'] for stage in PHASE2_STAGES}})

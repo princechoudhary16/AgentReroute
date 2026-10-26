@@ -142,15 +142,6 @@ def parser():
     run.add_argument('--model',help='Model preset or override (gemini, openai, ollama, or model in config)')
     run.add_argument('--out',type=Path,required=True)
     run.add_argument('--preflight',action='store_true',help='Validate corpus/config/credentials without calling a model')
-    lessons=commands.add_parser('build-lessons',
-        help='OFFLINE TRAINING: read gold on one split and write a frozen lesson bank for the LLM selector')
-    lessons.add_argument('--corpus',type=Path,required=True,help='Training split corpus (never the test split)')
-    lessons.add_argument('--config',type=Path,required=True)
-    lessons.add_argument('--variant',help='Variant name supplying the selector settings (default: first)')
-    lessons.add_argument('--out',type=Path,required=True,help='Lesson bank JSON to write')
-    lessons.add_argument('--limit',type=int,default=None,help='Cap the number of training cases')
-    lessons.add_argument('--per-category',dest='per_category',type=int,default=4)
-    lessons.add_argument('--quiet',action='store_true')
     evaluate=commands.add_parser('evaluate',help='Regenerate fixed-denominator reports from stored jobs')
     evaluate.add_argument('--corpus',type=Path,default=Path('data/benchmark'))
     evaluate.add_argument('--run',type=Path,required=True)
@@ -231,29 +222,6 @@ def main(argv=None):
                        for row in summary['results'] for rep in row['repetitions']):
                     return 1
                 return 0
-        elif args.command=='build-lessons':
-            from .selector import build_lesson_bank
-            config=validate_experiment(read_json(args.config))
-            variants=config['variants']
-            variant=next((v for v in variants if v['name']==args.variant),None) if args.variant else variants[0]
-            if variant is None:
-                raise ValueError('Requested variant absent from config')
-            if not variant.get('llm_selector'):
-                raise ValueError('build-lessons needs a variant with llm_selector set')
-            if variant.get('lesson_bank'):
-                raise ValueError('Build the bank from a variant with no lesson_bank, or it trains on itself')
-            cases,manifest=load_corpus(args.corpus)
-            provider=HTTPProvider.from_config(config['client'])
-            prepare=getattr(provider,'prepare_for_run',None)
-            if prepare is not None:
-                prepare()
-            cached=CachedProvider(provider,args.out.parent/'lesson_requests',
-                                  {'lessons':digest(variant),'corpus':manifest['corpus_hash']})
-            report=None if args.quiet else (lambda st,traj,note: print(
-                f"[{st['cases']:>4}] {traj['trajectory_id']:<22} {note}",flush=True))
-            _,stats=build_lesson_bank(cases,variant,cached,args.out,
-                                      per_category=args.per_category,limit=args.limit,on_case=report)
-            value={**stats,'corpus_hash':manifest['corpus_hash'],'variant':variant['name']}
         elif args.command=='evaluate':
             value=_brief(evaluate_run(args.corpus,args.run),args.run)
         elif args.command=='import-predictions':
