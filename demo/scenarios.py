@@ -7,7 +7,7 @@ an ordered list of propagation frames for the visualizer:
   initial_run      the original execution, one frame per dialog / tool call / handoff / reply
   debugging        AgentReroute milestones I-III (checks 25%, ranking 50%, rollback 75%)
   recovery_replay  the delivered rollout from its rollback step onward
-  verified         milestone IV (fresh-context verification and the RL theta update, 100%)
+  verified         milestone IV (scripted replay acceptance, frozen weights, 100%)
 
 The policy only ever sees ``env.trace`` and ``env.task_view``. Fault records (``Step.faults``) are gold-side:
 the frames show them so a viewer can see where the fault was injected, but they never reach the policy.
@@ -49,8 +49,8 @@ SCENARIOS = {
                    'step, finds no violation and abstains.'},
 }
 
-MILESTONES = ['I. P1/P2/P3 Attribution Checks', 'II. DualLoopRLJudge Candidate Ranking',
-              'III. Rollback & Directive Replay', 'IV. Fresh-Context Verifier & RL θ Update']
+MILESTONES = ['I. P1/P2/P3 Attribution Checks', 'II. Fixed-Check Candidate Ranking',
+              'III. Rollback & Directive Replay', 'IV. Replay Acceptance · Frozen Policy']
 
 
 class CapturingJudge(DualLoopRLJudge):
@@ -172,8 +172,8 @@ def run_scenario(scenario_id):
 
     original, trace = execute()
     env = RecoveryEnv(tid, trace, _task_view(trace, domain), runner, BudgetCaps().for_episode(original.tokens))
-    judge = CapturingJudge()
-    policy = MPRLRecoveryPolicy(rl_judge=judge)
+    judge = CapturingJudge(read_only=True)
+    policy = MPRLRecoveryPolicy(rl_judge=judge, learn=False)
     decision = policy.recover(env)
     delivered = decision.get('delivered')
     frames = step_frames(original, 'initial_run')
@@ -189,7 +189,7 @@ def run_scenario(scenario_id):
     for seq, frame in enumerate(frames, 1):
         frame['seq'] = seq
     op = spec['operator']
-    return {'id': scenario_id, 'trajectory_id': tid, 'title': spec['title'], 'summary': spec['summary'],
+    return {'id': scenario_id, 'measurement_kind': 'scripted_illustration', 'trajectory_id': tid, 'title': spec['title'], 'summary': spec['summary'],
             'task_id': spec['task_id'], 'operator': {'name': op[0].name, 'mode': op[0].mode, 'params': op[1]} if op else None,
             'original_termination': original.termination, 'decision': decision,
             'hypotheses': policy.hypotheses.get(tid, []), 'rl': policy.rl_log.get(tid),
@@ -224,7 +224,7 @@ def _debug_frames(policy, judge, env, decision, tid):
         frames.append(_frame(**debug, debug_pct=50, active_phase=2, title=MILESTONES[1], focus=top['agent'],
                              step_index=top['step_index'], actor=top['agent'],
                              narrative=f"Top-1 blame: {top['agent']} at step {top['step_index']} "
-                                       f"({top['mode']}, confidence {top['confidence']:.3f}).",
+                                       f"({top['mode']}, uncalibrated policy score {top['confidence']:.3f}).",
                              payload={'milestone': MILESTONES[1], 'top1': {k: top[k] for k in (
                                  'agent', 'step_index', 'mode', 'category', 'confidence')},
                                       'hypotheses': hypotheses, 'ranking': ranking}))
@@ -242,7 +242,7 @@ def _debug_frames(policy, judge, env, decision, tid):
                              step_index=directive['rollback_step'],
                              narrative=f"Rollback to step {directive['rollback_step']} with a {directive['kind']} "
                                        f"directive ({accepted.get('strategy', 'repair')}); the prefix is replayed "
-                                       'from cache and the rest runs live.',
+                                       'from the same scripted simulator. No model is called.',
                              payload={'milestone': MILESTONES[2], 'rollback_step': directive['rollback_step'],
                                       'directive_kind': directive['kind'], 'directive': directive['text'],
                                       'strategy': accepted.get('strategy'), 'attempts': attempts}))
@@ -259,17 +259,18 @@ def _verify_frame(policy, judge, decision, tid):
     if decision.get('status') == 'abstained' and not policy.hypotheses.get(tid):
         return _frame('verified', kind='verify', status='RECOVERED', debug_pct=100, active_phase=4,
                       title='IV. Clean Run — Abstained', verified=True, reward=None,
-                      narrative='100% Verified Clean: no perspective check fired, so AgentReroute takes no action '
+                      narrative='No check flagged this example, so the illustration takes no action '
                                 'and leaves θ unchanged.',
                       payload={'milestone': MILESTONES[3], 'verified': True, 'abstained': True, 'reward': None,
                                'theta': theta})
-    verified = bool(rl and rl['verified'])
-    reward = rl['reward'] if rl else None
+    attempts = policy.log[tid].attempts if tid in policy.log else []
+    verified = any(a.get('accepted') for a in attempts)
+    reward = None
     return _frame('verified', kind='verify', status='RECOVERED' if verified else 'FAULT', debug_pct=100,
                   active_phase=4, title=MILESTONES[3], verified=verified, reward=reward,
-                  narrative=(f'Fresh-context verifier accepted the replay; reward {reward:+.1f}, θ updated toward '
-                             f"step {rl['credited_step']}." if verified else
-                             f'No replay passed verification; reward {reward if reward is not None else "n/a"}.'),
+                  narrative=('The scripted replay passed the repair acceptance checks. Policy weights stay frozen; '
+                             'this illustration is not a published benchmark result.' if verified else
+                             'No scripted replay passed acceptance. Policy weights stay frozen.'),
                   payload={'milestone': MILESTONES[3], 'verified': verified, 'reward': reward, 'rl': rl,
                            'decision': decision, 'theta': theta})
 

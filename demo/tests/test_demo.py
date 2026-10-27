@@ -42,6 +42,17 @@ class ScenarioTests(unittest.TestCase):
         with mock.patch.object(scenarios, 'MPRLRecoveryPolicy', GoldGuardedPolicy):
             cls.results = {s['id']: s for s in scenarios.all_scenarios()}
 
+    def test_illustrations_never_train_or_write_feedback(self):
+        from agentrx.rl_policy import THETA0
+        with mock.patch.object(scenarios.CapturingJudge, 'record_recovery_outcome',
+                               side_effect=AssertionError('illustrations must not learn')):
+            for sid in IDS:
+                result = scenarios.run_scenario(sid)
+                self.assertIsNone(result['rl'])
+                self.assertEqual(result['measurement_kind'], 'scripted_illustration')
+                self.assertEqual(result['frames'][-1]['payload']['theta'], [round(w, 4) for w in THETA0])
+                self.assertNotIn('updated', result['frames'][-1]['narrative'])
+
     def test_runs_all_four_through_the_guarded_policy(self):
         self.assertEqual(list(self.results), IDS)
         self.assertEqual(GoldGuardedPolicy.seen, [f'demo-case-{i}' for i in range(1, 5)])
@@ -117,7 +128,8 @@ class ScenarioTests(unittest.TestCase):
 
     def _assert_recovered(self, r, rollback, kind=None):
         self.assertEqual(r['decision']['status'], 'intervened')
-        self.assertEqual((r['rl']['verified'], r['rl']['reward']), (True, 1.0))
+        self.assertIsNone(r['rl'])
+        self.assertTrue(r['frames'][-1]['verified'])
         m3 = next(f for f in r['frames'] if f['active_phase'] == 3 and f['phase'] == 'debugging')
         self.assertEqual(m3['payload']['rollback_step'], rollback)
         if kind:
@@ -137,15 +149,12 @@ class HtmlExportTests(unittest.TestCase):
             path = build_demo_html(Path(tmp)/'sub'/'demo.html')
             page = path.read_text(encoding='utf-8')
         self.assertTrue(page.startswith('<!doctype html>'))
-        for token in ('#FAF6EE', '#1B365D', '#B68D40', '#8B1E24', '#1E5631', '#C8B898'):
-            self.assertIn(token, page)
         for needle in ('id="zoom-in"', 'id="zoom-out"', 'id="zoom-fit"', 'Fit View', 'id="flow-token"',
                        'id="btn-play"', 'id="btn-prev"', 'id="btn-next"', '0.5x', '2x',
-                       'id="current-step"', 'id="live-trace"', 'Gazette de Propagation', 'id="bar-fill"',
+                       'id="current-step"', 'id="live-trace"', 'Execution history', 'id="execution-cursor"', 'id="bar-fill"',
                        'wire-active', 'wire-gold', 'wire-fault', 'wire-recovered'):
             self.assertIn(needle, page)
-        for i, m in enumerate(['I. P1/P2/P3 Attribution Checks', 'II. DualLoopRLJudge Ranking',
-                               'III. Rollback &amp; Directive Replay', 'IV. Fresh-Context Verifier &amp; θ Update'], 1):
+        for i, m in enumerate(['Identify constraints', 'Rank candidates', 'Replay correction', 'Verify replay'], 1):
             self.assertIn(f'id="ms-{i}"', page)
             self.assertIn(m, page)
         for agent in ('planner', 'order_agent', 'product_agent', 'returns_agent'):
@@ -186,7 +195,15 @@ class ServerTests(unittest.TestCase):
     def test_index_and_scenarios(self):
         status, ctype, body = self.get('/')
         self.assertEqual((status, ctype), (200, 'text/html; charset=utf-8'))
-        self.assertIn('Live SSE', body)
+        self.assertIn('id="story"', body)
+        self.assertIn('id="system-widget"', body)
+        self.assertIn('id="compare-widget"', body)
+        _, _, system = self.get('/system')
+        self.assertIn('Interactive simulation', system)
+        _, _, widget = self.get('/widgets/system')
+        self.assertIn('window.STUDIO_EMBEDDED=true', widget)
+        _, _, comparison = self.get('/widgets/compare')
+        self.assertIn('window.STUDIO_EMBEDDED=true', comparison)
         status, ctype, body = self.get('/api/scenarios')
         self.assertEqual((status, ctype), (200, 'application/json'))
         self.assertEqual([m['id'] for m in json.loads(body)], IDS)

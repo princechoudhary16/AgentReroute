@@ -45,7 +45,7 @@ python3 analyze_run.py results/final-evidence.csv
 | `recovery_orchestrator` | Decides whether, where and how to intervene, with a verifier gate and budget ([README](recovery_orchestrator/README.md)) |
 | `tool_prevention` | Deterministic pre-execution tool enforcement on a retail backend |
 | `tool_middleware` | Generic, conservative automatic tool prerequisites |
-| `demo` | Offline Versailles visualizer of control propagation and recovery (`python -m demo --out runs/demo_versailles.html`) |
+| `demo` | Interactive recovery studio and Gemini comparison (`python3 -m demo --serve`) |
 
 Tests: `python -m agentrx test`, plus
 `python -m unittest discover -s <package>/tests -t .` for `demo`, `repair_strategies`,
@@ -63,6 +63,30 @@ python3 -m agentrx check    # one-screen health summary (tests, smoke, audit, pr
 
 The demo runs offline with prerecorded model responses. It verifies the pipeline,
 not model accuracy. Reports are saved under `runs/smoke/experiment/`.
+
+## Explore the research
+
+```bash
+python3 -m demo --serve --port 8765
+```
+
+Open [the studio](http://localhost:8765/) for the current method, published-trace
+results and two interactive widgets. **Compare engines** runs fault attribution
+on a chosen published trace using Gemini 3.1 Flash Lite. Choose fixed checks or
+model-written checks; both use the full-trace selector with frozen policy weights.
+The separate retail workflow is a **scripted illustration**, not a benchmark result.
+
+For live comparisons, export `GEMINI_API_KEY` or add it to the ignored root `.env`
+file, then refresh settings. The key stays on the server. Requests use your Google
+project's quota; loading the page and viewing saved results make no inference calls.
+Run `python3 -m agentrx prepare --fetch` if published traces are missing.
+See [the UI guide](docs/comparison-ui.md).
+
+Current evidence: **29 tau and 44 magentic traces** from the authors' release.
+Our best reportable step accuracy is **37.9% vs 31.0%** on tau and **25.0% vs
+18.2%** on magentic. Neither margin is statistically significant. See
+[results and limitations](results/README.md), [the explanation](docs/ONBOARDING.md),
+and [the project report](docs/Project-Report.docx).
 
 ## Benchmark data
 
@@ -101,7 +125,7 @@ python3 -m agentrx run --config configs/dev_ollama.json --model YOUR_INSTALLED_M
 ```
 
 Live local smoke and single-trace pilots have been verified; diagnostic accuracy
-is not established. See [verification](docs/verification.md#ollama-integration-verification--2026-10-18).
+is not established. See [current evidence](results/README.md).
 
 ### 2. Cloud models (Gemini, OpenAI, or custom endpoints)
 
@@ -110,7 +134,7 @@ If you cannot run Ollama locally or want to use a cloud model, set your API key 
 - **Google Gemini**:
   ```bash
   export GEMINI_API_KEY="your-gemini-api-key"
-  python3 -m agentrx run --model gemini --out runs/gemini
+  python3 -m agentrx run --config configs/dev_gemini.json --out runs/gemini
   ```
 - **OpenAI**:
   ```bash
@@ -120,12 +144,12 @@ If you cannot run Ollama locally or want to use a cloud model, set your API key 
 
 Test your setup without spending tokens or making network calls with `--preflight`:
 ```bash
-python3 -m agentrx run --model gemini --preflight --out runs/gemini
+python3 -m agentrx run --config configs/dev_gemini.json --preflight --out runs/gemini
 ```
 
 ### 3. Adding any OpenAI-compatible model
 
-You can easily route to any OpenAI-compatible provider (e.g. Groq, Together AI, DeepSeek, vLLM, LiteLLM) by providing its endpoint and API key in a config file (or in `configs/dev_multi.json`):
+You can easily route to any OpenAI-compatible provider (e.g. Groq, Together AI, DeepSeek, vLLM, LiteLLM) by providing its endpoint and the name of its API-key environment variable in a config file (or in `configs/dev_multi.json`):
 
 ```json
 {
@@ -185,7 +209,7 @@ See [discovery, integration, and limits](docs/prevention.md). The earlier retail
 ## Documentation
 
 - [Usage, configuration, and implementation details](docs/usage.md)
-- [Verification results and limitations](docs/verification.md)
+- [Current results and limitations](results/README.md)
 - [Benchmark design](docs/benchmark-design.md)
 - [Repair strategies design](docs/repair-strategies-design.md)
 - [Tool prevention and middleware](docs/prevention.md)
