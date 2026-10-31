@@ -9,18 +9,19 @@ committed CSVs against the pinned revision. What lives here is everything the CS
   copied so the page never depends on the generated run data being checked out.
 """
 
+# Time budgets are the run of show in script v3 (150 words a minute).
 CHAPTERS = (
-    {'id': 'intro', 'title': 'Introduction', 'speaker': 'William', 'seconds': 75,
+    {'id': 'intro', 'title': 'Introduction', 'speaker': 'William', 'seconds': 71,
      'handoff': 'Badr will start with what already exists.'},
-    {'id': 'existing', 'title': 'Existing work and the gap', 'speaker': 'Badr', 'seconds': 90,
+    {'id': 'existing', 'title': 'Existing work and the gap', 'speaker': 'Badr', 'seconds': 82,
      'handoff': 'Nischit will explain how we attribute a failure.'},
-    {'id': 'attribution', 'title': 'Fault attribution', 'speaker': 'Nischit', 'seconds': 135,
-     'handoff': 'Prince will show what happens after a diagnosis.'},
-    {'id': 'repair', 'title': 'Repair and orchestrator', 'speaker': 'Prince', 'seconds': 120,
-     'handoff': 'Ananya will show whether it worked.'},
-    {'id': 'benchmark', 'title': 'Benchmark and results', 'speaker': 'Ananya', 'seconds': 120,
+    {'id': 'attribution', 'title': 'Fault attribution', 'speaker': 'Nischit', 'seconds': 106,
+     'handoff': 'Prince will show what we do with it.'},
+    {'id': 'repair', 'title': 'Repair and orchestrator', 'speaker': 'Prince', 'seconds': 189,
+     'handoff': 'Ananya will show what this did across a hundred failures.'},
+    {'id': 'benchmark', 'title': 'Benchmark and results', 'speaker': 'Ananya', 'seconds': 83,
      'handoff': 'William will close.'},
-    {'id': 'closing', 'title': 'Closing', 'speaker': 'William', 'seconds': 60, 'handoff': ''},
+    {'id': 'closing', 'title': 'Closing', 'speaker': 'William', 'seconds': 54, 'handoff': ''},
 )
 
 # Final report, Table 2. 100 failed test episodes; 25 healthy controls. Cost is tokens relative to the

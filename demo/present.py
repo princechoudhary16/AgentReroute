@@ -622,7 +622,8 @@ JS = r'''
  addEventListener('resize',()=>{measure();beats.forEach(b=>{b._p=undefined;});queue();});
 
  /* ---- reveal on arrival ---- */
- const seen=new IntersectionObserver(entries=>{for(const e of entries)if(e.isIntersecting){e.target.classList.add('in');seen.unobserve(e.target);}},{threshold:.3});
+ /* reveal as soon as a beat starts entering, so a continuous scroll never meets an empty screen */
+ const seen=new IntersectionObserver(entries=>{for(const e of entries)if(e.isIntersecting){e.target.classList.add('in');seen.unobserve(e.target);}},{threshold:.08,rootMargin:'0px 0px -5% 0px'});
  document.querySelectorAll('.stage').forEach(s=>seen.observe(s));
 
  /* ---- the live widgets mount when they come near, and report what they show ---- */

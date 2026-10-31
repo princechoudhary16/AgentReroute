@@ -3,7 +3,7 @@
 CSS = r'''
 :root{color-scheme:dark;--bg:#090e11;--surface:#10181d;--raised:#162128;--border:#253238;--line:#1a252b;--text:#edf4f3;--muted:#94a6ad;--dim:#7d8f96;--mint:#bcf783;--violet:#b9a4ff;--cyan:#7fdbed;--amber:#f5cd88;--red:#ff9b9b;--sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;--rail:64px;--top:56px;--gutter:clamp(24px,6vw,96px)}
 *{box-sizing:border-box}
-html{scroll-snap-type:y proximity;scroll-behavior:auto;background:var(--bg);scrollbar-width:none}
+html{scroll-behavior:auto;background:var(--bg);scrollbar-width:none}
 html::-webkit-scrollbar{display:none}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;cursor:pointer}
@@ -48,7 +48,7 @@ h1,h2,h3,p{margin:0}svg{display:block}
 .handoff .budget small{display:block;font-size:10px;letter-spacing:2px;color:var(--muted);margin-top:6px}
 
 /* beats */
-.beat{min-height:100vh;scroll-snap-align:start;position:relative}
+.beat{min-height:100vh;position:relative}
 .beat.scene{height:calc(var(--len,3) * 100vh)}
 .stage{position:relative;min-height:100vh;padding:calc(var(--top) + 4vh) var(--gutter) 9vh calc(var(--rail) + var(--gutter));display:flex;flex-direction:column}
 .scene .stage{position:sticky;top:0;height:100vh;min-height:0;overflow:hidden}
@@ -63,7 +63,7 @@ h1,h2,h3,p{margin:0}svg{display:block}
 .row{display:flex;gap:clamp(20px,3vw,44px);align-items:baseline;flex-wrap:wrap}
 
 /* reveal */
-.rv{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.2,.65,.3,1),transform .7s cubic-bezier(.2,.65,.3,1);transition-delay:calc(var(--d,0) * 90ms)}
+.rv{opacity:0;transform:translateY(16px);transition:opacity .45s cubic-bezier(.2,.65,.3,1),transform .45s cubic-bezier(.2,.65,.3,1);transition-delay:calc(var(--d,0) * 55ms)}
 .in .rv{opacity:1;transform:none}
 .bar{height:100%;border-radius:4px;transform-origin:left;transform:scaleX(0);transition:transform .9s cubic-bezier(.2,.65,.3,1) calc(var(--d,0) * 120ms + .2s)}
 .in .bar{transform:scaleX(1)}
