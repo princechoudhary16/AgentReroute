@@ -7,7 +7,7 @@ checks → evidence log → LLM attribution of the first **unrecovered** critica
 failure, responsible agent, and category.
 
 This project is an independent reconstruction, not Microsoft's original code.
-See [attribution](../THIRD_PARTY_NOTICES.md) and [design](superpowers/specs/2026-10-14-agentrx-reproduction-design.md).
+See [attribution](../THIRD_PARTY_NOTICES.md).
 
 ## Start here
 

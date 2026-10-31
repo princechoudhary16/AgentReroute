@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"#W8835847\"}, \"context\": {\"user_id\": \"daiki_silva_2903\"}}", "tokens_in": 2877, "tokens_out": 51, "model": "qwen2.5:32b", "lenient": false}

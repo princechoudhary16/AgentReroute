@@ -1,9 +1,13 @@
+import io
 import json
 import threading
 import unittest
+from email.message import Message
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from unittest import mock
 from unittest.mock import patch
-from agentrx.providers import HTTPProvider, OllamaProvider, ProviderError
+from urllib import error, request
+from agentrx.providers import HTTPProvider, OllamaProvider, ProviderError, _parse_json_object, env_key
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -68,7 +72,8 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(len(Handler.records), 2)
 
     def test_missing_credentials_fail_preflight(self):
-        with patch.dict('os.environ', {}, clear=True):
+        # sys.platform: no HKCU\Environment fallback, which would find a real user-level key on Windows.
+        with patch.dict('os.environ', {}, clear=True), patch('agentrx.providers.sys.platform', 'linux'):
             with self.assertRaisesRegex(ProviderError, 'OPENAI_API_KEY'):
                 HTTPProvider.from_config({'provider': 'openai', 'model': 'gpt-5'})
 
@@ -79,7 +84,7 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(Handler.records[0]['auth'], 'Bearer gem-key')
 
     def test_gemini_missing_credentials_fail(self):
-        with patch.dict('os.environ', {}, clear=True):
+        with patch.dict('os.environ', {}, clear=True), patch('agentrx.providers.sys.platform', 'linux'):
             with self.assertRaisesRegex(ProviderError, 'GEMINI_API_KEY'):
                 HTTPProvider.from_config({'provider': 'gemini'})
 
@@ -199,3 +204,175 @@ class OllamaProviderTests(unittest.TestCase):
         schema={'type':'object','properties':{'rules':{'type':'array'}},'required':['rules']}
         p.complete_messages([{'role':'user','content':'Return rules'}],response_schema=schema)
         self.assertEqual(OllamaHandler.records[0]['body']['format'],schema)
+
+
+# OpenRouter hardening of HTTPProvider (offline: scripted opener, no network)
+BASE_URL = 'https://openrouter.ai/api/v1'
+MODEL = 'minimax/minimax-m3.1-flash:free'
+ANSWER = {'step_index': 2, 'agent': 'planner', 'category': 'InvalidInvocation', 'rationale': 'ok'}
+
+
+def http_error(code, retry_after=None):
+    headers = Message()
+    if retry_after is not None:
+        headers['Retry-After'] = retry_after
+    return error.HTTPError(BASE_URL + '/chat/completions', code, 'error', headers, io.BytesIO(b'{}'))
+
+
+def completion(content):
+    return io.BytesIO(json.dumps({'id': 'gen-1', 'model': MODEL, 'usage': {'total_tokens': 9},
+                                  'choices': [{'finish_reason': 'stop',
+                                               'message': {'content': content}}]}).encode())
+
+
+class FakeOpener:
+    def __init__(self, outcomes):
+        self.outcomes, self.requests = list(outcomes), []
+
+    def open(self, req, timeout=None):
+        self.requests.append(req)
+        outcome = self.outcomes.pop(0)
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+
+class OpenRouterHardeningTests(unittest.TestCase):
+    def test_strips_think_tags_and_markdown_fences(self):
+        raw = json.dumps(ANSWER)
+        self.assertEqual(_parse_json_object(raw), ANSWER)
+        self.assertEqual(_parse_json_object('<think>reasoning</think>\n```json\n' + raw + '\n```'), ANSWER)
+        self.assertEqual(_parse_json_object('<think>a\n{"x": 1}\nb</think>```\n' + raw + '```'), ANSWER)
+        self.assertEqual(_parse_json_object('Here is my verdict:\n' + raw + '\nHope this helps.'), ANSWER)
+        with self.assertRaisesRegex(ProviderError, r'Malformed model JSON response \(JSONDecodeError\)'):
+            _parse_json_object('<think>only thoughts</think> no json here')
+        with self.assertRaisesRegex(ProviderError, 'Model must return a JSON object'):
+            _parse_json_object('```json\n[1, 2]\n```')
+
+    def test_cloudflare_headers_and_exponential_backoff(self):
+        opener = FakeOpener([http_error(429), http_error(429), http_error(503, retry_after='3'),
+                             http_error(429, retry_after='999'), http_error(400),
+                             completion('<think>x</think>```json\n' + json.dumps(ANSWER) + '\n```')])
+        provider = HTTPProvider(MODEL, BASE_URL, 'sk-or-test', provider='openai-compatible', retries=4,
+                                retry_delay=2, settings={'reasoning_effort': 'low', 'max_tokens': 4096})
+        with mock.patch.object(request, 'build_opener', return_value=opener), \
+                mock.patch('agentrx.providers.time.sleep') as sleep:
+            answer = provider.complete('judge', {'trajectory': {'steps': []}, 'checklist': False})
+        self.assertEqual(answer, ANSWER)
+        # 2s * 2**attempt, then numeric Retry-After, capped at 60; the 400 fallback retries without sleeping.
+        self.assertEqual([c.args[0] for c in sleep.call_args_list], [2, 4, 3.0, 60.0])
+        first = opener.requests[0]
+        self.assertEqual(first.full_url, BASE_URL + '/chat/completions')
+        self.assertEqual(first.get_header('User-agent'), 'AgentReroute/1.0')
+        self.assertEqual(first.get_header('Http-referer'), 'https://github.com/AgentReroute')
+        self.assertEqual(first.get_header('X-title'), 'AgentReroute')
+        self.assertEqual(first.get_header('Authorization'), 'Bearer sk-or-test')
+        bodies = [json.loads(r.data) for r in opener.requests]
+        self.assertTrue(all('response_format' in b and b['reasoning_effort'] == 'low' for b in bodies[:5]))
+        self.assertNotIn('response_format', bodies[5])
+        self.assertNotIn('reasoning_effort', bodies[5])
+        self.assertEqual(bodies[5]['max_tokens'], 4096)         # the token bound survives the fallback
+        self.assertEqual((provider.last_telemetry['attempts'], provider.last_telemetry['response_format']),
+                         (6, False))
+        self.assertEqual(provider._backoff(10), 60)
+
+    def test_env_key_registry_fallback_and_empty_override(self):
+        reg = mock.MagicMock()
+        reg.QueryValueEx.return_value = ('from-hkcu', 1)
+        with mock.patch.dict('sys.modules', {'winreg': reg}), mock.patch('agentrx.providers.sys.platform', 'win32'):
+            with mock.patch.dict('os.environ', {}, clear=True):
+                self.assertEqual(env_key('SOME_KEY'), 'from-hkcu')
+            with mock.patch.dict('os.environ', {'SOME_KEY': ''}, clear=True):
+                self.assertEqual(env_key('SOME_KEY'), '')         # explicit blank wins: no registry read
+            with mock.patch.dict('os.environ', {'SOME_KEY': 'proc'}, clear=True):
+                self.assertEqual(env_key('SOME_KEY'), 'proc')
+        self.assertEqual(reg.QueryValueEx.call_count, 1)
+
+    def test_complete_messages_sends_caller_messages_and_returns_text_and_usage(self):
+        msgs = [{'role': 'system', 'content': 'be an agent'}, {'role': 'user', 'content': 'cancel #W1'}]
+        opener = FakeOpener([completion(json.dumps(ANSWER))])
+        provider = HTTPProvider(MODEL, 'https://generativelanguage.googleapis.com/v1beta/openai', 'k',
+                                provider='gemini', retries=0)
+        with mock.patch.object(request, 'build_opener', return_value=opener):
+            text, usage, info = provider.complete_messages(msgs, json_mode=True)
+        self.assertEqual(json.loads(text), ANSWER)
+        self.assertEqual(usage['total_tokens'], 9)
+        self.assertIsNone(info)                                  # clean stop + string content -> not lenient
+        body = json.loads(opener.requests[0].data)
+        self.assertEqual(body['messages'], msgs)                 # caller messages, not agentrx stage prompts
+        self.assertIn('response_format', body)
+        # json_mode=False (the user simulator) returns plain text and sends no response_format.
+        plain = FakeOpener([completion('just text')])
+        with mock.patch.object(request, 'build_opener', return_value=plain):
+            text2, _, info2 = provider.complete_messages(msgs, json_mode=False)
+        self.assertEqual((text2, info2), ('just text', None))
+        self.assertNotIn('response_format', json.loads(plain.requests[0].data))
+        # A null content (Gemini occasionally returns one) becomes '' and is flagged lenient with a reason.
+        nulled = FakeOpener([completion(None)])
+        with mock.patch.object(request, 'build_opener', return_value=nulled):
+            text3, _, info3 = provider.complete_messages(msgs, json_mode=True)
+        self.assertEqual(text3, '')
+        self.assertTrue(info3['content_null'])
+
+    def test_complete_messages_flags_lenient_on_max_tokens_and_malformed(self):
+        provider = HTTPProvider(MODEL, 'https://generativelanguage.googleapis.com/v1beta/openai', 'k',
+                                provider='gemini', retries=0)
+        def resp(finish, content, out_tokens=7):
+            return io.BytesIO(json.dumps({'id': 'g', 'model': MODEL,
+                'usage': {'completion_tokens': out_tokens, 'total_tokens': out_tokens + 1},
+                'choices': [{'finish_reason': finish, 'message': {'content': content}}]}).encode())
+        # MAX_TOKENS (length): partial text is returned, flagged lenient, with the reason captured.
+        mt = FakeOpener([resp('length', '{"action": "repl', out_tokens=4096)])
+        with mock.patch.object(request, 'build_opener', return_value=mt):
+            text, _, info = provider.complete_messages([{'role': 'user', 'content': 'x'}], json_mode=True)
+        self.assertEqual(text, '{"action": "repl')
+        self.assertEqual((info['finish_reason'], info['content_null'], info['output_tokens']),
+                         ('length', False, 4096))
+        self.assertEqual(info['content_chars'], len('{"action": "repl'))     # partial, not null
+        # MALFORMED_FUNCTION_CALL: non-stop finish_reason must not raise; '' + lenient + null content.
+        mf = FakeOpener([resp('function_call_filter: MALFORMED_FUNCTION_CALL', None)])
+        with mock.patch.object(request, 'build_opener', return_value=mf):
+            text2, _, info2 = provider.complete_messages([{'role': 'user', 'content': 'x'}], json_mode=True)
+        self.assertEqual(text2, '')
+        self.assertEqual((info2['finish_reason'], info2['content_null']),
+                         ('function_call_filter: MALFORMED_FUNCTION_CALL', True))
+
+    def test_generate_content_native_skips_thought_parts_and_reads_usage_metadata(self):
+        provider = HTTPProvider('gemini-3.5-flash-lite', 'https://generativelanguage.googleapis.com/v1beta/openai',
+                                'k', provider='gemini', retries=0, settings={'temperature': 0})
+        def native(body):
+            return io.BytesIO(json.dumps(body).encode())
+        # A thought part plus a text part: only the text part is returned; thoughts count as output tokens.
+        good = native({'candidates': [{'finishReason': 'STOP', 'content': {'parts': [
+            {'text': 'internal reasoning', 'thought': True}, {'text': '{"action": "reply"}'}]}}],
+            'usageMetadata': {'promptTokenCount': 100, 'candidatesTokenCount': 6, 'thoughtsTokenCount': 40,
+                              'totalTokenCount': 146}})
+        opener = FakeOpener([good])
+        with mock.patch.object(request, 'build_opener', return_value=opener):
+            text, usage, info = provider.generate_content([{'role': 'system', 'content': 'sys'},
+                                                           {'role': 'user', 'content': 'hi'}], json_mode=True)
+        self.assertEqual(text, '{"action": "reply"}')              # thought part skipped
+        self.assertEqual((usage['prompt_tokens'], usage['completion_tokens']), (100, 46))  # 6 + 40 thoughts
+        self.assertIsNone(info)                                    # STOP + text -> not lenient
+        self.assertIn(':generateContent', opener.requests[0].full_url)
+        self.assertEqual(opener.requests[0].get_header('X-goog-api-key'), 'k')
+        # Thought-only response (no text part): empty text, lenient, with the thought token count recorded.
+        empty = native({'candidates': [{'finishReason': 'STOP', 'content': {'parts': [
+            {'text': 'all thinking', 'thought': True}]}}],
+            'usageMetadata': {'promptTokenCount': 100, 'candidatesTokenCount': 0, 'thoughtsTokenCount': 512,
+                              'totalTokenCount': 612}})
+        with mock.patch.object(request, 'build_opener', return_value=FakeOpener([empty])):
+            text2, usage2, info2 = provider.generate_content([{'role': 'user', 'content': 'hi'}], json_mode=True)
+        self.assertEqual(text2, '')
+        self.assertEqual((info2['thoughts_tokens'], info2['has_thought_part'], info2['output_tokens']),
+                         (512, True, 0))
+        self.assertEqual(usage2['completion_tokens'], 512)         # thoughts billed as output, not reported as zero
+
+    def test_400_fallback_is_openai_compatible_only_and_once(self):
+        for kind, outcomes in (('openai', [http_error(400)]), ('openai-compatible', [http_error(400)] * 2)):
+            opener = FakeOpener(outcomes)
+            provider = HTTPProvider(MODEL, BASE_URL, 'k', provider=kind, retries=2, retry_delay=0)
+            with mock.patch.object(request, 'build_opener', return_value=opener), \
+                    self.assertRaisesRegex(ProviderError, 'Model HTTP 400'):
+                provider.complete('judge', {'checklist': False})
+            self.assertEqual(len(opener.requests), len(outcomes), kind)

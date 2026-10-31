@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I found your pending order #W6729841. Please confirm that you want to change the shipping address for this order. What is the new address you would like to use?\"}", "tokens_in": 3089, "tokens_out": 52, "model": "qwen2.5:32b", "lenient": false}

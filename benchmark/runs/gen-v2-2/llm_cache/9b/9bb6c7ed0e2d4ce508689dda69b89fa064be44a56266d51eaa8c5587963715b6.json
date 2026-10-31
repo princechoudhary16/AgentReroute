@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"modify_pending_order_address\", \"arguments\": {\"order_id\": \"#W1845024\", \"address1\": \"123 Broadway\", \"address2\": \"\", \"city\": \"New York\", \"state\": \"NY\", \"country\": \"USA\", \"zip\": \"10108\"}}", "tokens_in": 3268, "tokens_out": 77, "model": "qwen2.5:32b", "lenient": false}

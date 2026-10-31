@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"calculate\", \"arguments\": {\"expression\": \"561.05 + 502.7\"}}", "tokens_in": 5527, "tokens_out": 34, "model": "qwen2.5:32b", "lenient": false}

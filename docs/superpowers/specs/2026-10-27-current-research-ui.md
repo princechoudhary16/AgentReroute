@@ -1,0 +1,13 @@
+# Current research UI integration
+
+Integrate the previously approved scrolling UI into mp_rl-gemini-actor without changing the current research baseline or inference semantics. User explicitly authorized the integration and necessary research-driven changes; proceed in the existing branch and checkout.
+
+The source of current claims is docs/Project-Report.docx, docs/AGENT-BRIEF.md, results/README.md and the committed final/selector CSVs at 0519e24. Current method: perspective constraints -> prefix checks -> blame and candidates -> LLM selector free over the trace. THETA0 frozen, no training during inference. Preserve the joint AgentRx control unchanged.
+
+Homepage preserves the visual design, scroll narrative and embedded tools, but explains current attribution and candidate recall rather than promising trained recovery gains. Headline graphs compare tau (29) and magentic (44) published subset, fixed and written checks as applicable. Compute exact accuracy, Wilson intervals and McNemar from CSV. Exclude contaminated synthesis arms from headline comparisons; disclose failed calls/fallbacks, missing magentic synthesis and statistical uncertainty. Show clean selector ablation separately. Retire old synthetic benchmark and cost/time savings claims.
+
+Comparison widget uses available published cases (data/benchmark/cases.json), AgentRx joint and current trace selector under matched Gemini 3.1 Flash Lite settings. Default fixed checks, optional written checks. Ground truth only added after prediction for display and scoring; never passed to models. No repair or theta update in this attribution-only comparison. Preserve inspectable events, saved runs, mobile and reduced motion. Missing corpus is actionable rather than replaced with fake benchmark cases. Historical legacy runs remain inspectable with their original metadata.
+
+The separate retail workflow remains an explicitly illustrative scripted recovery demonstration with current deterministic frozen attribution behavior; no claim of reportable benchmark performance or online learning. Keep environment secrets server-side. Do not issue live API calls during verification. Expose selector/synthesis fallbacks, transport errors and incomplete comparison status. Reuse branch pacing, conservatively configured for local demo, and do not change core provider complete() behavior.
+
+Scope excludes a new Elo arena, arbitrary tool execution, retraining, full live benchmark reruns and new speedup claims. Saved per-case evidence playback may be added if it fits the existing comparison UI without diluting correctness; it must be labeled result playback rather than reconstructed internal execution.

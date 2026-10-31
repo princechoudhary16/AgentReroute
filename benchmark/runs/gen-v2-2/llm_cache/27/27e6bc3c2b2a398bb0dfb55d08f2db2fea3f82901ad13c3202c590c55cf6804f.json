@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"handoff\", \"to\": \"order_agent\", \"message\": \"User wants to cancel the order (order_id: #W9348897) with the reason 'ordered by mistake'.\", \"context\": {\"user_id\": \"daiki_sanchez_3253\", \"order_id\": \"#W9348897\", \"reason\": \"ordered by mistake\"}}", "tokens_in": 9212, "tokens_out": 89, "model": "qwen2.5:32b", "lenient": false}

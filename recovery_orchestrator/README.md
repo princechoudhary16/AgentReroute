@@ -120,6 +120,7 @@ recovery_orchestrator/
 │   ├── e2e_benchmark.py    all recovery conditions on one benchmark corpus, same harness and scoring
 │   ├── cross_branch_check.py  orchestrator × repair-strategies × faultattribution check
 │   └── REPORT.md           latest cross-branch results and open questions
+
 └── tests/
     ├── test_rca.py, test_registry_trace.py, test_policy.py,
     ├── test_orchestrator.py, test_evaluation.py, test_leakage.py
@@ -296,15 +297,15 @@ calls the repairer's optional `record_outcome(trajectory_id, verified, rollout)`
 after every repaired attempt, with the verifier's verdict (never the reward).
 A repairer directive of kind `none` means "not applicable": it is skipped, not
 replayed. If the repairer substitutes a strategy, that strategy is logged as
-`applied_strategy` and not offered again on the same step. Results and open
-questions: [integration/REPORT.md](integration/REPORT.md).
+`applied_strategy` and not offered again on the same step. Run it with
+`integration/cross_branch_check.py`.
 
 Not yet:
 * **tau-bench replay.** `TauBenchEnvironment` documents the plan (prefix tool
   re-execution, user-simulator history restore, ledger-only reward). The tau-bench
   dependency still needs team agreement.
 * **Live LLM client** for the verifier and replay agent. `llm.LLMClient` is the interface.
-* **Registry priors** are the Repair team's estimates, not measured (see REPORT R3).
+* **Registry priors** are the Repair team's estimates, not measured.
 * **Calibration** of FA agreement against gold, once live FA runs exist (none are measured yet).
 
 ## Fixtures

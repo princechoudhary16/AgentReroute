@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"handoff\", \"to\": \"product_agent\", \"message\": \"Can you help me find a shorter skateboard made of bamboo?\", \"context\": {\"product_id\": \"1968349452\"}}", "tokens_in": 3140, "tokens_out": 50, "model": "qwen2.5:32b", "lenient": false}

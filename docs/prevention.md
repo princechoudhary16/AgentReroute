@@ -8,8 +8,7 @@ tool receives its original arguments and returns its original result. A failed o
 unverifiable check blocks the target call with a structured error.
 
 There are no new endpoint parameters, approval tokens, operation IDs, retail
-backends, or endpoint implementations. The earlier
-[retail policy experiment](retail-prevention-experiment.md) is a separate component.
+backends, or endpoint implementations. The earlier retail-specific `tool_prevention` package is a separate component.
 
 ## Try it
 

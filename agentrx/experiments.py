@@ -17,7 +17,7 @@ from .handoff import validate_handoff, CONFIDENCE_KIND
 
 CLIENT_KEYS = {'provider','model','base_url','api_key_env','deployment','api_version','settings',
                'timeout','retries','max_input_chars','replay_file','base_url_env','model_env',
-               'num_ctx','think','keep_alive'}
+               'num_ctx','think','keep_alive', 'tpm_limit'}
 
 
 def experiment_variants(config):
@@ -38,7 +38,9 @@ def experiment_variants(config):
         raise ValueError('variants must be a non-empty list')
     result, names = [], set()
     for variant in variants:
-        if set(variant) - {'name','evidence','checklist','generation','protocol','python_timeout','divergence_threshold','max_candidates','recovery_loop','rl_state_path'}:
+        if set(variant) - {'name','evidence','checklist','generation','protocol','python_timeout',
+                           'divergence_threshold','max_candidates','recovery_loop','repair_cascade',
+                           'rl_state_path','llm_selector','selector_pool'}:
             raise ValueError('Unsupported variant field')
         name = variant.get('name','')
         if not isinstance(name,str) or not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_.-]*',name) or name in names:

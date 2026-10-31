@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"handoff\", \"to\": \"product_agent\", \"message\": \"Can you provide more options for bamboo skateboards?\", \"context\": {\"product_id\": \"1968349452\"}}", "tokens_in": 3377, "tokens_out": 48, "model": "qwen2.5:32b", "lenient": false}

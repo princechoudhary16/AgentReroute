@@ -131,7 +131,7 @@ class ScriptedBrain:
         if not order_id:
             return _reply('The handoff did not include an order id, so I cannot proceed.')
         reads = [r for n, r in tools if n == 'get_order_details']
-        if not reads or _retryable(reads[-1]):
+        if not reads or _retryable(reads[-1], ('items',)):
             if len(reads) >= 2 and reads[-1].startswith('Error') and reads[-2].startswith('Error'):
                 return _reply(f'The order service keeps failing: {reads[-1]}')
             return _tool('get_order_details', order_id=order_id)
@@ -155,25 +155,34 @@ class ScriptedBrain:
         if context.get('question') != 'available_variants':
             return _reply('I cannot handle this request.')
         listing = [r for n, r in tools if n == 'list_all_product_types']
-        if not listing or _retryable(listing[-1]):
+        if not listing or _retryable(listing[-1], ('T-Shirt',)):
             return _tool('list_all_product_types')
         product_id = json.loads(listing[-1]).get('T-Shirt')
         details = [r for n, r in tools if n == 'get_product_details']
-        if not details or _retryable(details[-1]):
+        if not details or _retryable(details[-1], ('variants',)):
             return _tool('get_product_details', product_id=product_id)
         variants = json.loads(details[-1])['variants']
         count = sum(1 for v in variants.values() if v['available'])
         return _reply(f'There are {count} T-shirt variants available.')
 
 
-def _retryable(result):
+def _retryable(result, needs=()):
+    """True when a tool result cannot be used: an error, or a payload missing the fields the caller needs.
+
+    Shape-based on purpose. This used to test ``value.get('status') == 'processing'``, which was the fault
+    injector's own stuck payload, so rewording that payload silently stopped the scripted agent from
+    retrying and it then read an in-flight response as an order. A fixture agent that recognises a stuck
+    tool by its wording is the same leak the seed checks had, one layer down.
+    """
     if result.startswith('Error'):
         return True
     try:
         value = json.loads(result)
     except json.JSONDecodeError:
         return False
-    return isinstance(value, dict) and value.get('status') == 'processing'
+    if not isinstance(value, dict):
+        return False
+    return any(key not in value for key in needs)
 
 
 def scripted_llm(domain, task):

@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"The product details could not be found for the provided product ID. Please ensure the product ID is correct and try again.\"}", "tokens_in": 1910, "tokens_out": 36, "model": "qwen2.5:32b", "lenient": false}

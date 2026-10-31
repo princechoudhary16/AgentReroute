@@ -8,11 +8,14 @@ from .io import write_json
 from .perspectives import (PERSPECTIVES, compute_blame_matrix, encode_candidates, run_perspective_checks,
                            seed_constraints_for_perspective, synthesize_perspective_constraints)
 from .predictions import validate_prediction, validate_candidates
-from .rl_policy import DualLoopRLJudge, live_dynamic_recover, verify_and_score_state_change
+from .rl_policy import (DualLoopRLJudge, live_dynamic_recover, repair_cascade,
+                        verify_and_score_state_change)
+from .selector import llm_select
 from .taxonomy import category, agent
 
 DEFAULTS = {'evidence': True, 'checklist': True, 'generation': 'stepwise', 'protocol': 'joint',
-            'python_timeout': 3, 'recovery_loop': True}
+            'python_timeout': 3, 'recovery_loop': True, 'repair_cascade': 0,
+            'llm_selector': False, 'selector_pool': 5}
 
 
 def validate_config(config):
@@ -34,6 +37,29 @@ def validate_config(config):
         raise ValueError('Boundary options require protocol ranked')
     if type(result['recovery_loop']) is not bool:
         raise ValueError('recovery_loop must be a boolean')
+    if type(result['repair_cascade']) is not int or type(result['repair_cascade']) is bool \
+            or not 0 <= result['repair_cascade'] <= 5:
+        raise ValueError('repair_cascade must be an int in 0..5 (0 disables it)')
+    if result['repair_cascade']:
+        if result['protocol'] != 'mp_rl':
+            raise ValueError('repair_cascade requires protocol mp_rl')
+        # The cascade is inference only. Recorded as False so result.json shows theta was frozen.
+        result['recovery_loop'] = False
+    if result['llm_selector'] not in (False, 'pool', 'trace'):
+        raise ValueError("llm_selector must be False, 'pool' or 'trace'")
+    if result['llm_selector']:
+        if result['protocol'] != 'mp_rl':
+            raise ValueError('llm_selector requires protocol mp_rl')
+        if result['repair_cascade']:
+            raise ValueError('llm_selector and repair_cascade both decide the prediction; enable one')
+        if type(result['selector_pool']) is not int or type(result['selector_pool']) is bool \
+                or not 1 <= result['selector_pool'] <= 20:
+            # Seeds-only pools average 4.5, but synthesis pushes them past 10, and a cap below the
+            # pool size hides gold from the selector entirely.
+            raise ValueError('selector_pool must be an int in 1..20')
+        # Selection is inference only, like the cascade: theta is read, never written.
+        result['recovery_loop'] = False
+
     if result.get('rl_state_path') is not None and (not isinstance(result['rl_state_path'], str) or not result['rl_state_path'].strip()):
         raise ValueError('rl_state_path must be a non-empty string')
     return result
@@ -148,7 +174,8 @@ def diagnose(trajectory, policy, tools, config, provider, artifacts):
 def _compact(c):
     return {'agent': c['agent'], 'raw_agent': c['raw_agent'], 'step_index': c['step_index'],
             'category': c['dominant_category'], 'perspective': c['dominant_perspective'],
-            'probability': c['probability'], 'logit': c['logit'], 'features': c['features']}
+            'probability': c['probability'], 'logit': c['logit'], 'features': c['features'],
+            'violated_checks': c['violated_checks']}
 
 
 def _rca_payload(trajectory, result, ranked, violations):
@@ -181,12 +208,15 @@ def diagnose_mp_rl(trajectory, policy, tools, config, provider, artifacts, rl_ju
     result = {'trajectory_id': trajectory['trajectory_id'], 'domain': trajectory['domain'],
               'measurement_kind': provider.measurement_kind, 'config': config, 'status': 'ok',
               'prediction': None, 'checks': checks, 'violations': violations, 'errors': errors,
-              'ranked_candidates': [], 'recovery': {'status': 'not_run'}}
+              'ranked_candidates': [], 'recovery': {'status': 'not_run'}, 'selection': None}
     recovery_log = {'status': 'not_run'}
     write_json(artifacts/'trajectory_ir.json', trajectory)
     try:
         if rl_judge is None:
-            rl_judge = DualLoopRLJudge.load(config['rl_state_path']) if config.get('rl_state_path') else DualLoopRLJudge()
+            # Pure diagnosis (no recovery loop) never writes the checkpoint, so load it read-only.
+            read_only = not config['recovery_loop']
+            rl_judge = (DualLoopRLJudge.load(config['rl_state_path'], read_only=read_only)
+                        if config.get('rl_state_path') else DualLoopRLJudge(read_only=read_only))
         context = {'policy': policy, 'tools': tools, 'python_timeout': config['python_timeout']}
         effective, views = {}, {}
         for pid, spec in PERSPECTIVES.items():
@@ -207,7 +237,8 @@ def diagnose_mp_rl(trajectory, policy, tools, config, provider, artifacts, rl_ju
         write_json(artifacts/'validation_log.json', violations)
         blame = compute_blame_matrix(trajectory, checks)
         candidates = encode_candidates(trajectory, checks, blame)
-        top1, ranked, probs = rl_judge.select_action(candidates, trajectory_id=trajectory['trajectory_id'])
+        top1, ranked, probs = rl_judge.select_action(candidates, explore=bool(config.get('rl_explore', False)),
+                                                     trajectory_id=trajectory['trajectory_id'])
         names = {v['assertion_name'] for v in top1['violated_checks'] if v['perspective'] == top1['dominant_perspective']}
         rl_judge.pending[str(trajectory['trajectory_id'])]['constraints_used'] = [
             c for c in effective[top1['dominant_perspective']] if c.get('origin') == 'llm' and c['assertion_name'] in names]
@@ -219,7 +250,32 @@ def diagnose_mp_rl(trajectory, policy, tools, config, provider, artifacts, rl_ju
             'rationale': top1['rationale'], 'evidence_refs': top1['evidence_refs']}, trajectory)
         if errors:
             result['status'] = 'partial_checker_errors'
-        if config['recovery_loop']:
+        if config['llm_selector']:
+            # One model call decides the attribution, with the perspective analysis as evidence.
+            # Reads no gold; theta is frozen. Any failure degrades to the ranked top-1 rather
+            # than voiding the prediction.
+            chosen, selection = llm_select(trajectory, blame, ranked, provider,
+                                           scope=config['llm_selector'], pool=config['selector_pool'])
+            if chosen is not None:
+                result['prediction'] = chosen
+            result['selection'] = selection
+            recovery_log = {'status': 'not_run', 'mode': 'llm_selector', 'selection': selection}
+        elif config['repair_cascade']:
+            # Try the top-k blamed steps in rank order and let the observable verifier choose; the
+            # prediction becomes whichever candidate's repair verifies. Reads no gold, updates no weights.
+            cascade = repair_cascade(trajectory, checks, effective, ranked, candidates, probs,
+                                     policy, tools, provider, context, top_k=config['repair_cascade'])
+            chosen = cascade['chosen'] or top1
+            result['prediction'] = validate_prediction({
+                'step_index': chosen['step_index'], 'agent': chosen['raw_agent'],
+                'category': chosen['dominant_category'], 'rationale': chosen['rationale'],
+                'evidence_refs': chosen['evidence_refs']}, trajectory)
+            recovery_log = {'status': 'ok', 'mode': 'repair_cascade', **cascade}
+            result['recovery'] = {'status': 'ok', 'mode': 'repair_cascade',
+                                  'resolution': cascade['resolution'],
+                                  'accepted_rank': cascade['accepted_rank'],
+                                  'attempted': len(cascade['attempts'])}
+        elif config['recovery_loop']:
             # Recovery is auxiliary to diagnosis: its failure is recorded but never voids the prediction.
             try:
                 recovery = live_dynamic_recover(trajectory, top1, policy, tools, provider, rl_judge.memory)

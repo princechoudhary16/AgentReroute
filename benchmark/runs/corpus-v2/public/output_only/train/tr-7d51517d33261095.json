@@ -1,0 +1,235 @@
+{
+  "trajectory_id": "tr-7d51517d33261095",
+  "domain": "retail",
+  "instruction": "Hello! I need to return a digital camera that I recently purchased. I believe the order number is #W8855135, but I'm not entirely sure. Could you please assist me with initiating the return process?",
+  "instruction_source": "first_user_message",
+  "view": "output_only",
+  "steps": [
+    {
+      "index": 1,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Hello! I need to return a digital camera that I recently purchased. I believe the order number is #W8855135, but I'm not entirely sure. Could you please assist me with initiating the return process?"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"#W8855135\"}, \"context\": {}, \"content\": \"I will check the details of the order you provided to confirm if it's the correct one and proceed with the return process. Please hold on a moment.\"}",
+          "tool_calls": [
+            {
+              "id": "call-2",
+              "name": "get_order_details",
+              "arguments": {
+                "order_id": "#W8855135"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "{\"order_id\": \"#W8855135\", \"user_id\": \"sofia_li_9219\", \"address\": {\"address1\": \"786 Elm Street\", \"address2\": \"Suite 546\", \"city\": \"San Antonio\", \"country\": \"USA\", \"state\": \"TX\", \"zip\": \"78260\"}, \"items\": [{\"name\": \"Air Purifier\", \"product_id\": \"3821016478\", \"item_id\": \"4035304400\", \"price\": 504.19, \"options\": {\"room size\": \"medium\", \"filter type\": \"HEPA\", \"features\": \"smart sensors\"}}, {\"name\": \"Hiking Boots\", \"product_id\": \"7363354090\", \"item_id\": \"1437889264\", \"price\": 258.09, \"options\": {\"size\": \"7\", \"material\": \"synthetic\", \"waterproof\": \"no\"}}, {\"name\": \"Skateboard\", \"product_id\": \"1968349452\", \"item_id\": \"3098764622\", \"price\": 202.13, \"options\": {\"deck material\": \"plastic\", \"length\": \"34 inch\", \"design\": \"plain\"}}, {\"name\": \"Yoga Mat\", \"product_id\": \"4635925001\", \"item_id\": \"2733768059\", \"price\": 94.38, \"options\": {\"thickness\": \"6mm\", \"material\": \"natural rubber\", \"color\": \"pink\"}}], \"fulfillments\": [], \"status\": \"pending\", \"payment_history\": [{\"transaction_type\": \"payment\", \"amount\": 1058.79, \"payment_method_id\": \"credit_card_3951670\"}]}",
+          "name": "get_order_details"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"I see that the order you provided with the order ID #W8855135 is currently in a 'pending' status and does not include a digital camera. Could you please provide the correct order ID or more details about the digital camera you wish to return? If you're unsure, we can look up your orders to find the correct one.\"}"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "I see, that's strange. I'm certain it was a digital camera I purchased. Could you look up my orders and find the one with the digital camera? I want to make sure I get that return process started."
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"get_user_details\", \"arguments\": {\"user_id\": \"sofia_li_9219\"}, \"context\": {\"user_id\": \"sofia_li_9219\"}, \"content\": \"I will look up your orders to find the one with the digital camera. Please hold on a moment.\"}",
+          "tool_calls": [
+            {
+              "id": "call-6",
+              "name": "get_user_details",
+              "arguments": {
+                "user_id": "sofia_li_9219"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "{\"name\": {\"first_name\": \"Sofia\", \"last_name\": \"Li\"}, \"address\": {\"address1\": \"786 Elm Street\", \"address2\": \"Suite 546\", \"city\": \"San Antonio\", \"country\": \"USA\", \"state\": \"TX\", \"zip\": \"78260\"}, \"email\": \"sofia.li7352@example.com\", \"payment_methods\": {\"paypal_8194385\": {\"source\": \"paypal\", \"id\": \"paypal_8194385\"}, \"credit_card_3951670\": {\"source\": \"credit_card\", \"brand\": \"visa\", \"last_four\": \"6791\", \"id\": \"credit_card_3951670\"}, \"credit_card_8105988\": {\"source\": \"credit_card\", \"brand\": \"mastercard\", \"last_four\": \"8484\", \"id\": \"credit_card_8105988\"}}, \"orders\": [\"#W4689314\", \"#W8855135\", \"#W3916020\", \"#W5416052\"]}",
+          "name": "get_user_details"
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"#W4689314\"}, \"context\": {\"user_id\": \"sofia_li_9219\"}, \"content\": \"I am checking another order to see if it includes the digital camera you wish to return. Please hold on a moment.\"}",
+          "tool_calls": [
+            {
+              "id": "call-8",
+              "name": "get_order_details",
+              "arguments": {
+                "order_id": "#W4689314"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "{\"order_id\": \"#W4689314\", \"user_id\": \"sofia_li_9219\", \"address\": {\"address1\": \"786 Elm Street\", \"address2\": \"Suite 546\", \"city\": \"San Antonio\", \"country\": \"USA\", \"state\": \"TX\", \"zip\": \"78260\"}, \"items\": [{\"name\": \"Digital Camera\", \"product_id\": \"8940227892\", \"item_id\": \"5996159312\", \"price\": 2895.55, \"options\": {\"resolution\": \"24MP\", \"zoom\": \"3x\", \"storage\": \"SD card\"}}], \"fulfillments\": [{\"tracking_id\": [\"689944590938\"], \"item_ids\": [\"5996159312\"]}], \"status\": \"delivered\", \"payment_history\": [{\"transaction_type\": \"payment\", \"amount\": 2895.55, \"payment_method_id\": \"credit_card_8105988\"}]}",
+          "name": "get_order_details"
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"I found the order with the digital camera you wish to return. The order ID is #W4689314, and it has been delivered. To initiate the return process, I need to confirm the order ID and the list of items to be returned. The order includes one digital camera. Is this the correct order, and do you wish to return the digital camera?\"}"
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Yes, that's the correct order. I do wish to return the digital camera. Could you please start the return process and ensure the refund goes back to the original payment method?"
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"handoff\", \"to\": \"returns_agent\", \"message\": \"User wants to return a digital camera from order #W4689314. The refund should go to the original payment method.\", \"context\": {\"user_id\": \"sofia_li_9219\", \"order_id\": \"#W4689314\", \"item_ids\": [\"5996159312\"], \"payment_method\": \"credit_card_8105988\"}}"
+        },
+        {
+          "sub_index": 2,
+          "role": "planner",
+          "content": "{\"handoff_to\": \"returns_agent\", \"message\": \"User wants to return a digital camera from order #W4689314. The refund should go to the original payment method.\", \"context\": {\"user_id\": \"sofia_li_9219\", \"order_id\": \"#W4689314\", \"item_ids\": [\"5996159312\"], \"payment_method\": \"credit_card_8105988\"}}",
+          "name": "handoff"
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "returns_agent",
+          "content": "{\"action\": \"tool\", \"tool\": \"return_delivered_order_items\", \"arguments\": {\"order_id\": \"#W4689314\", \"item_ids\": [\"5996159312\"], \"payment_method_id\": \"credit_card_8105988\"}}",
+          "tool_calls": [
+            {
+              "id": "call-13",
+              "name": "return_delivered_order_items",
+              "arguments": {
+                "order_id": "#W4689314",
+                "item_ids": [
+                  "5996159312"
+                ],
+                "payment_method_id": "credit_card_8105988"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "{\"order_id\": \"#W4689314\", \"user_id\": \"sofia_li_9219\", \"address\": {\"address1\": \"786 Elm Street\", \"address2\": \"Suite 546\", \"city\": \"San Antonio\", \"country\": \"USA\", \"state\": \"TX\", \"zip\": \"78260\"}, \"items\": [{\"name\": \"Digital Camera\", \"product_id\": \"8940227892\", \"item_id\": \"5996159312\", \"price\": 2895.55, \"options\": {\"resolution\": \"24MP\", \"zoom\": \"3x\", \"storage\": \"SD card\"}}], \"fulfillments\": [{\"tracking_id\": [\"689944590938\"], \"item_ids\": [\"5996159312\"]}], \"status\": \"return requested\", \"payment_history\": [{\"transaction_type\": \"payment\", \"amount\": 2895.55, \"payment_method_id\": \"credit_card_8105988\"}], \"return_items\": [\"5996159312\"], \"return_payment_method_id\": \"credit_card_8105988\"}",
+          "name": "return_delivered_order_items"
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "returns_agent",
+          "content": "{\"action\": \"reply\", \"content\": \"The digital camera from order #W4689314 has been marked for return. The refund amount of $2895.55 will be processed to the original payment method, your credit card. You will receive an email with instructions on how to return the item.\"}"
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"The return process for the digital camera from order #W4689314 has been initiated. The refund amount of $2895.55 will be processed to your original payment method, which is your credit card. You will receive an email with instructions on how to return the item. If you have any further questions, feel free to ask.\"}"
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Great, thank you for handling that. I appreciate your help in getting this sorted out. ###STOP###"
+        }
+      ]
+    }
+  ],
+  "agents": [
+    "order_agent",
+    "planner",
+    "product_agent",
+    "returns_agent"
+  ]
+}

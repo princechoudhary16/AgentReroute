@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"handoff\", \"to\": \"returns_agent\", \"message\": \"User wants to return all items in order #W4597054. Confirm with the user and proceed with the return process.\", \"context\": {\"user_id\": \"amelia_silva_7726\", \"order_id\": \"#W4597054\"}}", "tokens_in": 6371, "tokens_out": 81, "model": "qwen2.5:32b", "lenient": false}

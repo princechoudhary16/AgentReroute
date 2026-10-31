@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"There was an issue finding the product details for the T-Shirt. Please check the product ID and try again.\"}", "tokens_in": 2801, "tokens_out": 34, "model": "qwen2.5:32b", "lenient": false}

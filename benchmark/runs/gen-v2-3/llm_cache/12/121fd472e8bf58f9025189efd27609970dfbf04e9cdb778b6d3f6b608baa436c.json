@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I'm sorry, but there seems to be an issue with the item ID 67890. It appears that this item ID is incorrect or not found. Could you please double-check the item ID and provide the correct one?\"}", "tokens_in": 6070, "tokens_out": 60, "model": "qwen2.5:32b", "lenient": false}

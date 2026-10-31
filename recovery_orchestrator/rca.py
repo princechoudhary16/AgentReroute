@@ -134,10 +134,9 @@ HANDOFF_SCHEMA = 'agentrx-recovery-v1'
 
 
 def is_full_agentrx(config: dict) -> bool:
-    """Default pooling filter: variants that use both violations and the checklist
-    (the joint judge, or the Track B ranked judge)."""
+    """Default pooling filter: variants that use both violations and the checklist (joint, mp_rl or ranked)."""
     return bool(config.get('evidence')) and bool(config.get('checklist')) \
-        and config.get('protocol', 'joint') in ('joint', 'ranked')
+        and config.get('protocol', 'joint') in ('joint', 'mp_rl', 'ranked')
 
 
 def find_runs(run_dir, trajectory_id, domain: str, variants=None) -> list[dict]:

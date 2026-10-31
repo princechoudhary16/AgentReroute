@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"The shipping address for the pending order #W4860251 has been successfully updated to the user's default address in Chicago.\"}", "tokens_in": 3588, "tokens_out": 41, "model": "qwen2.5:32b", "lenient": false}

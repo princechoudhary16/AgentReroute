@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I see that your default address is in Seattle. Could you please provide the address details for your previous order in New York?\"}", "tokens_in": 3337, "tokens_out": 37, "model": "qwen2.5:32b", "lenient": false}

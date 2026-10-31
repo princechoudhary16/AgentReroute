@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I need the order ID and the new address details to proceed with changing the shipping address. Could you please provide the order ID and the address details from your other order?\"}", "tokens_in": 3849, "tokens_out": 46, "model": "qwen2.5:32b", "lenient": false}

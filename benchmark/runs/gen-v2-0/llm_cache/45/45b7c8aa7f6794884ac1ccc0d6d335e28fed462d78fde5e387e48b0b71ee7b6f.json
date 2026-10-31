@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"There was an issue retrieving the user details and the payment method could not be found. Please provide the correct user ID or payment method ID to proceed with the returns.\"}", "tokens_in": 2809, "tokens_out": 45, "model": "qwen2.5:32b", "lenient": false}

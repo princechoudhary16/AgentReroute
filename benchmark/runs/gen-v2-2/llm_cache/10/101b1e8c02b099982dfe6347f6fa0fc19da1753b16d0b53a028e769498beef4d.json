@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"get_product_details\", \"arguments\": {\"product_id\": \"9523456873\"}, \"context\": {\"user_id\": \"daiki_sanchez_3253\", \"order_id\": \"#W9348897\", \"item_id\": \"6117189161\"}, \"content\": \"\"}", "tokens_in": 6373, "tokens_out": 88, "model": "qwen2.5:32b", "lenient": false}

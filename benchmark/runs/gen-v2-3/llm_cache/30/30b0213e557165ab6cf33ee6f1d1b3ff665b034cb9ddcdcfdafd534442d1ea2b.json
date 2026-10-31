@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I encountered an issue while trying to modify your order. It seems there was a problem retrieving the details for the item ID you provided. Please try again later or contact support for further assistance.\"}", "tokens_in": 3644, "tokens_out": 50, "model": "qwen2.5:32b", "lenient": false}

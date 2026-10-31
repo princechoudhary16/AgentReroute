@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"The pending order with order id #W9373487 has been cancelled successfully. The total amount has been refunded to the original payment method, which is a gift card, immediately.\"}", "tokens_in": 3536, "tokens_out": 52, "model": "qwen2.5:32b", "lenient": false}

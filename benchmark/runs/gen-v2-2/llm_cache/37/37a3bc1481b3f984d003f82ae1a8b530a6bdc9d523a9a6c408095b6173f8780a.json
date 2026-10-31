@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"modify_pending_order_address\", \"arguments\": {\"order_id\": \"#W6729841\", \"address1\": \"144 Lakeview Drive\", \"address2\": \"Suite 925\", \"city\": \"New York\", \"state\": \"NY\", \"country\": \"USA\", \"zip\": \"10228\"}}", "tokens_in": 3431, "tokens_out": 85, "model": "qwen2.5:32b", "lenient": false}

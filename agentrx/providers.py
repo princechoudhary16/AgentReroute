@@ -1,8 +1,12 @@
 """JSON model clients and persistent request-level provenance without API secrets."""
+import collections
 import copy
 import json
 import os
 import platform
+import re
+import sys
+import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,8 +15,80 @@ from .io import digest, read_json, write_json
 from .prompts import messages, prompt_identity, ranked_response_schema
 
 
+class _PerCallDiagnostics:
+    """``last_raw`` / ``last_telemetry`` held per thread rather than per instance.
+
+    CachedProvider reads them immediately after provider.complete() to record what the model actually
+    returned. They describe one call, so with several checks of the same constraint running at once on
+    one provider, a plain attribute lets one thread record another thread's raw response against its
+    own cache entry. The results themselves are unaffected (the response is returned directly), but the
+    stored diagnostics would be silently wrong, which is worse than having none. Thread-local keeps each
+    call's diagnostics with that call, and reads as an ordinary attribute at every existing call site.
+    """
+
+    @property
+    def _diagnostics(self):
+        local = self.__dict__.get('_diagnostics_local')
+        if local is None:
+            local = self.__dict__['_diagnostics_local'] = threading.local()
+        return local
+
+    @property
+    def last_raw(self):
+        return getattr(self._diagnostics, 'raw', None)
+
+    @last_raw.setter
+    def last_raw(self, value):
+        self._diagnostics.raw = value
+
+    @property
+    def last_telemetry(self):
+        return getattr(self._diagnostics, 'telemetry', {})
+
+    @last_telemetry.setter
+    def last_telemetry(self, value):
+        self._diagnostics.telemetry = value
+
+
 class ProviderError(RuntimeError):
     pass
+
+
+def env_key(name):
+    """os.environ, else (Windows) the user-level HKCU\\Environment value a process started earlier cannot see.
+
+    A variable set to '' in the process environment disables the fallback (e.g. a test proving a key is absent).
+    """
+    key = os.environ.get(name)
+    if key is None and sys.platform == 'win32':
+        import winreg
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment') as reg:
+                key, _ = winreg.QueryValueEx(reg, name)
+        except OSError:
+            pass
+    return key
+
+
+def _parse_json_object(text):
+    """The JSON object in a model reply, tolerating <think> blocks, markdown fences and surrounding prose."""
+    if not isinstance(text, str):
+        raise ProviderError('Malformed model JSON response (TypeError)')
+    cleaned = re.sub(r'<think>.*?</think>', '', text, flags=re.S).strip()
+    cleaned = re.sub(r'^```(?:json)?\s*|\s*```$', '', cleaned, flags=re.I).strip()
+    try:
+        value = json.loads(cleaned)
+    except json.JSONDecodeError:
+        first, last = cleaned.find('{'), cleaned.rfind('}')
+        try:
+            value = json.loads(cleaned[first:last + 1]) if 0 <= first < last else None
+        except json.JSONDecodeError:
+            value = None
+        if value is None:
+            raise ProviderError('Malformed model JSON response (JSONDecodeError)') from None
+    if not isinstance(value, dict):
+        raise ProviderError('Model must return a JSON object')
+    return value
 
 
 class NoRedirect(request.HTTPRedirectHandler):
@@ -20,12 +96,12 @@ class NoRedirect(request.HTTPRedirectHandler):
         raise ProviderError('Model endpoint redirect rejected; configure its final URL')
 
 
-class HTTPProvider:
+class HTTPProvider(_PerCallDiagnostics):
     measurement_kind = 'model_measurement'
 
     def __init__(self, model, base_url, api_key, provider='openai', deployment=None,
                  api_version='2024-10-21', settings=None, timeout=180, retries=3,
-                 retry_delay=1, max_input_chars=None):
+                 retry_delay=1, max_input_chars=None, tpm_limit=None):
         url = parse.urlparse(base_url)
         if url.scheme not in ('http', 'https') or not url.hostname or url.username or url.password or url.query or url.fragment:
             raise ProviderError('Invalid model base URL (no credentials/query/fragment allowed)')
@@ -40,6 +116,8 @@ class HTTPProvider:
             raise ProviderError('Unsupported sampling setting')
         self.timeout, self.retries, self.retry_delay = timeout, retries, retry_delay
         self.max_input_chars = max_input_chars
+        self.tpm_limit = tpm_limit      # input tokens per minute to stay under; None disables pacing
+        self._spent = collections.deque()   # (monotonic second, estimated input tokens)
         if provider == 'azure':
             if not deployment:
                 raise ProviderError('Azure needs AZURE_OPENAI_DEPLOYMENT')
@@ -47,11 +125,13 @@ class HTTPProvider:
                         '/chat/completions?api-version=' + parse.quote(api_version, safe=''))
         else:
             self.url = base_url.rstrip('/') + '/chat/completions'
+        self.base_url = base_url.rstrip('/')
         self.identity = {'provider': provider, 'model': model, 'base_url': base_url,
                          'deployment': deployment, 'api_version': api_version if provider == 'azure' else 'v1',
                          'settings': self.settings, 'client': 'python-urllib', 'python': platform.python_version()}
         self.last_telemetry = {}
         self.last_raw = None
+        self.http_requests = 0          # every HTTP request sent by this instance, retries included
 
     @classmethod
     def from_config(cls, config):
@@ -65,7 +145,7 @@ class HTTPProvider:
         key_env = config.get('api_key_env',
                              'AZURE_OPENAI_API_KEY' if kind == 'azure'
                              else ('GEMINI_API_KEY' if kind == 'gemini' else 'OPENAI_API_KEY'))
-        key = config.get('api_key') or os.environ.get(key_env)
+        key = config.get('api_key') or env_key(key_env)
         if not key:
             raise ProviderError(f'Set {key_env} in your local environment or config before model-backed runs')
         if config.get('base_url_env') and not os.environ.get(config['base_url_env']):
@@ -83,56 +163,206 @@ class HTTPProvider:
                    deployment=config.get('deployment') or os.environ.get('AZURE_OPENAI_DEPLOYMENT'),
                    api_version=config.get('api_version', os.environ.get('AZURE_OPENAI_API_VERSION', '2024-10-21')),
                    settings=config.get('settings'), timeout=config.get('timeout', 180),
-                   retries=config.get('retries', 3), max_input_chars=config.get('max_input_chars'))
+                   retries=config.get('retries', 3), max_input_chars=config.get('max_input_chars'),
+                   tpm_limit=config.get('tpm_limit'))
 
-    def complete(self, stage, payload):
-        body = {'model': self.model, 'messages': messages(stage, payload),
-                'response_format': {'type': 'json_object'}, **self.settings}
-        encoded = json.dumps(body, ensure_ascii=False).encode()
-        if self.max_input_chars and sum(len(m['content']) for m in body['messages']) > self.max_input_chars:
+    def _pace(self, n_chars):
+        """Block until this request fits a rolling 60s input-token budget.
+
+        Gemini rate-limits on tokens per minute, not requests. A run can sit at 2% of its request
+        allowance and still be refused, because each synthesis call carries the whole trajectory.
+        Measured on this project: ~22k input tokens per call, median 13k, tail 96k. A fixed delay
+        therefore either throttles the small calls for nothing or lets a run of large ones through,
+        so this tracks what was actually sent in the last minute and waits only when the next call
+        would not fit.
+
+        Tokens are estimated at 4 chars each, which runs slightly high and errs toward waiting.
+        Retries are paced too, since a 429 retry spends the same budget.
+        """
+        if not self.tpm_limit:
+            return
+        estimate = max(1, n_chars // 4)
+        while True:
+            now = time.monotonic()
+            while self._spent and now - self._spent[0][0] >= 60.0:
+                self._spent.popleft()
+            if not self._spent or sum(t for _, t in self._spent) + estimate <= self.tpm_limit:
+                break
+            time.sleep(min(60.0, max(0.05, 60.0 - (now - self._spent[0][0]))))
+        self._spent.append((time.monotonic(), estimate))
+
+    def _backoff(self, attempt, retry_after=None):
+        """Seconds before the next attempt: a numeric Retry-After header, else exponential; both capped at 60."""
+        try:
+            return min(60.0, max(0.0, float(retry_after)))
+        except (TypeError, ValueError):
+            return min(60, self.retry_delay * (2 ** attempt))
+
+    def _send(self, body, url=None, headers=None):
+        """Hardened transport shared by complete(), complete_messages() and generate_content(): POST
+        ``body`` to ``url`` (default self.url) with ``headers`` (default the Cloudflare-safe compat headers
+        + auth), retry 429/5xx with backoff, apply the OpenRouter 400 response_format fallback, enforce the
+        size limit, and return the raw response envelope."""
+        if self.max_input_chars and 'messages' in body \
+                and sum(len(m['content']) for m in body['messages']) > self.max_input_chars:
             raise ProviderError('Configured input limit exceeded; no content was truncated')
-        headers = {'Content-Type': 'application/json'}
-        headers['api-key' if self.provider == 'azure' else 'Authorization'] = (
-            self.api_key if self.provider == 'azure' else 'Bearer ' + self.api_key)
+        encoded = json.dumps(body, ensure_ascii=False).encode()
+        if headers is None:
+            # Cloudflare in front of OpenRouter answers 403 to the default Python-urllib User-Agent.
+            headers = {'Content-Type': 'application/json', 'User-Agent': 'AgentReroute/1.0',
+                       'HTTP-Referer': 'https://github.com/AgentReroute', 'X-Title': 'AgentReroute'}
+            headers['api-key' if self.provider == 'azure' else 'Authorization'] = (
+                self.api_key if self.provider == 'azure' else 'Bearer ' + self.api_key)
+        target = url or self.url
         opener = request.build_opener(NoRedirect())
         start = time.monotonic()
         self.last_raw = None
-        for attempt in range(self.retries + 1):
+        attempt = sent = 0
+        while True:
             try:
-                req = request.Request(self.url, data=encoded, headers=headers, method='POST')
+                sent += 1
+                self._pace(len(encoded))
+                self.http_requests += 1
+                req = request.Request(target, data=encoded, headers=headers, method='POST')
                 with opener.open(req, timeout=self.timeout) as response:
                     content = response.read(20_000_001)
                     if len(content) > 20_000_000:
                         raise ProviderError('Model response exceeds size limit')
                     raw = json.loads(content)
+                    status = getattr(response, 'status', None)
                 self.last_raw = raw
                 self.last_telemetry = {'model': raw.get('model'), 'response_id': raw.get('id'),
                     'usage': raw.get('usage', {}), 'seconds': time.monotonic() - start,
-                    'attempts': attempt + 1, 'timestamp': datetime.now(timezone.utc).isoformat()}
-                choice = raw['choices'][0]
-                if choice.get('finish_reason') not in ('stop', None):
-                    raise ProviderError(f"Incomplete model response: {choice.get('finish_reason')}")
-                message = choice['message']
-                if message.get('refusal'):
-                    raise ProviderError('Model refused diagnostic request')
-                answer = json.loads(message['content'])
-                if not isinstance(answer, dict):
-                    raise ProviderError('Model must return a JSON object')
-                return answer
+                    'attempts': sent, 'http_status': status, 'response_format': 'response_format' in body,
+                    'timestamp': datetime.now(timezone.utc).isoformat()}
+                return raw
             except error.HTTPError as exc:
+                retry_after = exc.headers.get('Retry-After') if exc.headers else None
                 exc.close()
+                if exc.code == 400 and self.provider == 'openai-compatible' and 'response_format' in body:
+                    # Some OpenRouter :free upstreams reject response_format or reasoning_effort; the prompt
+                    # still demands JSON.
+                    del body['response_format']
+                    body.pop('reasoning_effort', None)
+                    encoded = json.dumps(body, ensure_ascii=False).encode()
+                    continue
                 if exc.code not in (429, 500, 502, 503, 504) or attempt == self.retries:
                     raise ProviderError(f'Model HTTP {exc.code}; response body omitted to protect credentials') from None
+                delay = self._backoff(attempt, retry_after)
             except (error.URLError, TimeoutError, OSError):
                 if attempt == self.retries:
                     raise ProviderError('Model transport failed after retries') from None
-            except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
+                delay = self._backoff(attempt)
+            except json.JSONDecodeError as exc:
                 raise ProviderError(f'Malformed model JSON response ({type(exc).__name__})') from None
-            time.sleep(min(10, self.retry_delay * 2**attempt))
-        raise ProviderError('Model retries exhausted')
+            time.sleep(delay)
+            attempt += 1
+
+    def _message(self, raw):
+        """The assistant message from a response envelope, enforcing finish_reason and refusal checks."""
+        try:
+            choice = raw['choices'][0]
+            if choice.get('finish_reason') not in ('stop', None):
+                raise ProviderError(f"Incomplete model response: {choice.get('finish_reason')}")
+            message = choice['message']
+        except (KeyError, IndexError, TypeError) as exc:
+            raise ProviderError(f'Malformed model JSON response ({type(exc).__name__})') from None
+        if message.get('refusal'):
+            raise ProviderError('Model refused diagnostic request')
+        return message
+
+    def complete(self, stage, payload):
+        body = {'model': self.model, 'messages': messages(stage, payload),
+                'response_format': {'type': 'json_object'}, **self.settings}
+        return _parse_json_object(self._message(self._send(body))['content'])
+
+    def complete_messages(self, chat_messages, *, json_mode=True):
+        """General chat over the same hardened transport, for callers that supply their own messages
+        (e.g. the benchmark actor). Returns (text, usage, lenient_info).
+
+        lenient_info is None on a clean reply, else a dict describing why the lenient fallback fired
+        ({finish_reason, refusal, content_null, content_chars, output_tokens}) so the caller can both count
+        and diagnose degraded responses. Lenient by design, unlike complete(): it does not raise on a
+        non-'stop' finish_reason (e.g. length / MAX_TOKENS), a refusal, or a null content; it yields the
+        partial text or ''. Transport errors (HTTP/timeout) still raise."""
+        body = {'model': self.model, 'messages': list(chat_messages), **self.settings}
+        if json_mode:
+            body['response_format'] = {'type': 'json_object'}
+        raw = self._send(body)
+        content = finish = None
+        refusal = False
+        try:
+            choice = raw['choices'][0]
+            message = choice['message']
+            finish = choice.get('finish_reason')
+            content = message.get('content')
+            refusal = bool(message.get('refusal'))
+        except (KeyError, IndexError, TypeError):
+            pass
+        text = content if isinstance(content, str) else ''
+        lenient = finish not in ('stop', None) or refusal or not isinstance(content, str)
+        info = None
+        if lenient:
+            info = {'finish_reason': finish, 'refusal': refusal, 'content_null': content is None,
+                    'content_chars': len(text), 'output_tokens': raw.get('usage', {}).get('completion_tokens')}
+        return text, raw.get('usage', {}), info
+
+    def generate_content(self, chat_messages, *, json_mode=True, response_schema=None):
+        """Gemini NATIVE generateContent, for the actor path only (the attributor keeps complete()).
+
+        Maps messages to native contents/parts, concatenates the text of all non-thought parts (skipping any
+        part with thought: true), reads finishReason, and maps usageMetadata including thoughtsTokenCount
+        (billed as output, so it is folded into completion_tokens). Returns (text, usage, lenient_info) with
+        the same leniency contract as complete_messages; transport errors still raise.
+
+        ``response_schema`` adds generationConfig.responseSchema, which constrains decoding to a shape instead
+        of only asking for the JSON mime type. Measured on one tau task (benchmark/runs/threeway.log): mime
+        type alone aborted 4/23 action turns with MALFORMED_RESPONSE or unparseable JSON, no mime type 2/20,
+        and an explicit schema 0/14. Gemini requires the JSON mime type alongside a schema, so a schema
+        without ``json_mode`` is a caller error rather than a silently dropped field."""
+        system = '\n'.join(m['content'] for m in chat_messages if m.get('role') == 'system')
+        contents = [{'role': 'model' if m['role'] == 'assistant' else 'user', 'parts': [{'text': m['content']}]}
+                    for m in chat_messages if m.get('role') != 'system']
+        body = {'contents': contents}
+        if system:
+            body['systemInstruction'] = {'parts': [{'text': system}]}
+        gen_cfg = {}
+        if 'temperature' in self.settings:
+            gen_cfg['temperature'] = self.settings['temperature']
+        if json_mode:
+            gen_cfg['responseMimeType'] = 'application/json'
+            if response_schema is not None:
+                gen_cfg['responseSchema'] = response_schema
+        elif response_schema is not None:
+            raise ProviderError('responseSchema requires json_mode: Gemini needs the JSON mime type with a schema')
+        if gen_cfg:
+            body['generationConfig'] = gen_cfg
+        native_url = (self.base_url[:-len('/openai')] if self.base_url.endswith('/openai') else self.base_url) \
+            + '/models/' + parse.quote(self.model, safe='') + ':generateContent'
+        headers = {'Content-Type': 'application/json', 'User-Agent': 'AgentReroute/1.0', 'x-goog-api-key': self.api_key}
+        raw = self._send(body, url=native_url, headers=headers)
+        cand = (raw.get('candidates') or [{}])[0]
+        finish = cand.get('finishReason')
+        parts = (cand.get('content') or {}).get('parts') or []
+        text = ''.join(p['text'] for p in parts
+                       if isinstance(p, dict) and not p.get('thought') and isinstance(p.get('text'), str))
+        um = raw.get('usageMetadata') or {}
+        prompt = um.get('promptTokenCount') or 0
+        cand_tokens = um.get('candidatesTokenCount') or 0
+        thoughts = um.get('thoughtsTokenCount') or 0
+        usage = {'prompt_tokens': prompt, 'completion_tokens': cand_tokens + thoughts,
+                 'total_tokens': um.get('totalTokenCount') or (prompt + cand_tokens + thoughts)}
+        lenient = finish not in ('STOP', None) or not text
+        info = None
+        if lenient:
+            info = {'finish_reason': finish, 'refusal': finish in ('SAFETY', 'BLOCKLIST', 'PROHIBITED_CONTENT'),
+                    'content_null': not parts, 'content_chars': len(text), 'output_tokens': cand_tokens,
+                    'thoughts_tokens': thoughts,
+                    'has_thought_part': any(isinstance(p, dict) and p.get('thought') for p in parts)}
+        return text, usage, info
 
 
-class OllamaProvider:
+class OllamaProvider(_PerCallDiagnostics):
     """Local Ollama via the native /api/chat endpoint (no credential, explicit context window).
 
     The OpenAI-compatible endpoint cannot set num_ctx and Ollama silently truncates prompts
@@ -278,7 +508,7 @@ class OllamaProvider:
         return answer
 
 
-class ReplayProvider:
+class ReplayProvider(_PerCallDiagnostics):
     """Explicit fixture replay for offline smoke tests, never benchmark evidence."""
     measurement_kind = 'offline_fixture'
     def __init__(self, path):

@@ -1,0 +1,2457 @@
+{
+  "tr-b3f8a31b2a53dd71": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-000.clean.s0",
+    "split": "train"
+  },
+  "tr-8dca340b1d534458": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-000.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-6428ac1b3a20ded3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-000.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-0364f2ddaaec00a6": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-000.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-679224b5d84607cf": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-000.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-2a3e2888ecc784e2": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-000.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-ce166fc566816be6": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-000.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-3e12c165b45e0f1f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-000.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-496d845f1908851e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-012.clean.s0",
+    "split": "train"
+  },
+  "tr-7408fbeea01639e9": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-044.clean.s0",
+    "split": "train"
+  },
+  "tr-10bd0b21d3ba4f60": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-044.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-39d88f705ca88f11": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-044.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-e29a651c0562a09e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-044.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-201ca8d423293515": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-044.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-5ad668608046f339": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-044.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-f1d2b9ab42e5edfc": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-044.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-6ad67729ccef8333": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-044.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-7c9af2d789233dae": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-048.clean.s0",
+    "split": "train"
+  },
+  "tr-90cbdf83075b9ebf": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-048.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-6d3e5209eb1ec87a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-048.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-1b8f018e84a6b751": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-048.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-b417ebcb87cf582f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-048.misroute[persistence=once].middle.s0",
+    "split": "train"
+  },
+  "tr-1d76906c480a4a58": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-048.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-0e2bef8ad0d23749": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-048.drop_context[persistence=once,variant=drop_ids].middle.s0",
+    "split": "train"
+  },
+  "tr-6096a460a66d34b3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-048.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-23b38529a93dd12f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-048.drop_context[persistence=persistent,variant=drop_ids].middle.s0",
+    "split": "train"
+  },
+  "tr-50f91e29df491a5f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-048.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-59d580c88d077d67": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-048.drop_context[persistence=once,variant=truncate].middle.s0",
+    "split": "train"
+  },
+  "tr-baadd1a8f56c1d73": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-048.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-19f6747fec2fc457": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-048.omit_detail[].middle.s0",
+    "split": "train"
+  },
+  "tr-a9833de5203914dd": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-060.clean.s0",
+    "split": "train"
+  },
+  "tr-a6519994d869d197": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-060.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-097b627fd65a54f0": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-060.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-47ea27b044f7a005": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-060.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-fe16dc687e13ec90": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-060.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-e4da5d379e49e4fb": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-060.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-9b8966d60ebf4dd7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-060.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-56b07755b1fa2036": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-060.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-8384098087307777": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-068.clean.s0",
+    "split": "test"
+  },
+  "tr-58491c3b4476849b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.clean.s0",
+    "split": "train"
+  },
+  "tr-3847ffb3b5af4648": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-971b73846a22da39": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-c613399c31cb9928": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-fb6bb18bc6605139": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.irrelevant_tool[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-deb472a0886c9e62": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.irrelevant_tool[persistence=once].middle.s0",
+    "split": "train"
+  },
+  "tr-a2b3bd13dd7cdc41": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.irrelevant_tool[persistence=persistent].early.s0",
+    "split": "train"
+  },
+  "tr-18b3092c607822f9": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.irrelevant_tool[persistence=persistent].middle.s0",
+    "split": "train"
+  },
+  "tr-b3e30d9a7b56298c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.stuck_processing[].early.s0",
+    "split": "train"
+  },
+  "tr-e2ed23fd0e584563": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.stuck_processing[].middle.s0",
+    "split": "train"
+  },
+  "tr-445432f6dee4bcfa": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.tool_error[cell=explicit_transient].early.s0",
+    "split": "train"
+  },
+  "tr-664722e2a5c800e3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.tool_error[cell=explicit_transient].middle.s0",
+    "split": "train"
+  },
+  "tr-3f2ac20e05509fb8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.stale_output[cell=silent_transient].early.s0",
+    "split": "train"
+  },
+  "tr-615b32675e205dcc": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.stale_output[cell=silent_transient].middle.s0",
+    "split": "train"
+  },
+  "tr-23d73fd19ed869a0": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.misread_value[target=argument].early.s0",
+    "split": "train"
+  },
+  "tr-44d409bd26de4fea": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-85d2cdd5b1e9270b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-3be5ef414ea081de": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-4830fbd62ec36ce7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-080.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-4fcd68d35bfd5abf": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-088.clean.s0",
+    "split": "train"
+  },
+  "tr-36e61de4f280c728": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-088.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-88ec0218d9712ac2": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-088.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-a1e65a617fcd1958": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-088.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-0ecc44c9861bc6a7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-088.misread_value[target=argument].early.s0",
+    "split": "train"
+  },
+  "tr-81c32e89373210a8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-088.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-71e1fc95baf9d451": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-088.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-1d936c5006d4c7b1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-088.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-452331a8ec162869": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-088.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-d112456421cc12f8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-092.clean.s0",
+    "split": "calibration"
+  },
+  "tr-8dd0e940520de9e3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-092.skip_write[].early.s0",
+    "split": "calibration"
+  },
+  "tr-130cfacfafed8dfa": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-092.skip_write[].middle.s0",
+    "split": "calibration"
+  },
+  "tr-c8edeff689d162cb": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-092.policy_contradiction[directive=no_writes].early.s0",
+    "split": "calibration"
+  },
+  "tr-0904579a920e46d5": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-092.misroute[persistence=once].early.s0",
+    "split": "calibration"
+  },
+  "tr-847fef8d1a153dd1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-092.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "calibration"
+  },
+  "tr-8289a46e8fd8e6f4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-092.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "calibration"
+  },
+  "tr-8c8b4181fe5c1411": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-092.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "calibration"
+  },
+  "tr-13f81bfdc6bc98a3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-0",
+    "episode_id": "retail-092.omit_detail[].early.s0",
+    "split": "calibration"
+  },
+  "tr-fc359b378c341c8c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.clean.s0",
+    "split": "calibration"
+  },
+  "tr-902e66320c2c3abf": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.skip_write[].early.s0",
+    "split": "calibration"
+  },
+  "tr-4d4689dd787ab691": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.policy_contradiction[directive=no_writes].early.s0",
+    "split": "calibration"
+  },
+  "tr-3192ca086562910a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.misroute[persistence=once].early.s0",
+    "split": "calibration"
+  },
+  "tr-b258bf243688e9a5": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.irrelevant_tool[persistence=once].early.s0",
+    "split": "calibration"
+  },
+  "tr-fa2e669852e714bb": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.irrelevant_tool[persistence=once].middle.s0",
+    "split": "calibration"
+  },
+  "tr-828ce124309f8439": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.irrelevant_tool[persistence=persistent].early.s0",
+    "split": "calibration"
+  },
+  "tr-700a8c498f1dff60": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.irrelevant_tool[persistence=persistent].middle.s0",
+    "split": "calibration"
+  },
+  "tr-f110147a430fdc80": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.stuck_processing[].early.s0",
+    "split": "calibration"
+  },
+  "tr-2f370547ce783e28": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.stuck_processing[].middle.s0",
+    "split": "calibration"
+  },
+  "tr-bc5a25186e7d5b89": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.tool_error[cell=explicit_transient].early.s0",
+    "split": "calibration"
+  },
+  "tr-d993c6fd83d306b4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.tool_error[cell=explicit_transient].middle.s0",
+    "split": "calibration"
+  },
+  "tr-b34d62c65c1463db": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.stale_output[cell=silent_transient].early.s0",
+    "split": "calibration"
+  },
+  "tr-50475cbf788e866a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.stale_output[cell=silent_transient].middle.s0",
+    "split": "calibration"
+  },
+  "tr-afef8ae6bd060591": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.misread_value[target=argument].early.s0",
+    "split": "calibration"
+  },
+  "tr-90e9fbac14749797": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "calibration"
+  },
+  "tr-d4e17fa0efd5da40": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "calibration"
+  },
+  "tr-141be217b486b90e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "calibration"
+  },
+  "tr-6efd4e92636765dd": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-001.omit_detail[].early.s0",
+    "split": "calibration"
+  },
+  "tr-591b20bb6b3b1025": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-009.clean.s0",
+    "split": "test"
+  },
+  "tr-26c170456048a7d2": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-009.skip_write[].early.s0",
+    "split": "test"
+  },
+  "tr-835600f851e5d976": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-009.policy_contradiction[directive=no_writes].early.s0",
+    "split": "test"
+  },
+  "tr-181d747b9e277f9e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-009.misroute[persistence=once].early.s0",
+    "split": "test"
+  },
+  "tr-d96f07179b87c8e9": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-009.misroute[persistence=persistent].early.s0",
+    "split": "test"
+  },
+  "tr-e2a62508eb226dbf": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-009.misread_value[target=claim].early.s0",
+    "split": "test"
+  },
+  "tr-7239e33ca2526147": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-009.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-9b65e8adf4c1ac8e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-009.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-e97bd35bbe131570": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-009.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-b2fb6072392c80f7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-009.drop_context[persistence=persistent,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-4f394a7297d81504": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-053.clean.s0",
+    "split": "test"
+  },
+  "tr-3c52dc8ab437a002": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-053.skip_write[].early.s0",
+    "split": "test"
+  },
+  "tr-796ffcbbb7e180a5": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-053.policy_contradiction[directive=no_writes].early.s0",
+    "split": "test"
+  },
+  "tr-8be5d8fe04f4e8ff": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-053.misroute[persistence=once].early.s0",
+    "split": "test"
+  },
+  "tr-bf9d286feefbbe34": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-053.misroute[persistence=persistent].early.s0",
+    "split": "test"
+  },
+  "tr-10dcf20e95fd82f1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-053.misread_value[target=claim].early.s0",
+    "split": "test"
+  },
+  "tr-446018e01ce22d29": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-053.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-5358b94b93ebc789": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-053.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-fd3e65303303abaf": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-053.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-45792e2bd4240470": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-053.drop_context[persistence=persistent,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-8a471200e95f1dc6": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-053.omit_detail[].early.s0",
+    "split": "test"
+  },
+  "tr-7a9511256513cabc": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-065.clean.s0",
+    "split": "test"
+  },
+  "tr-a30d0227257866a3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-073.clean.s0",
+    "split": "test"
+  },
+  "tr-f8f9dddf312f2879": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-073.skip_write[].early.s0",
+    "split": "test"
+  },
+  "tr-f2a92937f2269692": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-073.policy_contradiction[directive=no_writes].early.s0",
+    "split": "test"
+  },
+  "tr-96538b37cb5aa47a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-073.misroute[persistence=once].early.s0",
+    "split": "test"
+  },
+  "tr-2a516892fa20090a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-073.misroute[persistence=persistent].early.s0",
+    "split": "test"
+  },
+  "tr-ab26645d8c5105fe": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-073.misread_value[target=claim].early.s0",
+    "split": "test"
+  },
+  "tr-3667092e4d988d75": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-073.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-a9e586b64290730b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-073.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-143d84fbac13a6b7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-073.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-cbbfde5ed4175492": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-073.drop_context[persistence=persistent,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-e3db9b8e9725ce8a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-073.omit_detail[].early.s0",
+    "split": "test"
+  },
+  "tr-e56d3d9cb9b72fe9": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.clean.s0",
+    "split": "train"
+  },
+  "tr-8299a575f7da3a17": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-abe1ffe006f7066e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-8b23f3b92d3d2727": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-995c7a6944a771ce": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.irrelevant_tool[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-edcdf79c90766273": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.irrelevant_tool[persistence=once].middle.s0",
+    "split": "train"
+  },
+  "tr-cdedc0e29dfff382": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.irrelevant_tool[persistence=once].late.s0",
+    "split": "train"
+  },
+  "tr-0b8b8ab9bbd67abc": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.irrelevant_tool[persistence=persistent].early.s0",
+    "split": "train"
+  },
+  "tr-198c5fad03f8acab": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.irrelevant_tool[persistence=persistent].middle.s0",
+    "split": "train"
+  },
+  "tr-764d08e5eaaf51c8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.irrelevant_tool[persistence=persistent].late.s0",
+    "split": "train"
+  },
+  "tr-f5924373d6b83c66": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.stuck_processing[].early.s0",
+    "split": "train"
+  },
+  "tr-a35a5b83fda0b18c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.stuck_processing[].middle.s0",
+    "split": "train"
+  },
+  "tr-da399920d3d348dd": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.tool_error[cell=explicit_transient].early.s0",
+    "split": "train"
+  },
+  "tr-92696b1ae576ee9b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.tool_error[cell=explicit_transient].middle.s0",
+    "split": "train"
+  },
+  "tr-4b82b098cec6ddf7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.stale_output[cell=silent_transient].early.s0",
+    "split": "train"
+  },
+  "tr-e870bbb1ea42f4e3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.stale_output[cell=silent_transient].middle.s0",
+    "split": "train"
+  },
+  "tr-2de3eac4bfcd27f8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-7596b144822544bd": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-32ebda37203321ff": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-dcd898f5857d4657": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-077.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-82bbbe7658b4c9a1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.clean.s0",
+    "split": "train"
+  },
+  "tr-9ebdd69698ce1e4c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-c1f2dfc1dc3d91e8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-60f199799fc8934e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-c059c8bf54afed26": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.irrelevant_tool[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-0fc8ae4cfb729ab2": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.irrelevant_tool[persistence=once].middle.s0",
+    "split": "train"
+  },
+  "tr-8716a68b087667bf": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.irrelevant_tool[persistence=persistent].early.s0",
+    "split": "train"
+  },
+  "tr-31b5eb77ef3fed54": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.irrelevant_tool[persistence=persistent].middle.s0",
+    "split": "train"
+  },
+  "tr-637bca84c2526f3d": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.stuck_processing[].early.s0",
+    "split": "train"
+  },
+  "tr-188ac81bec994177": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.stuck_processing[].middle.s0",
+    "split": "train"
+  },
+  "tr-7b96913288815a9c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.tool_error[cell=explicit_transient].early.s0",
+    "split": "train"
+  },
+  "tr-c0a01d5abd519f6e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.tool_error[cell=explicit_transient].middle.s0",
+    "split": "train"
+  },
+  "tr-674f5c109f956c73": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.stale_output[cell=silent_transient].early.s0",
+    "split": "train"
+  },
+  "tr-dd5d6b48d3593f4f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.stale_output[cell=silent_transient].middle.s0",
+    "split": "train"
+  },
+  "tr-756e9a22caebcf8f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.misread_value[target=argument].early.s0",
+    "split": "train"
+  },
+  "tr-b0d78255567c440b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-f07c7ed96d76961a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-ab1de7a104354dda": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-06da9bcd9149582a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-085.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-dfb2e9727bb811bf": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-089.clean.s0",
+    "split": "test"
+  },
+  "tr-1d680f34e54ef995": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-089.skip_write[].early.s0",
+    "split": "test"
+  },
+  "tr-64401ce25d1b793f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-089.policy_contradiction[directive=no_writes].early.s0",
+    "split": "test"
+  },
+  "tr-ab6f207d31f32da5": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-089.misroute[persistence=once].early.s0",
+    "split": "test"
+  },
+  "tr-f223f03e06bc4b94": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-089.misroute[persistence=persistent].early.s0",
+    "split": "test"
+  },
+  "tr-3c5362d1ed2d4442": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-089.misread_value[target=claim].early.s0",
+    "split": "test"
+  },
+  "tr-49c92a93caf33e68": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-089.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-bf69df4748cddbe8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-089.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-aee0d6bc1af28a8b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-089.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-8285edf2a725f804": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-089.drop_context[persistence=persistent,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-ec0ab7eeceef96f4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-089.omit_detail[].early.s0",
+    "split": "test"
+  },
+  "tr-cef07597eead7fb8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.clean.s0",
+    "split": "test"
+  },
+  "tr-198b353f2bbfb5d0": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.skip_write[].early.s0",
+    "split": "test"
+  },
+  "tr-b348c25035e6079c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.skip_write[].middle.s0",
+    "split": "test"
+  },
+  "tr-49bf56a90de1b6dc": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.skip_write[].late.s0",
+    "split": "test"
+  },
+  "tr-e36a617faccec7b3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.policy_contradiction[directive=no_writes].early.s0",
+    "split": "test"
+  },
+  "tr-51866b873145a2d8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.policy_contradiction[directive=no_writes].middle.s0",
+    "split": "test"
+  },
+  "tr-7355d8461a3a718a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.policy_contradiction[directive=no_writes].late.s0",
+    "split": "test"
+  },
+  "tr-ea244943b02195c4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.misroute[persistence=once].early.s0",
+    "split": "test"
+  },
+  "tr-a002ade0c866dea5": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.misroute[persistence=once].middle.s0",
+    "split": "test"
+  },
+  "tr-8e8e3fa26dfe9bc1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.misroute[persistence=persistent].early.s0",
+    "split": "test"
+  },
+  "tr-3736d0582c33340e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.misroute[persistence=persistent].middle.s0",
+    "split": "test"
+  },
+  "tr-8f9a0b82e5f7b22a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.misread_value[target=argument].early.s0",
+    "split": "test"
+  },
+  "tr-4d6f1333be78d949": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.misread_value[target=claim].early.s0",
+    "split": "test"
+  },
+  "tr-b3b3642640375e64": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.misread_value[target=claim].middle.s0",
+    "split": "test"
+  },
+  "tr-d1a8d7fe571483cf": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-2649667958d9add3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.drop_context[persistence=once,variant=drop_ids].middle.s0",
+    "split": "test"
+  },
+  "tr-4255b707a5fe8518": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-0b9720c5b785ef61": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.drop_context[persistence=persistent,variant=drop_ids].middle.s0",
+    "split": "test"
+  },
+  "tr-efc220325c8df7a5": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-741b0afbe85cbda4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.drop_context[persistence=once,variant=truncate].middle.s0",
+    "split": "test"
+  },
+  "tr-08449b9342592cdb": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.drop_context[persistence=persistent,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-273ce9dc2ae2649a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-1",
+    "episode_id": "retail-097.drop_context[persistence=persistent,variant=truncate].middle.s0",
+    "split": "test"
+  },
+  "tr-8146051cc81c8cd1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-006.clean.s0",
+    "split": "train"
+  },
+  "tr-6e268491617824c1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-006.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-94dedb787c159d5f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-006.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-576e741fbd3a6cfc": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-006.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-f5a9462aec7e74a7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-006.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-d25dee3b1165564b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-006.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-bef433d9a0ffbc35": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-006.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-590d663584c53a21": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-006.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-4465e1f78bcd64d7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-006.omit_detail[].middle.s0",
+    "split": "train"
+  },
+  "tr-9c2a61742953c01f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-018.clean.s0",
+    "split": "test"
+  },
+  "tr-9ea2be05280b1fbf": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-018.skip_write[].early.s0",
+    "split": "test"
+  },
+  "tr-6b514ba431ec41bc": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-018.policy_contradiction[directive=no_writes].early.s0",
+    "split": "test"
+  },
+  "tr-7211a6eda8f61d10": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-018.misroute[persistence=once].early.s0",
+    "split": "test"
+  },
+  "tr-e4a9653f96328469": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-018.misroute[persistence=persistent].early.s0",
+    "split": "test"
+  },
+  "tr-19254cda9d137a2f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-018.misread_value[target=claim].early.s0",
+    "split": "test"
+  },
+  "tr-5b1bb1944d7c3b1d": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-018.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-f599cbddae5ffa10": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-018.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-f19ea49dbc32c9f3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-018.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-78cab1def9f7ea2b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-018.drop_context[persistence=persistent,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-0091d8de9a4b9f5c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-026.clean.s0",
+    "split": "calibration"
+  },
+  "tr-3062e011bcd2f374": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-026.skip_write[].early.s0",
+    "split": "calibration"
+  },
+  "tr-77bed9e375eea314": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-026.policy_contradiction[directive=no_writes].early.s0",
+    "split": "calibration"
+  },
+  "tr-2673615c327c6e16": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-026.misroute[persistence=once].early.s0",
+    "split": "calibration"
+  },
+  "tr-7f567a2ca944ba04": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-026.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "calibration"
+  },
+  "tr-51e49e078242fb2e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-026.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "calibration"
+  },
+  "tr-a85353134646073b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-026.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "calibration"
+  },
+  "tr-49e937954441defe": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-026.omit_detail[].early.s0",
+    "split": "calibration"
+  },
+  "tr-426045aadf1a918f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-026.omit_detail[].middle.s0",
+    "split": "calibration"
+  },
+  "tr-cf754b0248a2105d": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.clean.s0",
+    "split": "train"
+  },
+  "tr-3d73a232bdcda807": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-f27dd914dfdbd4e0": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-8ce3b3ac17446f3c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-23b924b64f63c5be": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.irrelevant_tool[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-39b80da26b2b702a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.irrelevant_tool[persistence=persistent].early.s0",
+    "split": "train"
+  },
+  "tr-5dbbe72c5e4edc06": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.stuck_processing[].early.s0",
+    "split": "train"
+  },
+  "tr-85ebb7870b41a384": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.tool_error[cell=explicit_transient].early.s0",
+    "split": "train"
+  },
+  "tr-9d2def7337a3230b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.stale_output[cell=silent_transient].early.s0",
+    "split": "train"
+  },
+  "tr-397ecd659d878231": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.misread_value[target=argument].early.s0",
+    "split": "train"
+  },
+  "tr-ccad3aa986398243": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-cfc805e2a3ece7a9": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-d854b05763a36075": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-7a76d1826f230d23": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-49ace4ff0f33f485": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-046.omit_detail[].middle.s0",
+    "split": "train"
+  },
+  "tr-c66136fcdfdba198": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-050.clean.s0",
+    "split": "test"
+  },
+  "tr-c6a481832839989c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-050.misroute[persistence=once].early.s0",
+    "split": "test"
+  },
+  "tr-1bb2d135e5adf633": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-050.misroute[persistence=persistent].early.s0",
+    "split": "test"
+  },
+  "tr-7a665274a5cd1251": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-050.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-3b9eead59807ec06": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-050.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-b327eb6cc2a5e88a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-050.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-8dc773e455ce4d92": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-2",
+    "episode_id": "retail-050.drop_context[persistence=persistent,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-5ba9d613bd6f53cb": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.clean.s0",
+    "split": "calibration"
+  },
+  "tr-ffeb4a274cfe927b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.skip_write[].early.s0",
+    "split": "calibration"
+  },
+  "tr-58661523340d52e1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.skip_write[].middle.s0",
+    "split": "calibration"
+  },
+  "tr-5da47d602f5a8f22": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.skip_write[].late.s0",
+    "split": "calibration"
+  },
+  "tr-533cd54c10159d11": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.policy_contradiction[directive=no_writes].early.s0",
+    "split": "calibration"
+  },
+  "tr-5fd8c16927993ba5": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.policy_contradiction[directive=no_writes].middle.s0",
+    "split": "calibration"
+  },
+  "tr-8b76da67b47d3621": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.misroute[persistence=once].early.s0",
+    "split": "calibration"
+  },
+  "tr-3ce857a421b29e27": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.misroute[persistence=once].middle.s0",
+    "split": "calibration"
+  },
+  "tr-27a2a96fe6611195": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "calibration"
+  },
+  "tr-aab281d39de26dad": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.drop_context[persistence=once,variant=drop_ids].middle.s0",
+    "split": "calibration"
+  },
+  "tr-371fbe41623a44ae": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "calibration"
+  },
+  "tr-428b3507772ab2c8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.drop_context[persistence=persistent,variant=drop_ids].middle.s0",
+    "split": "calibration"
+  },
+  "tr-c1eec6199c849646": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "calibration"
+  },
+  "tr-a5c8fdb5176d338e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.drop_context[persistence=once,variant=truncate].middle.s0",
+    "split": "calibration"
+  },
+  "tr-a345aad86ade0cb1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-011.omit_detail[].early.s0",
+    "split": "calibration"
+  },
+  "tr-6eb8892605a3943e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.clean.s0",
+    "split": "train"
+  },
+  "tr-73a99cb44df0f2f5": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-536a534fc47a7c85": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-835f5fa286eee8e1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-a8c3e2b99bb0cc2c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.irrelevant_tool[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-183f14248af317d7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.irrelevant_tool[persistence=once].middle.s0",
+    "split": "train"
+  },
+  "tr-f61e448a9ccc3ced": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.irrelevant_tool[persistence=persistent].early.s0",
+    "split": "train"
+  },
+  "tr-d88ecf0d0817ffc4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.irrelevant_tool[persistence=persistent].middle.s0",
+    "split": "train"
+  },
+  "tr-6566246342fa7e48": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.stuck_processing[].early.s0",
+    "split": "train"
+  },
+  "tr-ad113a73ef95baae": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.stuck_processing[].middle.s0",
+    "split": "train"
+  },
+  "tr-0496b88c77ae49c4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.tool_error[cell=explicit_transient].early.s0",
+    "split": "train"
+  },
+  "tr-1e19f9b53886a1b9": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.tool_error[cell=explicit_transient].middle.s0",
+    "split": "train"
+  },
+  "tr-3463cea68ac33cd6": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.stale_output[cell=silent_transient].early.s0",
+    "split": "train"
+  },
+  "tr-6ec7b0b9c93f50dd": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.stale_output[cell=silent_transient].middle.s0",
+    "split": "train"
+  },
+  "tr-81ce628b01da8ca5": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.misread_value[target=argument].early.s0",
+    "split": "train"
+  },
+  "tr-284f638a3c9cdb5a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-87b070af71587c28": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-562f0d65f5d8d37e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-38855d9520fcaeb5": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-015.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-ec815b8311ffa3ec": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.clean.s0",
+    "split": "train"
+  },
+  "tr-597578bb6252862a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-c2d0c3f396ccc7ab": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.skip_write[].middle.s0",
+    "split": "train"
+  },
+  "tr-e9ef076e2481c2a3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.skip_write[].late.s0",
+    "split": "train"
+  },
+  "tr-cc22f38f40c2323a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-aa4cd723688b4006": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.policy_contradiction[directive=no_writes].middle.s0",
+    "split": "train"
+  },
+  "tr-cd96c468b5c3d13f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.policy_contradiction[directive=no_writes].late.s0",
+    "split": "train"
+  },
+  "tr-f51043a5fe01bd13": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-77b1768a00f280e8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.misroute[persistence=once].middle.s0",
+    "split": "train"
+  },
+  "tr-0ab25912ab084d60": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.misroute[persistence=once].late.s0",
+    "split": "train"
+  },
+  "tr-77b5ab31815a8506": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.irrelevant_tool[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-f9ab69db9d5067fe": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.irrelevant_tool[persistence=once].middle.s0",
+    "split": "train"
+  },
+  "tr-7fb38f15cce135a3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.irrelevant_tool[persistence=once].late.s0",
+    "split": "train"
+  },
+  "tr-b4f23b0fb9bc50ef": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.irrelevant_tool[persistence=persistent].early.s0",
+    "split": "train"
+  },
+  "tr-e5ea16e4dfaa00ad": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.irrelevant_tool[persistence=persistent].middle.s0",
+    "split": "train"
+  },
+  "tr-82597321823d729c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.irrelevant_tool[persistence=persistent].late.s0",
+    "split": "train"
+  },
+  "tr-78628d1eaf4de61e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.stuck_processing[].early.s0",
+    "split": "train"
+  },
+  "tr-0ed9885d8744585b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.stuck_processing[].middle.s0",
+    "split": "train"
+  },
+  "tr-7cedc33fba083571": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.stuck_processing[].late.s0",
+    "split": "train"
+  },
+  "tr-97a8881887ce947f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.tool_error[cell=explicit_transient].early.s0",
+    "split": "train"
+  },
+  "tr-25fbc47517bc97c9": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.tool_error[cell=explicit_transient].middle.s0",
+    "split": "train"
+  },
+  "tr-ced211c547545eb8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.tool_error[cell=explicit_transient].late.s0",
+    "split": "train"
+  },
+  "tr-b3b19c97e17813cb": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.stale_output[cell=silent_transient].early.s0",
+    "split": "train"
+  },
+  "tr-7d07cdf75fc0359c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.stale_output[cell=silent_transient].middle.s0",
+    "split": "train"
+  },
+  "tr-52aabb437f4a84b6": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.stale_output[cell=silent_transient].late.s0",
+    "split": "train"
+  },
+  "tr-3ba78c5afe9d1ed7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.misread_value[target=argument].early.s0",
+    "split": "train"
+  },
+  "tr-127d515eb9895b99": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-924d087b47933167": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.drop_context[persistence=once,variant=drop_ids].middle.s0",
+    "split": "train"
+  },
+  "tr-3bf552bea24ec141": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.drop_context[persistence=once,variant=drop_ids].late.s0",
+    "split": "train"
+  },
+  "tr-d9372509c8ead7d6": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-1460e312903bf405": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.drop_context[persistence=persistent,variant=drop_ids].middle.s0",
+    "split": "train"
+  },
+  "tr-5826bffbd71579e4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.drop_context[persistence=persistent,variant=drop_ids].late.s0",
+    "split": "train"
+  },
+  "tr-8074b215626fabab": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-bde789f6bcd8255b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.drop_context[persistence=once,variant=truncate].middle.s0",
+    "split": "train"
+  },
+  "tr-5923e1c90902c691": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.drop_context[persistence=once,variant=truncate].late.s0",
+    "split": "train"
+  },
+  "tr-d4837ac086b462aa": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-ee3ac9503bf13728": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-023.omit_detail[].middle.s0",
+    "split": "train"
+  },
+  "tr-0947c7acf704cb68": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.clean.s0",
+    "split": "train"
+  },
+  "tr-ef9f775e0b03de47": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-fb0777b801e8f8b6": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.skip_write[].middle.s0",
+    "split": "train"
+  },
+  "tr-ed3ab847a88a81d5": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-720f50454066353f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-458e1833609c5491": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.irrelevant_tool[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-94fc61e0f1ca0ecd": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.irrelevant_tool[persistence=once].middle.s0",
+    "split": "train"
+  },
+  "tr-091d93fac4e8e7d5": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.irrelevant_tool[persistence=once].late.s0",
+    "split": "train"
+  },
+  "tr-a5875c0526850b52": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.irrelevant_tool[persistence=persistent].early.s0",
+    "split": "train"
+  },
+  "tr-f9ad24492a75bdb9": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.irrelevant_tool[persistence=persistent].middle.s0",
+    "split": "train"
+  },
+  "tr-3a62d04d5dd88207": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.irrelevant_tool[persistence=persistent].late.s0",
+    "split": "train"
+  },
+  "tr-fdc718e6c7e1e027": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.stuck_processing[].early.s0",
+    "split": "train"
+  },
+  "tr-f652b92bc6d7e7d4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.stuck_processing[].middle.s0",
+    "split": "train"
+  },
+  "tr-cd27149596ee32c6": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.stuck_processing[].late.s0",
+    "split": "train"
+  },
+  "tr-4178108d53b8c3b6": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.tool_error[cell=explicit_transient].early.s0",
+    "split": "train"
+  },
+  "tr-5d0b6cb219cb9bb7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.tool_error[cell=explicit_transient].middle.s0",
+    "split": "train"
+  },
+  "tr-c0ad63615de64d73": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.tool_error[cell=explicit_transient].late.s0",
+    "split": "train"
+  },
+  "tr-42f3bac295d4f6b2": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.stale_output[cell=silent_transient].early.s0",
+    "split": "train"
+  },
+  "tr-9c818cb8708b068e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.stale_output[cell=silent_transient].middle.s0",
+    "split": "train"
+  },
+  "tr-65ecdbe32fe8b9c2": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.stale_output[cell=silent_transient].late.s0",
+    "split": "train"
+  },
+  "tr-1e5214cc18513f6c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.misread_value[target=argument].early.s0",
+    "split": "train"
+  },
+  "tr-844bc949dfd9d1dd": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.misread_value[target=argument].middle.s0",
+    "split": "train"
+  },
+  "tr-8bab7d019734b48d": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-f3e2c5fe0581eaa6": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-69d8da1cf0962355": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-027.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-d58d222f2dd02702": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.clean.s0",
+    "split": "test"
+  },
+  "tr-856a171c6fe764c2": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.skip_write[].early.s0",
+    "split": "test"
+  },
+  "tr-57062539d8d60e75": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.policy_contradiction[directive=no_writes].early.s0",
+    "split": "test"
+  },
+  "tr-d7ebbe174f401c02": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.misroute[persistence=once].early.s0",
+    "split": "test"
+  },
+  "tr-3a47038708786e47": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.misroute[persistence=persistent].early.s0",
+    "split": "test"
+  },
+  "tr-f24ddd4684bbee5d": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.misread_value[target=argument].early.s0",
+    "split": "test"
+  },
+  "tr-e5dab0f59ec6433a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.misread_value[target=claim].early.s0",
+    "split": "test"
+  },
+  "tr-d549522d00c782f4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-4ea62f157995c455": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-db21d08bc465ec86": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-ef3229b9f32684f3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.drop_context[persistence=persistent,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-d9d0e61d7dac92ab": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.omit_detail[].early.s0",
+    "split": "test"
+  },
+  "tr-6f54c7b00c8da007": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.omit_detail[].middle.s0",
+    "split": "test"
+  },
+  "tr-b4c5d9e51f7a816d": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-043.omit_detail[].late.s0",
+    "split": "test"
+  },
+  "tr-120e82068c31e285": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.clean.s0",
+    "split": "train"
+  },
+  "tr-8c75ca8c91b4d2fc": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-cf91d0e405d064b3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-b32d5e4f3bbb0500": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-1142cd8d05eff75a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.irrelevant_tool[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-ab27a2f407cfaadf": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.irrelevant_tool[persistence=persistent].early.s0",
+    "split": "train"
+  },
+  "tr-065315badf76c115": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.stuck_processing[].early.s0",
+    "split": "train"
+  },
+  "tr-54f4c5bfcfe8bbfa": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.tool_error[cell=explicit_transient].early.s0",
+    "split": "train"
+  },
+  "tr-f079bdd58e39bdde": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.stale_output[cell=silent_transient].early.s0",
+    "split": "train"
+  },
+  "tr-b856edc0caf1ab71": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.misread_value[target=argument].early.s0",
+    "split": "train"
+  },
+  "tr-4bd350cd0f6a0d1c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-06354f6bba52c7a2": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-2933615c9d6d57c1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-eb3e30b3107a99c5": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-8f3b716eba9e883b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-047.omit_detail[].middle.s0",
+    "split": "train"
+  },
+  "tr-7d51517d33261095": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-051.clean.s0",
+    "split": "train"
+  },
+  "tr-7b9b79505cafa491": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-051.skip_write[].early.s0",
+    "split": "train"
+  },
+  "tr-250c41a5f68c82cc": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-051.policy_contradiction[directive=no_writes].early.s0",
+    "split": "train"
+  },
+  "tr-a6d5bb0d1d14c7a9": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-051.misroute[persistence=once].early.s0",
+    "split": "train"
+  },
+  "tr-0eb086b6753685b7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-051.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-fd35cada62d6e908": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-051.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "train"
+  },
+  "tr-e50a467dd501e084": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-051.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "train"
+  },
+  "tr-06dad19a436c5057": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-051.omit_detail[].early.s0",
+    "split": "train"
+  },
+  "tr-e891644ef536e77c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.clean.s0",
+    "split": "test"
+  },
+  "tr-bcff6b6d1baadd97": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.skip_write[].early.s0",
+    "split": "test"
+  },
+  "tr-3e331545bb39346a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.skip_write[].middle.s0",
+    "split": "test"
+  },
+  "tr-151204475dcb53ad": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.skip_write[].late.s0",
+    "split": "test"
+  },
+  "tr-88212deb0c6b1efa": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.policy_contradiction[directive=no_writes].early.s0",
+    "split": "test"
+  },
+  "tr-8bcb5c8b46da8746": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.policy_contradiction[directive=no_writes].middle.s0",
+    "split": "test"
+  },
+  "tr-49c82ef9b16cc8d7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.policy_contradiction[directive=no_writes].late.s0",
+    "split": "test"
+  },
+  "tr-55007cc46493576c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.misroute[persistence=once].early.s0",
+    "split": "test"
+  },
+  "tr-40db364259c5ed39": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.misroute[persistence=once].middle.s0",
+    "split": "test"
+  },
+  "tr-4ea8e344f6b256e1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.misroute[persistence=once].late.s0",
+    "split": "test"
+  },
+  "tr-b7958e58bfa1db30": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.misroute[persistence=persistent].early.s0",
+    "split": "test"
+  },
+  "tr-73c7a59363e9db7b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.misroute[persistence=persistent].middle.s0",
+    "split": "test"
+  },
+  "tr-86071dadbc597c04": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.misroute[persistence=persistent].late.s0",
+    "split": "test"
+  },
+  "tr-e47362df0f901ca7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.irrelevant_tool[persistence=once].early.s0",
+    "split": "test"
+  },
+  "tr-5815e42e36b371ca": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.irrelevant_tool[persistence=persistent].early.s0",
+    "split": "test"
+  },
+  "tr-e0f869a30c7a48f4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.stuck_processing[].early.s0",
+    "split": "test"
+  },
+  "tr-e5314efd9d4d1230": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.tool_error[cell=explicit_transient].early.s0",
+    "split": "test"
+  },
+  "tr-6c1b5752b84d33c9": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.tool_error[cell=explicit_persistent].early.s0",
+    "split": "test"
+  },
+  "tr-591caa51762b417e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.stale_output[cell=silent_transient].early.s0",
+    "split": "test"
+  },
+  "tr-c4fbdeb0c5633e8f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.stale_output[cell=silent_persistent].early.s0",
+    "split": "test"
+  },
+  "tr-b57d5af993eed97d": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.misread_value[target=argument].early.s0",
+    "split": "test"
+  },
+  "tr-21636e75c8c34036": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.misread_value[target=argument].middle.s0",
+    "split": "test"
+  },
+  "tr-71881180dd2ad11d": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.misread_value[target=claim].early.s0",
+    "split": "test"
+  },
+  "tr-6023cd6b797aac44": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.misread_value[target=claim].middle.s0",
+    "split": "test"
+  },
+  "tr-828cc9eada7033a4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.misread_value[target=claim].late.s0",
+    "split": "test"
+  },
+  "tr-a9dc1d67b6d936c4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-8e031e6c8e2ec7f9": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.drop_context[persistence=once,variant=drop_ids].middle.s0",
+    "split": "test"
+  },
+  "tr-a1982cb06e2f7687": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.drop_context[persistence=once,variant=drop_ids].late.s0",
+    "split": "test"
+  },
+  "tr-066b2704365b4e83": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-32babe695297d48e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.drop_context[persistence=persistent,variant=drop_ids].middle.s0",
+    "split": "test"
+  },
+  "tr-be4f55416abe4546": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.drop_context[persistence=persistent,variant=drop_ids].late.s0",
+    "split": "test"
+  },
+  "tr-aa04aa2b6a340687": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-b6a35f0498ea7654": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.drop_context[persistence=once,variant=truncate].middle.s0",
+    "split": "test"
+  },
+  "tr-cc145d1915318ff1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.drop_context[persistence=once,variant=truncate].late.s0",
+    "split": "test"
+  },
+  "tr-e90d9bd9b7bd638c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.drop_context[persistence=persistent,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-df073ccaab13de09": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.drop_context[persistence=persistent,variant=truncate].middle.s0",
+    "split": "test"
+  },
+  "tr-8592081f5d4b89ef": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.drop_context[persistence=persistent,variant=truncate].late.s0",
+    "split": "test"
+  },
+  "tr-f6ef0e8e8a82414e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.omit_detail[].early.s0",
+    "split": "test"
+  },
+  "tr-187d47c63b265765": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.omit_detail[].middle.s0",
+    "split": "test"
+  },
+  "tr-542ef863ca86d0bc": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-055.omit_detail[].late.s0",
+    "split": "test"
+  },
+  "tr-be3ee35529925b27": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-067.clean.s0",
+    "split": "test"
+  },
+  "tr-44936770d308c650": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.clean.s0",
+    "split": "calibration"
+  },
+  "tr-b61fc7a3bc9eef0c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.skip_write[].early.s0",
+    "split": "calibration"
+  },
+  "tr-cca1fdf2c5c619df": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.skip_write[].middle.s0",
+    "split": "calibration"
+  },
+  "tr-240c15ca83dc0998": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.skip_write[].late.s0",
+    "split": "calibration"
+  },
+  "tr-e5da5ddd80776c80": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.policy_contradiction[directive=no_writes].early.s0",
+    "split": "calibration"
+  },
+  "tr-9ad10be885d7b718": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.policy_contradiction[directive=no_writes].middle.s0",
+    "split": "calibration"
+  },
+  "tr-638fa6b5cca7672b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.policy_contradiction[directive=no_writes].late.s0",
+    "split": "calibration"
+  },
+  "tr-ee1a477f19ca9030": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.misroute[persistence=once].early.s0",
+    "split": "calibration"
+  },
+  "tr-e63d87dd1e8aab6d": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.misroute[persistence=once].middle.s0",
+    "split": "calibration"
+  },
+  "tr-cd7438de48ae236e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.misroute[persistence=once].late.s0",
+    "split": "calibration"
+  },
+  "tr-3fb840bffb9f77f4": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.irrelevant_tool[persistence=once].early.s0",
+    "split": "calibration"
+  },
+  "tr-079b45de7b81c483": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.irrelevant_tool[persistence=once].middle.s0",
+    "split": "calibration"
+  },
+  "tr-1903f3d6b2099342": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.irrelevant_tool[persistence=persistent].early.s0",
+    "split": "calibration"
+  },
+  "tr-da37aaadaf2b59a1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.irrelevant_tool[persistence=persistent].middle.s0",
+    "split": "calibration"
+  },
+  "tr-d7a496e00323faf3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.stuck_processing[].early.s0",
+    "split": "calibration"
+  },
+  "tr-399a4915c2f3c4f6": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.stuck_processing[].middle.s0",
+    "split": "calibration"
+  },
+  "tr-49cc99c105fc914e": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.tool_error[cell=explicit_transient].early.s0",
+    "split": "calibration"
+  },
+  "tr-c915a658b2a4766a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.tool_error[cell=explicit_transient].middle.s0",
+    "split": "calibration"
+  },
+  "tr-3947483f79a1df65": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.stale_output[cell=silent_transient].early.s0",
+    "split": "calibration"
+  },
+  "tr-4b00948cafc5d080": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.stale_output[cell=silent_transient].middle.s0",
+    "split": "calibration"
+  },
+  "tr-053cdfba63cd0bd3": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.misread_value[target=argument].early.s0",
+    "split": "calibration"
+  },
+  "tr-64ec76ed1bb0814f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "calibration"
+  },
+  "tr-82104dbd373703d1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.drop_context[persistence=once,variant=drop_ids].middle.s0",
+    "split": "calibration"
+  },
+  "tr-ebea0a90a7944c22": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.drop_context[persistence=once,variant=drop_ids].late.s0",
+    "split": "calibration"
+  },
+  "tr-6c486cfe6cdbfd6f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "calibration"
+  },
+  "tr-98684e65d5142315": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.drop_context[persistence=persistent,variant=drop_ids].middle.s0",
+    "split": "calibration"
+  },
+  "tr-99aadf9c4473cdd2": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.drop_context[persistence=persistent,variant=drop_ids].late.s0",
+    "split": "calibration"
+  },
+  "tr-9523f05690cf6aed": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "calibration"
+  },
+  "tr-ba7a3a81c6ef12e1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.drop_context[persistence=once,variant=truncate].middle.s0",
+    "split": "calibration"
+  },
+  "tr-fbc53501bd2b816c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.drop_context[persistence=once,variant=truncate].late.s0",
+    "split": "calibration"
+  },
+  "tr-778c1de110a9316c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.omit_detail[].early.s0",
+    "split": "calibration"
+  },
+  "tr-3c0367fc1d7c6997": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-083.omit_detail[].middle.s0",
+    "split": "calibration"
+  },
+  "tr-d5e7c4066077ffec": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-095.clean.s0",
+    "split": "calibration"
+  },
+  "tr-8ec3e08bf422e358": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-095.skip_write[].early.s0",
+    "split": "calibration"
+  },
+  "tr-a57b40dc20a190c0": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-095.policy_contradiction[directive=no_writes].early.s0",
+    "split": "calibration"
+  },
+  "tr-35f34f39cce066c7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-095.misroute[persistence=once].early.s0",
+    "split": "calibration"
+  },
+  "tr-08c6a9cc65fd7f2f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-095.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "calibration"
+  },
+  "tr-e576c2f92dbfd1e1": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-095.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "calibration"
+  },
+  "tr-e5c8fbd0f18bb8ff": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-095.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "calibration"
+  },
+  "tr-466df6ba92cf669d": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-095.omit_detail[].early.s0",
+    "split": "calibration"
+  },
+  "tr-dc31d678ed6b8193": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-095.omit_detail[].middle.s0",
+    "split": "calibration"
+  },
+  "tr-ede9bf2a5408c73b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.clean.s0",
+    "split": "test"
+  },
+  "tr-0193380c92c44f2c": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.skip_write[].early.s0",
+    "split": "test"
+  },
+  "tr-bd03ef3bcb6d4424": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.policy_contradiction[directive=no_writes].early.s0",
+    "split": "test"
+  },
+  "tr-d5e9b9b4d11d1b11": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.misroute[persistence=once].early.s0",
+    "split": "test"
+  },
+  "tr-d36ab4a5699e293f": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.misroute[persistence=persistent].early.s0",
+    "split": "test"
+  },
+  "tr-a830646df1808af7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.irrelevant_tool[persistence=once].early.s0",
+    "split": "test"
+  },
+  "tr-53739a9575ead937": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.irrelevant_tool[persistence=once].middle.s0",
+    "split": "test"
+  },
+  "tr-e87f3c629a0bea7b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.irrelevant_tool[persistence=persistent].early.s0",
+    "split": "test"
+  },
+  "tr-b5cfc939d57e0426": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.irrelevant_tool[persistence=persistent].middle.s0",
+    "split": "test"
+  },
+  "tr-2727a162dc6d72f2": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.stuck_processing[].early.s0",
+    "split": "test"
+  },
+  "tr-9f3a0c08a85794e2": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.stuck_processing[].middle.s0",
+    "split": "test"
+  },
+  "tr-571cf978709672d8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.tool_error[cell=explicit_transient].early.s0",
+    "split": "test"
+  },
+  "tr-eecd3486113943f9": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.tool_error[cell=explicit_transient].middle.s0",
+    "split": "test"
+  },
+  "tr-b7794459f76520b8": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.tool_error[cell=explicit_persistent].early.s0",
+    "split": "test"
+  },
+  "tr-e76acf7bcbc642cd": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.tool_error[cell=explicit_persistent].middle.s0",
+    "split": "test"
+  },
+  "tr-4ca1d306458faec0": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.stale_output[cell=silent_transient].early.s0",
+    "split": "test"
+  },
+  "tr-cd9d75c3391860fb": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.stale_output[cell=silent_transient].middle.s0",
+    "split": "test"
+  },
+  "tr-6f670a5c065a504b": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.stale_output[cell=silent_persistent].early.s0",
+    "split": "test"
+  },
+  "tr-0c7de1ea62e953fc": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.stale_output[cell=silent_persistent].middle.s0",
+    "split": "test"
+  },
+  "tr-f29c8d33ca525ec6": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.misread_value[target=argument].early.s0",
+    "split": "test"
+  },
+  "tr-5f6c99cc3fd214d7": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.misread_value[target=claim].early.s0",
+    "split": "test"
+  },
+  "tr-ec0bc3247ac30b17": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.drop_context[persistence=once,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-dad12639c661a726": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.drop_context[persistence=persistent,variant=drop_ids].early.s0",
+    "split": "test"
+  },
+  "tr-6ac27d94db15ce0a": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.drop_context[persistence=once,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-d8496e6ede45088d": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.drop_context[persistence=persistent,variant=truncate].early.s0",
+    "split": "test"
+  },
+  "tr-748e2b09c9329770": {
+    "generation_dir": "E:\\Projects\\AgentReroute\\benchmark\\runs\\gen-v2-3",
+    "episode_id": "retail-107.omit_detail[].early.s0",
+    "split": "test"
+  }
+}

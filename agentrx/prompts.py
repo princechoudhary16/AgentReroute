@@ -4,7 +4,8 @@ from .io import digest
 from .taxonomy import taxonomy, CATEGORIES
 
 PROMPT_VERSION = 'agentrx-reconstruction-v1'
-PHASE2_STAGES = ('perspective_global', 'perspective_dynamic', 'perspective_repair', 'tool_sandbox')
+PHASE2_STAGES = ('perspective_global', 'perspective_dynamic', 'perspective_repair', 'tool_sandbox',
+                 'mp_rl_select')
 CONSTRAINT_SCHEMA = {
     'assertion_name': 'unique_snake_case', 'taxonomy_targets': ['InvalidInvocation'],
     'constraint_type': 'SCHEMA|PROTOCOL|RELATIONAL_POST|PROVENANCE|TEMPORAL|CAPABILITY|ANY',
@@ -57,6 +58,24 @@ JUDGING = (
     '"evidence_refs": [{"step_index": original integer, "substep_index": original integer}], '
     '"custom_category": optional string}. Inconclusive requires a rationale and nonempty '
     'custom_category, with null step/agent if localization is unsupported. '
+)
+
+SELECTION = (
+    'Attribute the decisive fault in a failed multi-agent run, using a prior automated analysis as '
+    'evidence. Scan in temporal order. For each failure, look ahead for recovery; if recovered, '
+    'continue. Select the earliest unrecovered, causally decisive failure that explains the '
+    'unsuccessful task, and distinguish root causes from downstream symptoms. '
+    'The analysis supplies a blame matrix, giving each perspective\'s violation rate per agent, and '
+    'ranked candidate steps with the constraint violations found at each. Treat every violation as '
+    'FALLIBLE EVIDENCE: the checks are machine-generated, false positives are common, the highest '
+    'ranked candidate is usually not the fault, and the true fault often produced no violation at '
+    'all. Weigh the analysis against the trajectory itself and do not defer to the ranking. '
+    'The responsible agent need not be the speaker at the selected event. Use an agent observed in '
+    'the supplied trajectory. '
+    'Return {"step_index": original integer index or null, "agent": exact responsible role or null, '
+    '"category": taxonomy identifier, "rationale": evidence-grounded explanation including recovery '
+    'and why the ranked candidates were accepted or rejected, '
+    '"evidence_refs": [{"step_index": original integer, "substep_index": original integer}]}. '
 )
 
 RANKED_JUDGING = (
@@ -164,6 +183,14 @@ def messages(stage, payload):
             instruction += ' FORBIDDEN OUTPUTS (DO NOT REPEAT): ' + json.dumps(payload['forbidden_patterns'])
         if payload.get('retry_feedback'):
             instruction += ' LAYER 1 REJECTION FEEDBACK (DO NOT REPEAT REJECTED LINE): ' + json.dumps(payload['retry_feedback'])
+    elif stage == 'mp_rl_select':
+        scope = payload.get('scope', 'trace')
+        instruction = SELECTION + (
+            'SCOPE: choose ONLY from the ranked candidate steps listed in the analysis. '
+            if scope == 'pool' else
+            'SCOPE: you may select ANY step in the trajectory. The ranked candidates are evidence, '
+            'not a restriction; select a step outside them when the trace points elsewhere. ')
+        instruction += 'Taxonomy identifiers: ' + json.dumps(taxonomy(False)) + '. '
     elif stage == 'tool_sandbox':
         instruction = (
             'You are the Dynamic MAS Environment / Peer-Agent Sandbox. Given the trajectory prefix ending at the '
@@ -181,6 +208,6 @@ def messages(stage, payload):
 def prompt_identity():
     # Include actual prompt constants and resource contents, not only a manual version.
     return digest({'version': PROMPT_VERSION, 'common': COMMON, 'generation': GENERATION,
-                   'judge': JUDGING, 'ranked_judge': RANKED_JUDGING, 'schema': CONSTRAINT_SCHEMA, 'taxonomy': taxonomy(True),
+                   'judge': JUDGING, 'ranked_judge': RANKED_JUDGING, 'selection': SELECTION, 'schema': CONSTRAINT_SCHEMA, 'taxonomy': taxonomy(True),
                    'semantic_template': messages('semantic', {})[0]['content'],
                    'phase2_templates': {stage: messages(stage, {})[0]['content'] for stage in PHASE2_STAGES}})

@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"modify_pending_order_payment\", \"arguments\": {\"order_id\": \"#W5270061\", \"payment_method_id\": \"paypal_7729105\"}}", "tokens_in": 5330, "tokens_out": 49, "model": "qwen2.5:32b", "lenient": false}

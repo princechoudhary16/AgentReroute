@@ -1,0 +1,233 @@
+{
+  "trajectory_id": "tr-1bb2d135e5adf633",
+  "domain": "retail",
+  "instruction": "Hi there! I need to urgently undo a cancellation on an order I made earlier. Can you assist with that? It's really important that I receive all the items from that order as soon as possible.",
+  "instruction_source": "first_user_message",
+  "view": "output_only",
+  "steps": [
+    {
+      "index": 1,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Hi there! I need to urgently undo a cancellation on an order I made earlier. Can you assist with that? It's really important that I receive all the items from that order as soon as possible."
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"I can help with that, but first, I need to verify your identity. Could you please provide me with your email address or your first name, last name, and zip code?\"}"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Sure, my name is Chen Smith and my zip code is 32278. Please verify and undo the cancellation right away. Time is really of the essence here."
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"find_user_id_by_name_zip\", \"arguments\": {\"first_name\": \"Chen\", \"last_name\": \"Smith\", \"zip\": \"32278\"}}",
+          "tool_calls": [
+            {
+              "id": "call-4",
+              "name": "find_user_id_by_name_zip",
+              "arguments": {
+                "first_name": "Chen",
+                "last_name": "Smith",
+                "zip": "32278"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "chen_smith_8425",
+          "name": "find_user_id_by_name_zip"
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"get_user_details\", \"arguments\": {\"user_id\": \"chen_smith_8425\"}}",
+          "tool_calls": [
+            {
+              "id": "call-6",
+              "name": "get_user_details",
+              "arguments": {
+                "user_id": "chen_smith_8425"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "{\"name\": {\"first_name\": \"Chen\", \"last_name\": \"Smith\"}, \"address\": {\"address1\": \"932 Hickory Lane\", \"address2\": \"Suite 309\", \"city\": \"Jacksonville\", \"country\": \"USA\", \"state\": \"FL\", \"zip\": \"32278\"}, \"email\": \"chen.smith7677@example.com\", \"payment_methods\": {\"gift_card_4796172\": {\"source\": \"gift_card\", \"balance\": 47, \"id\": \"gift_card_4796172\"}, \"credit_card_6177109\": {\"source\": \"credit_card\", \"brand\": \"visa\", \"last_four\": \"9488\", \"id\": \"credit_card_6177109\"}, \"paypal_9175769\": {\"source\": \"paypal\", \"id\": \"paypal_9175769\"}}, \"orders\": [\"#W8859225\"]}",
+          "name": "get_user_details"
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"Thank you for your patience, Chen. I see you have an order with us. Could you please confirm the order ID? Also, please note that once an order is cancelled, it cannot be undone. We can, however, place a new order for you if that's what you need.\"}"
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "I understand that the order can't be undone directly. In that case, could you please place a new order with the exact same items as the cancelled one? It's crucial that I receive everything as soon as possible. Thank you for your help."
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"#W8859225\"}}",
+          "tool_calls": [
+            {
+              "id": "call-10",
+              "name": "get_order_details",
+              "arguments": {
+                "order_id": "#W8859225"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "{\"order_id\": \"#W8859225\", \"user_id\": \"chen_smith_8425\", \"address\": {\"address1\": \"932 Hickory Lane\", \"address2\": \"Suite 309\", \"city\": \"Jacksonville\", \"country\": \"USA\", \"state\": \"FL\", \"zip\": \"32278\"}, \"items\": [{\"name\": \"Indoor Security Camera\", \"product_id\": \"2985987096\", \"item_id\": \"1999523885\", \"price\": 294.47, \"options\": {\"resolution\": \"4K\", \"field of view\": \"160 degrees\", \"connectivity\": \"Wi-Fi\"}}, {\"name\": \"Mechanical Keyboard\", \"product_id\": \"1656367028\", \"item_id\": \"9665000388\", \"price\": 269.46, \"options\": {\"switch type\": \"clicky\", \"backlight\": \"none\", \"size\": \"80%\"}}, {\"name\": \"Indoor Security Camera\", \"product_id\": \"2985987096\", \"item_id\": \"5966895767\", \"price\": 329.58, \"options\": {\"resolution\": \"2K\", \"field of view\": \"160 degrees\", \"connectivity\": \"Ethernet\"}}, {\"name\": \"Wireless Earbuds\", \"product_id\": \"9924732112\", \"item_id\": \"2052249669\", \"price\": 237.14, \"options\": {\"color\": \"white\", \"battery life\": \"4 hours\", \"water resistance\": \"not resistant\"}}], \"fulfillments\": [{\"tracking_id\": [\"208425478671\"], \"item_ids\": [\"1999523885\", \"9665000388\", \"5966895767\", \"2052249669\"]}], \"status\": \"cancelled\", \"payment_history\": [{\"transaction_type\": \"payment\", \"amount\": 1130.65, \"payment_method_id\": \"paypal_9175769\"}, {\"transaction_type\": \"refund\", \"amount\": 1130.65, \"payment_method_id\": \"paypal_9175769\"}]}",
+          "name": "get_order_details"
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"I understand the urgency of your request, Chen. To place a new order with the exact same items as your cancelled order, I will need to confirm the details with you. The items in your cancelled order are as follows: \\n1. Indoor Security Camera (4K, 160 degrees, Wi-Fi)\\n2. Mechanical Keyboard (clicky, no backlight, 80% size)\\n3. Indoor Security Camera (2K, 160 degrees, Ethernet)\\n4. Wireless Earbuds (white, 4 hours battery life, not water resistant)\\n\\nPlease confirm if you want these exact items in your new order. Also, could you please specify the payment method you would like to use for this new order?\"}"
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Yes, please proceed with the exact same items as listed. I just need this new order to be processed and delivered as quickly as possible. I can use the same payment method as before. Thank you for your assistance."
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"handoff\", \"to\": \"product_agent\", \"message\": \"Place a new order with the exact same items as the cancelled order #W8859225 for user chen_smith_8425. Use the same payment method (paypal_9175769) and address as the original order.\", \"context\": {\"user_id\": \"chen_smith_8425\", \"order_id\": \"#W8859225\", \"items\": [{\"name\": \"Indoor Security Camera\", \"product_id\": \"2985987096\", \"item_id\": \"1999523885\", \"price\": 294.47, \"options\": {\"resolution\": \"4K\", \"field of view\": \"160 degrees\", \"connectivity\": \"Wi-Fi\"}}, {\"name\": \"Mechanical Keyboard\", \"product_id\": \"1656367028\", \"item_id\": \"9665000388\", \"price\": 269.46, \"options\": {\"switch type\": \"clicky\", \"backlight\": \"none\", \"size\": \"80%\"}}, {\"name\": \"Indoor Security Camera\", \"product_id\": \"2985987096\", \"item_id\": \"5966895767\", \"price\": 329.58, \"options\": {\"resolution\": \"2K\", \"field of view\": \"160 degrees\", \"connectivity\": \"Ethernet\"}}, {\"name\": \"Wireless Earbuds\", \"product_id\": \"9924732112\", \"item_id\": \"2052249669\", \"price\": 237.14, \"options\": {\"color\": \"white\", \"battery life\": \"4 hours\", \"water resistance\": \"not resistant\"}}], \"payment_method\": \"paypal_9175769\"}}"
+        },
+        {
+          "sub_index": 2,
+          "role": "planner",
+          "content": "{\"handoff_to\": \"product_agent\", \"message\": \"Place a new order with the exact same items as the cancelled order #W8859225 for user chen_smith_8425. Use the same payment method (paypal_9175769) and address as the original order.\", \"context\": {\"user_id\": \"chen_smith_8425\", \"order_id\": \"#W8859225\", \"items\": [{\"name\": \"Indoor Security Camera\", \"product_id\": \"2985987096\", \"item_id\": \"1999523885\", \"price\": 294.47, \"options\": {\"resolution\": \"4K\", \"field of view\": \"160 degrees\", \"connectivity\": \"Wi-Fi\"}}, {\"name\": \"Mechanical Keyboard\", \"product_id\": \"1656367028\", \"item_id\": \"9665000388\", \"price\": 269.46, \"options\": {\"switch type\": \"clicky\", \"backlight\": \"none\", \"size\": \"80%\"}}, {\"name\": \"Indoor Security Camera\", \"product_id\": \"2985987096\", \"item_id\": \"5966895767\", \"price\": 329.58, \"options\": {\"resolution\": \"2K\", \"field of view\": \"160 degrees\", \"connectivity\": \"Ethernet\"}}, {\"name\": \"Wireless Earbuds\", \"product_id\": \"9924732112\", \"item_id\": \"2052249669\", \"price\": 237.14, \"options\": {\"color\": \"white\", \"battery life\": \"4 hours\", \"water resistance\": \"not resistant\"}}], \"payment_method\": \"paypal_9175769\"}}",
+          "name": "handoff"
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "product_agent",
+          "content": "{\"action\": \"reply\", \"content\": \"The request to place a new order with the exact same items as the cancelled order #W8859225 for user chen_smith_8425 cannot be handled within the scope of my actions. This involves placing a new order, which is not covered by the current capabilities. Please transfer the user to a human agent for this request.\"}"
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"transfer_to_human_agents\", \"arguments\": {\"summary\": \"User Chen Smith needs to place a new order with the exact same items as their cancelled order #W8859225. The request involves placing a new order, which is beyond the current capabilities.\"}}",
+          "tool_calls": [
+            {
+              "id": "call-16",
+              "name": "transfer_to_human_agents",
+              "arguments": {
+                "summary": "User Chen Smith needs to place a new order with the exact same items as their cancelled order #W8859225. The request involves placing a new order, which is beyond the current capabilities."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "Transfer successful",
+          "name": "transfer_to_human_agents"
+        }
+      ]
+    }
+  ],
+  "agents": [
+    "order_agent",
+    "planner",
+    "product_agent",
+    "returns_agent"
+  ]
+}

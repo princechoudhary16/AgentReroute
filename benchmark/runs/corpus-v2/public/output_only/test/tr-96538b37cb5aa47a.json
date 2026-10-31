@@ -1,0 +1,304 @@
+{
+  "trajectory_id": "tr-96538b37cb5aa47a",
+  "domain": "retail",
+  "instruction": "Hello! I recently made a purchase and I'm realizing I need to return most of the items. I'm only keeping the coffee machine. Could you guide me on how to proceed with the returns?",
+  "instruction_source": "first_user_message",
+  "view": "output_only",
+  "steps": [
+    {
+      "index": 1,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Hello! I recently made a purchase and I'm realizing I need to return most of the items. I'm only keeping the coffee machine. Could you guide me on how to proceed with the returns?"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"Sure, I can help you with that. Could you please provide me with your email address or your first name, last name, and zip code so I can verify your identity and locate your order?\"}"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "My name is Fatima Wilson and my email is fatima.wilson5721@example.com. Could you use that to find my order?"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"find_user_id_by_email\", \"arguments\": {\"email\": \"fatima.wilson5721@example.com\"}}",
+          "tool_calls": [
+            {
+              "id": "call-4",
+              "name": "find_user_id_by_email",
+              "arguments": {
+                "email": "fatima.wilson5721@example.com"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "fatima_wilson_7472",
+          "name": "find_user_id_by_email"
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"get_user_details\", \"arguments\": {\"user_id\": \"fatima_wilson_7472\"}}",
+          "tool_calls": [
+            {
+              "id": "call-6",
+              "name": "get_user_details",
+              "arguments": {
+                "user_id": "fatima_wilson_7472"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "{\"name\": {\"first_name\": \"Fatima\", \"last_name\": \"Wilson\"}, \"address\": {\"address1\": \"167 Willow Lane\", \"address2\": \"Suite 624\", \"city\": \"San Diego\", \"country\": \"USA\", \"state\": \"CA\", \"zip\": \"92183\"}, \"email\": \"fatima.wilson5721@example.com\", \"payment_methods\": {\"credit_card_6824399\": {\"source\": \"credit_card\", \"brand\": \"visa\", \"last_four\": \"8991\", \"id\": \"credit_card_6824399\"}}, \"orders\": [\"#W5272531\"]}",
+          "name": "get_user_details"
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"Thank you, Fatima. I found your order. The order ID is #W5272531. Could you please confirm if this is the order you want to return most of the items from, except for the coffee machine?\"}"
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Yes, that's correct. I want to return everything except for the coffee machine from order #W5272531."
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"#W5272531\"}}",
+          "tool_calls": [
+            {
+              "id": "call-10",
+              "name": "get_order_details",
+              "arguments": {
+                "order_id": "#W5272531"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "{\"order_id\": \"#W5272531\", \"user_id\": \"fatima_wilson_7472\", \"address\": {\"address1\": \"167 Willow Lane\", \"address2\": \"Suite 624\", \"city\": \"San Diego\", \"country\": \"USA\", \"state\": \"CA\", \"zip\": \"92183\"}, \"items\": [{\"name\": \"Electric Toothbrush\", \"product_id\": \"7352963235\", \"item_id\": \"3320557165\", \"price\": 188.67, \"options\": {\"color\": \"blue\", \"speed settings\": \"high\", \"battery type\": \"AA batteries\"}}, {\"name\": \"Electric Kettle\", \"product_id\": \"1075968781\", \"item_id\": \"2698416822\", \"price\": 149.45, \"options\": {\"capacity\": \"1.5L\", \"material\": \"plastic\", \"color\": \"white\"}}, {\"name\": \"Electric Toothbrush\", \"product_id\": \"7352963235\", \"item_id\": \"8098621301\", \"price\": 192.15, \"options\": {\"color\": \"black\", \"speed settings\": \"high\", \"battery type\": \"rechargeable\"}}, {\"name\": \"Hiking Boots\", \"product_id\": \"7363354090\", \"item_id\": \"7228247242\", \"price\": 251.38, \"options\": {\"size\": \"10\", \"material\": \"leather\", \"waterproof\": \"yes\"}}, {\"name\": \"Espresso Machine\", \"product_id\": \"4354588079\", \"item_id\": \"7441167885\", \"price\": 2866.37, \"options\": {\"pressure\": \"15 bar\", \"capacity\": \"1.5L\", \"type\": \"capsule\"}}], \"fulfillments\": [{\"tracking_id\": [\"848454071657\"], \"item_ids\": [\"3320557165\", \"2698416822\", \"8098621301\", \"7228247242\", \"7441167885\"]}], \"status\": \"delivered\", \"payment_history\": [{\"transaction_type\": \"payment\", \"amount\": 3648.02, \"payment_method_id\": \"credit_card_6824399\"}]}",
+          "name": "get_order_details"
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"I see that your order #W5272531 is delivered and contains several items. You mentioned you want to keep the coffee machine. Based on the order details, the coffee machine is the Espresso Machine with item ID 7441167885. Would you like to return all other items except for the Espresso Machine?\"}"
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Yes, that's right. I would like to return all items except for the Espresso Machine with item ID 7441167885."
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"handoff\", \"to\": \"product_agent\", \"message\": \"User wants to return all items except for the Espresso Machine with item ID 7441167885 from order #W5272531. The payment method for refund should be the original payment method used for the order.\", \"context\": {\"user_id\": \"fatima_wilson_7472\", \"order_id\": \"#W5272531\", \"items_to_return\": [\"3320557165\", \"2698416822\", \"8098621301\", \"7228247242\"], \"payment_method\": \"credit_card_6824399\"}}"
+        },
+        {
+          "sub_index": 2,
+          "role": "planner",
+          "content": "{\"handoff_to\": \"product_agent\", \"message\": \"User wants to return all items except for the Espresso Machine with item ID 7441167885 from order #W5272531. The payment method for refund should be the original payment method used for the order.\", \"context\": {\"user_id\": \"fatima_wilson_7472\", \"order_id\": \"#W5272531\", \"items_to_return\": [\"3320557165\", \"2698416822\", \"8098621301\", \"7228247242\"], \"payment_method\": \"credit_card_6824399\"}}",
+          "name": "handoff"
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "product_agent",
+          "content": "{\"action\": \"reply\", \"content\": \"The user's request can be handled. However, the tools provided do not include a function to return items of a delivered order. The planner needs to route this request to the appropriate specialist or system that can process order returns.\"}"
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"I've reviewed your request to return all items except for the Espresso Machine from your order #W5272531. I will now transfer you to a specialist who can assist with the return process.\"}"
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "That sounds good, thank you for your help so far! I appreciate it."
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"handoff\", \"to\": \"returns_agent\", \"message\": \"User wants to return all items except for the Espresso Machine with item ID 7441167885 from order #W5272531. The payment method for refund should be the original payment method used for the order.\", \"context\": {\"user_id\": \"fatima_wilson_7472\", \"order_id\": \"#W5272531\", \"items_to_return\": [\"3320557165\", \"2698416822\", \"8098621301\", \"7228247242\"], \"payment_method\": \"credit_card_6824399\"}}"
+        },
+        {
+          "sub_index": 2,
+          "role": "planner",
+          "content": "{\"handoff_to\": \"returns_agent\", \"message\": \"User wants to return all items except for the Espresso Machine with item ID 7441167885 from order #W5272531. The payment method for refund should be the original payment method used for the order.\", \"context\": {\"user_id\": \"fatima_wilson_7472\", \"order_id\": \"#W5272531\", \"items_to_return\": [\"3320557165\", \"2698416822\", \"8098621301\", \"7228247242\"], \"payment_method\": \"credit_card_6824399\"}}",
+          "name": "handoff"
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "returns_agent",
+          "content": "{\"action\": \"tool\", \"tool\": \"return_delivered_order_items\", \"arguments\": {\"order_id\": \"#W5272531\", \"item_ids\": [\"3320557165\", \"2698416822\", \"8098621301\", \"7228247242\"], \"payment_method_id\": \"credit_card_6824399\"}}",
+          "tool_calls": [
+            {
+              "id": "call-19",
+              "name": "return_delivered_order_items",
+              "arguments": {
+                "order_id": "#W5272531",
+                "item_ids": [
+                  "3320557165",
+                  "2698416822",
+                  "8098621301",
+                  "7228247242"
+                ],
+                "payment_method_id": "credit_card_6824399"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "{\"order_id\": \"#W5272531\", \"user_id\": \"fatima_wilson_7472\", \"address\": {\"address1\": \"167 Willow Lane\", \"address2\": \"Suite 624\", \"city\": \"San Diego\", \"country\": \"USA\", \"state\": \"CA\", \"zip\": \"92183\"}, \"items\": [{\"name\": \"Electric Toothbrush\", \"product_id\": \"7352963235\", \"item_id\": \"3320557165\", \"price\": 188.67, \"options\": {\"color\": \"blue\", \"speed settings\": \"high\", \"battery type\": \"AA batteries\"}}, {\"name\": \"Electric Kettle\", \"product_id\": \"1075968781\", \"item_id\": \"2698416822\", \"price\": 149.45, \"options\": {\"capacity\": \"1.5L\", \"material\": \"plastic\", \"color\": \"white\"}}, {\"name\": \"Electric Toothbrush\", \"product_id\": \"7352963235\", \"item_id\": \"8098621301\", \"price\": 192.15, \"options\": {\"color\": \"black\", \"speed settings\": \"high\", \"battery type\": \"rechargeable\"}}, {\"name\": \"Hiking Boots\", \"product_id\": \"7363354090\", \"item_id\": \"7228247242\", \"price\": 251.38, \"options\": {\"size\": \"10\", \"material\": \"leather\", \"waterproof\": \"yes\"}}, {\"name\": \"Espresso Machine\", \"product_id\": \"4354588079\", \"item_id\": \"7441167885\", \"price\": 2866.37, \"options\": {\"pressure\": \"15 bar\", \"capacity\": \"1.5L\", \"type\": \"capsule\"}}], \"fulfillments\": [{\"tracking_id\": [\"848454071657\"], \"item_ids\": [\"3320557165\", \"2698416822\", \"8098621301\", \"7228247242\", \"7441167885\"]}], \"status\": \"return requested\", \"payment_history\": [{\"transaction_type\": \"payment\", \"amount\": 3648.02, \"payment_method_id\": \"credit_card_6824399\"}], \"return_items\": [\"2698416822\", \"3320557165\", \"7228247242\", \"8098621301\"], \"return_payment_method_id\": \"credit_card_6824399\"}",
+          "name": "return_delivered_order_items"
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "returns_agent",
+          "content": "{\"action\": \"reply\", \"content\": \"The return request for the items Electric Toothbrush (item ID: 3320557165), Electric Kettle (item ID: 2698416822), Electric Toothbrush (item ID: 8098621301), and Hiking Boots (item ID: 7228247242) from order #W5272531 has been processed. The refund will be credited to the original payment method, which is the credit card. The Espresso Machine (item ID: 7441167885) will remain in your order. The total refund amount is $3648.02 - $2866.37 = $781.65.\"}"
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"Your return request has been processed. The items Electric Toothbrush, Electric Kettle, Electric Toothbrush, and Hiking Boots will be returned. The refund will be credited to your original payment method, which is the credit card. The Espresso Machine will remain in your order. The total refund amount is $781.65. You will receive an email with instructions on how to return the items. Thank you for your patience!\"}"
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Thank you for handling this for me. I appreciate the assistance and the clear communication. ###STOP###"
+        }
+      ]
+    }
+  ],
+  "agents": [
+    "order_agent",
+    "planner",
+    "product_agent",
+    "returns_agent"
+  ]
+}

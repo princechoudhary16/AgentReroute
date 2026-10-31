@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I found your pending order #W6750959. To change the shipping address to your NYC address, I will need the full address details. Could you please provide the address line 1, city, state, and zip code for your NYC address?\"}", "tokens_in": 3073, "tokens_out": 67, "model": "qwen2.5:32b", "lenient": false}

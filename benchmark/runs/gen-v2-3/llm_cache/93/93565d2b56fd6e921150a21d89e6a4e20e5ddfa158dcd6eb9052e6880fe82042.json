@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"modify_user_address\", \"arguments\": {\"user_id\": \"sophia_martin_8570\", \"address1\": \"760 Elm Avenue\", \"address2\": \"Suite 564\", \"city\": \"Houston\", \"state\": \"TX\", \"country\": \"USA\", \"zip\": \"77034\"}}", "tokens_in": 3237, "tokens_out": 84, "model": "qwen2.5:32b", "lenient": false}

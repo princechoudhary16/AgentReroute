@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"cancel_pending_order\", \"arguments\": {\"order_id\": \"[omitted]\", \"reason\": \"ordered by mistake\"}}", "tokens_in": 3194, "tokens_out": 34, "model": "qwen2.5:32b", "lenient": false}

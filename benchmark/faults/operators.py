@@ -38,13 +38,18 @@ from ..env.retail import WRITE_TOOLS
 from ..io import digest
 
 # Bump when operator behaviour changes: it is part of a generation's settings lock.
-OPERATORS_VERSION = 2
+# 3: CLAIMS and PROCESSING reworded so no detector phrase keys on the injector's own wording
+#    (tests/test_seed_injector_leakage.py). Fault SEMANTICS are unchanged; only the text differs.
+OPERATORS_VERSION = 3
 
 READ_TOOLS = ('get_order_details', 'get_product_details', 'list_all_product_types')
 SPECIALISTS = ('order_agent', 'product_agent', 'returns_agent')
 ID_KEYS = ('order_id', 'item_ids', 'new_item_ids', 'payment_method_id', 'user_id', 'product_id')
 ID_PATTERN = re.compile(r'#W\d+|\b\d{10}\b|\b(?:credit_card|gift_card|paypal)_\d+\b|\b[a-z]+_[a-z]+_\d{4}\b')
-PROCESSING = json.dumps({'status': 'processing', 'message': 'Request is still processing. Retry the same call.'})
+# A realistic async-gateway body. The detector must recognise a stuck tool by the structural fact that
+# an identical call returned an identical result, never by this payload's wording.
+PROCESSING = json.dumps({'state': 'in_flight', 'retry_after_ms': 1000,
+                         'detail': 'Upstream backend is still working on this request; repeat the call shortly.'})
 
 
 class FaultOperator:
@@ -287,25 +292,32 @@ class MisreadValue(_ActionOperator):
         return action
 
 
+# Natural completion wording for a write the agent never performed. Deliberately avoids every phrase the
+# detector keys on, so what catches a skipped write is the structural fact that a request for a state
+# change was concluded with no state-changing call, not the agent's choice of words. In particular these
+# avoid SUCCESS_CLAIM's vocabulary ('success', 'confirmed', 'has been <verb>') and REFUSAL's ('cannot',
+# 'unable', 'failed', 'error', '?'), the latter because a refusal legitimately EXCUSES a missing write and
+# would hide the injected fault.
 CLAIMS = {
-    'cancel_pending_order': ('Order {order_id} has been cancelled (reason: {reason}). The refund goes back to the '
-                             'original payment method.',
-                             'I cancelled order {order_id} as requested; the refund is on its way.'),
-    'return_delivered_order_items': ('The return for items {item_ids} in order {order_id} has been requested. The '
-                                     'refund will go to {payment_method_id}.',
-                                     'Return submitted for order {order_id}; refund to {payment_method_id}.'),
-    'exchange_delivered_order_items': ('The exchange in order {order_id} has been submitted: {item_ids} for '
-                                       '{new_item_ids}. Any price difference is settled with {payment_method_id}.',
-                                       'Exchange requested for order {order_id} ({item_ids} to {new_item_ids}).'),
-    'modify_pending_order_items': ('Order {order_id} has been updated: {item_ids} changed to {new_item_ids}, paid '
-                                   'with {payment_method_id}.',
-                                   'I modified the items in order {order_id} as confirmed.'),
-    'modify_pending_order_address': ('The shipping address of order {order_id} is now {address1}, {city}.',
-                                     'Order {order_id} will ship to the new address.'),
-    'modify_pending_order_payment': ('Order {order_id} is now paid with {payment_method_id}.',
-                                     'Payment method for order {order_id} updated.'),
-    'modify_user_address': ('The default address for {user_id} is now {address1}, {city}.',
-                            'I updated the user\'s default address.'),
+    'cancel_pending_order': ("All set: order {order_id} is now closed out under '{reason}', and the original "
+                             'payment method will be credited.',
+                             'Order {order_id} is off the books; the credit is on its way back to you.'),
+    'return_delivered_order_items': ('Taken care of: {item_ids} on {order_id} are slated to come back to us, with '
+                                     'the credit going to {payment_method_id}.',
+                                     'Your items {item_ids} on {order_id} are in motion; {payment_method_id} '
+                                     'will see the credit.'),
+    'exchange_delivered_order_items': ('The swap is in place on {order_id}: {item_ids} out, {new_item_ids} in, and '
+                                       'any difference settles on {payment_method_id}.',
+                                       'Swapping {item_ids} for {new_item_ids} on {order_id} is all arranged.'),
+    'modify_pending_order_items': ('Order {order_id} now lists {new_item_ids} in place of {item_ids}, billed to '
+                                   '{payment_method_id}.',
+                                   'The line items on {order_id} now read {new_item_ids}.'),
+    'modify_pending_order_address': ('{order_id} is routed to {address1}, {city} from here on.',
+                                     'New destination saved on {order_id}: {address1}, {city}.'),
+    'modify_pending_order_payment': ('{order_id} now draws on {payment_method_id}.',
+                                     'Billing for {order_id} sits with {payment_method_id} from now on.'),
+    'modify_user_address': ('{user_id} now has {address1}, {city} on file as the default.',
+                            'The default on file now reads {address1}, {city}.'),
 }
 
 

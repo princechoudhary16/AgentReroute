@@ -13,6 +13,7 @@ Layout of a built corpus::
 Splits are disjoint by task template. Held-out fault variants appear only in
 ``test``; episodes using them on other splits are dropped (and counted).
 """
+import os
 from pathlib import Path
 
 from . import BENCHMARK_NAME, __version__
@@ -29,6 +30,32 @@ DEFAULT_HELDOUT = ('tool_error[cell=explicit_persistent]', 'stale_output[cell=si
                    'drop_context[persistence=persistent,variant=truncate]', 'misread_value[target=claim]',
                    'policy_contradiction[directive=skip_verification]', 'misroute[persistence=persistent]')
 INCLUDED_STATUSES = ('failed', 'tolerated', 'clean')
+
+
+def _corpus_relative(gen_dir, corpus_dir):
+    """``gen_dir`` written relative to the corpus that will cite it, as a POSIX path.
+
+    A built corpus is a research artifact: it gets copied between machines and handed to collaborators.
+    Storing the absolute path of whichever machine built it means the recovery harness resolves nothing
+    anywhere else, which is a build-time footgun with a run-time error message. Generation directories
+    sit beside the corpus under runs/, so the relative form is stable under moving or cloning the repo.
+    Separators are normalised so a corpus built on Windows is readable on Linux and the reverse.
+    """
+    try:
+        relative = os.path.relpath(Path(gen_dir).resolve(), Path(corpus_dir).resolve())
+    except ValueError:
+        return str(Path(gen_dir).resolve())      # different Windows drives: no relative path exists
+    return relative.replace(os.sep, '/')
+
+
+def generation_dir(stored, corpus_dir):
+    """Resolve a gold index entry's generation directory against the corpus that cites it.
+
+    Accepts the index row or the bare stored string. Corpora built before paths became relative hold
+    absolute ones, which are returned unchanged, so an existing corpus keeps working.
+    """
+    path = Path(stored['generation_dir'] if isinstance(stored, dict) else stored)
+    return path if path.is_absolute() else Path(corpus_dir) / path
 
 
 def variant_key(operator):
@@ -102,15 +129,33 @@ def build(gen_dirs, out_dir, ratios=None, heldout_variants=DEFAULT_HELDOUT, natu
     gold = {s: [] for s in SPLITS}
     public_ids = {s: [] for s in SPLITS}
     episodes_index, sources, dropped = {}, [], {'heldout_variant_outside_test': 0, 'unlabeled_natural': 0,
-                                                 'not_activated': 0}
+                                                 'not_activated': 0, 'degraded': 0, 'lenient_response': 0}
+    lenient_episodes = 0
     policies = {}
     for gen_dir in gen_dirs:
         meta = read_json(Path(gen_dir) / 'generation.json')
         domain = load_domain(meta['config']['data_dir'])
         policies[domain.name] = domain.policy
         sources.append({'generation_dir': str(gen_dir), 'identity': meta['identity']})
+        if sources[0]['identity'] != meta['identity']:
+            differing = sorted(k for k in set(sources[0]['identity']) | set(meta['identity'])
+                               if sources[0]['identity'].get(k) != meta['identity'].get(k))
+            raise ValueError(
+                f'generation directories disagree on {differing}: {sources[0]["generation_dir"]} vs '
+                f'{gen_dir}. Merging them would put episodes made under different settings (model, '
+                f'context window, operator version) into one corpus with nothing recording which was '
+                f'which. Rebuild the odd one out, or build them as separate corpora.')
         for episode in load_episodes(gen_dir):
             status = episode['status']
+            # Counted before any drop: this is the generation's contamination rate, which the actor-hygiene
+            # gate reads. Counting survivors instead would report 0 exactly when the drop is working.
+            lenient_episodes += int(episode.get('lenient_responses', 0) > 0)
+            if episode.get('lenient_responses', 0) > 0:
+                # An unrecovered actor reply leaves an empty action in the trace that no label can
+                # describe. generate() already marks such runs 'degraded'; this also catches a corpus built
+                # from a generation directory made before that status existed.
+                dropped['lenient_response'] += 1
+                continue
             if status == 'not_activated':
                 dropped['not_activated'] += 1
                 continue
@@ -123,6 +168,11 @@ def build(gen_dirs, out_dir, ratios=None, heldout_variants=DEFAULT_HELDOUT, natu
                     'critical_step': label['critical']['step_index'], 'responsible_agent': label['critical']['agent'],
                     'mode': label['critical']['mode'], 'fault_step': label.get('fault_step'),
                     'acceptable_steps': label.get('acceptable_steps', [label['critical']['step_index']])}}
+            if episode['status'] not in INCLUDED_STATUSES:
+                # 'degraded' today, and a backstop for any future generation-side status that carries no
+                # gold. Keeps schema.GOLD_STATUSES the single definition of what a gold record may say.
+                dropped['degraded'] += 1
+                continue
             split = assign_split(episode['task_id'], ratios)
             if episode['operator'] and variant_key(episode['operator']) in heldout_variants and split != 'test':
                 dropped['heldout_variant_outside_test'] += 1
@@ -139,7 +189,7 @@ def build(gen_dirs, out_dir, ratios=None, heldout_variants=DEFAULT_HELDOUT, natu
             validate_gold(record, trace)
             gold[split].append(record)
             public_ids[split].append(tid)
-            episodes_index[tid] = {'generation_dir': str(Path(gen_dir).resolve()),
+            episodes_index[tid] = {'generation_dir': _corpus_relative(gen_dir, out_dir),
                                    'episode_id': episode['episode_id'], 'split': split}
     agentrx = {}
     for split in SPLITS:
@@ -169,7 +219,8 @@ def build(gen_dirs, out_dir, ratios=None, heldout_variants=DEFAULT_HELDOUT, natu
         counts[split] = {'total': len(gold[split]), 'by_label': dict(sorted(by.items()))}
     manifest = {'benchmark': BENCHMARK_NAME, 'version': __version__, 'splits': counts, 'ratios': ratios,
                 'split_policy': 'disjoint by task template; held-out variants only in test',
-                'heldout_variants': list(heldout_variants), 'dropped': dropped, 'sources': sources,
+                'heldout_variants': list(heldout_variants), 'dropped': dropped,
+                'lenient_episodes': lenient_episodes, 'sources': sources,
                 'agentrx_export': agentrx,
                 'gold_hash': digest(gold), 'views': ['full', 'output_only']}
     write_json(out_dir / 'manifest.json', manifest)

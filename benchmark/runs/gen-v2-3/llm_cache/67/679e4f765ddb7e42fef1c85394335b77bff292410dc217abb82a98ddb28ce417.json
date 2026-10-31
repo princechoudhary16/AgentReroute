@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"There was an issue locating the order. Please provide the exact order ID and item ID so I can proceed with the return and refund to the original gift card.\"}", "tokens_in": 2661, "tokens_out": 44, "model": "qwen2.5:32b", "lenient": false}

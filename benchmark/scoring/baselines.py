@@ -235,8 +235,11 @@ def from_agentrx_run(run_dir, variant=None, repetition=None, system=None):
 
     AgentRx gives one prediction per run; when several repetitions are present,
     each distinct step becomes a hypothesis with confidence = vote share.
+    When every pooled run of a trajectory carries a ranked list (``ranked_candidates`` from
+    ``protocol='mp_rl'`` or ``recovery_handoff.candidates`` from ``protocol='ranked'``), its top
+    3 distinct steps become hypotheses with confidence = mean candidate probability over runs.
     """
-    votes = {}
+    votes, ranked = {}, {}
     for path in sorted(Path(run_dir).glob('jobs/*/rep-*/*/*/result.json')):
         parts = path.parts
         if variant and parts[-5] != variant:
@@ -248,6 +251,8 @@ def from_agentrx_run(run_dir, variant=None, repetition=None, system=None):
         tid = str(result['trajectory_id'])
         bucket = votes.setdefault(tid, {'total': 0, 'steps': {}})
         bucket['total'] += 1
+        listed = result.get('ranked_candidates', (result.get('recovery_handoff') or {}).get('candidates'))
+        ranked.setdefault(tid, []).append(listed)
         if not prediction or prediction.get('category') == 'Inconclusive' or prediction.get('step_index') is None:
             continue
         mapped, _ = from_agentrx(prediction['category'])
@@ -257,6 +262,9 @@ def from_agentrx_run(run_dir, variant=None, repetition=None, system=None):
         entry['modes'][mapped] = entry['modes'].get(mapped, 0) + 1
     rows = []
     for tid, bucket in sorted(votes.items()):
+        if all(listed is not None for listed in ranked[tid]):
+            rows.append({'trajectory_id': tid, 'hypotheses': _ranked_hypotheses(ranked[tid])})
+            continue
         hyps = []
         for step, entry in sorted(bucket['steps'].items(), key=lambda kv: (-kv[1]['votes'], kv[0]))[:3]:
             label = max(entry['modes'].items(), key=lambda kv: kv[1])[0]
@@ -265,3 +273,23 @@ def from_agentrx_run(run_dir, variant=None, repetition=None, system=None):
                          'confidence': round(entry['votes'] / bucket['total'], 4)})
         rows.append({'trajectory_id': tid, 'hypotheses': hyps})
     return _submission(system or f'agentrx:{variant or "all"}', rows, 'output_only')
+
+
+def _ranked_hypotheses(runs):
+    """Pool per-run ranked candidate lists: distinct steps by mean probability (absent from a run = 0)."""
+    steps = {}
+    for listed in runs:
+        for c in listed:
+            try:
+                mapped, _ = from_agentrx(c['category'])
+            except ValueError:
+                continue
+            p = float(c.get('probability', c.get('confidence', 0.5)))
+            entry = steps.setdefault(c['step_index'], {'mass': 0.0, 'best': -1.0})
+            entry['mass'] += p
+            if p > entry['best']:
+                entry.update(best=p, agent=c.get('raw_agent') or c.get('agent', ''), mode=mapped,
+                             rationale=str(c.get('rationale', ''))[:500])
+    top = sorted(steps.items(), key=lambda kv: (-kv[1]['mass'], kv[0]))[:3]
+    return [{'step_index': step, 'agent': e['agent'], 'mode': e['mode'] if e['mode'] in MODES else 'out_of_scope',
+             'confidence': round(e['mass'] / len(runs), 4), 'rationale': e['rationale']} for step, e in top]

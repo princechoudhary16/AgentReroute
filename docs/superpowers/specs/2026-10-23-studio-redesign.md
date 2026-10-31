@@ -1,0 +1,11 @@
+# AgentReroute studio redesign and Gemini
+
+User explicitly requests a dramatic visual overhaul of both tabs, an intuitive low-clutter interface, and migration of UI inference from Ollama to Gemini's free API tier. Keep the existing Python server and real algorithms. Design choice: shared dark graphite studio, mint recovery accent and violet diagnosis accent, custom route mark, larger typography, deliberate spacing, restrained motion. No external UI dependencies.
+
+Live system: visual agent network is the main feature, with compact scenario selection, playback/scrub controls, a readable current-event inspector, progressive recovery stages, and expandable full trace/payload. Preserve tool hover/focus, pan/zoom, all four scenarios, offline exports. Label scripted simulation accurately; do not present it as cloud inference.
+
+Compare engines: Gemini setup/configuration, clear scenario/model/run controls, two differentiated algorithm panels, actual progress, outcomes and ranked candidates. Preserve all requests, checks, errors, performance, shared trace and playback; reduce visual repetition through disclosures. Show archived provider identity, never relabel Ollama history Gemini. Present uncertainties and initial weights accurately without dominating the product interface.
+
+Gemini: existing HTTPS OpenAI-compatible provider extended for agent replay. Default gemini-3.5-flash-lite; gemini-3.8-flash remains selectable (both free tiers documented by Google on 2026-10-23). Live connection probes measured 1.36s for Lite versus 171.49s for Flash, motivating the interactive default; these observations do not establish general latency or accuracy. Server reads only the ignored root .env key or environment; environment wins. No credentials in browser/artifacts/logs; key changes picked up for new runs without restart. No paid-tier switch or billing changes. Quotas and billing are account controlled. Missing key gets an actionable setup state, not fake connectivity. Preserve CLI Ollama support.
+
+Verify functional behavior, both viewports, missing-key and recorded-run states, no secret exposure, actual provider/request contracts and suite regressions. Live API verification depends on supplied key; finish all offline/UI work regardless. Leave UI on 8765. No push.

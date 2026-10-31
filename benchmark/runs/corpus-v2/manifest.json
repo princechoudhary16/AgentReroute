@@ -1,0 +1,212 @@
+{
+  "benchmark": "agentreroute-bench",
+  "version": "0.1.0",
+  "splits": {
+    "train": {
+      "total": 233,
+      "by_label": {
+        "clean": 16,
+        "context_propagation": 31,
+        "cycles": 12,
+        "drift": 22,
+        "instruction_adherence": 34,
+        "misinterpretation_of_tool_output": 4,
+        "missing_details": 2,
+        "tolerated": 104,
+        "tool_failure": 8
+      }
+    },
+    "calibration": {
+      "total": 93,
+      "by_label": {
+        "clean": 6,
+        "context_propagation": 14,
+        "cycles": 2,
+        "drift": 7,
+        "instruction_adherence": 18,
+        "misinterpretation_of_tool_output": 2,
+        "tolerated": 44
+      }
+    },
+    "test": {
+      "total": 165,
+      "by_label": {
+        "clean": 13,
+        "context_propagation": 34,
+        "cycles": 3,
+        "drift": 24,
+        "instruction_adherence": 26,
+        "misinterpretation_of_tool_output": 4,
+        "missing_details": 2,
+        "tolerated": 52,
+        "tool_failure": 7
+      }
+    }
+  },
+  "ratios": {
+    "train": 0.5,
+    "calibration": 0.2,
+    "test": 0.3
+  },
+  "split_policy": "disjoint by task template; held-out variants only in test",
+  "heldout_variants": [
+    "tool_error[cell=explicit_persistent]",
+    "stale_output[cell=silent_persistent]",
+    "drop_context[persistence=persistent,variant=truncate]",
+    "misread_value[target=claim]",
+    "policy_contradiction[directive=skip_verification]",
+    "misroute[persistence=persistent]"
+  ],
+  "dropped": {
+    "heldout_variant_outside_test": 118,
+    "unlabeled_natural": 80,
+    "not_activated": 44,
+    "degraded": 0,
+    "lenient_response": 0
+  },
+  "lenient_episodes": 0,
+  "sources": [
+    {
+      "generation_dir": "benchmark/runs/gen-v2-0",
+      "identity": {
+        "backend": "ollama",
+        "model": "qwen2.5:32b",
+        "temperature": 0.0,
+        "seeds": [
+          0
+        ],
+        "max_steps": 60,
+        "domain_source": {
+          "kind": "tau-bench",
+          "repo": "sierra-research/tau-bench",
+          "ref": "main",
+          "commit": "59a200c6d575d595120f1cb70fea53cef0632f6b",
+          "files": {
+            "users.json": "6f4fd104cc5e80b92166c4035315c31532c6cea52a90dcdf18425ee7f87c2b82",
+            "orders.json": "2598a12586d28f2d6bd16bc86f4c800029b6af18e0abb5c475ef5c869c11ced1",
+            "products.json": "a9eabcc1a9742c5f5288c2779acce52b9308423383ed24706bbaf0889f762a0f",
+            "policy.md": "d539fd2a46a8b8dd2e934ff9ed92f43e9f6b56bc7a718db8d2803ba8ad8f6bf7",
+            "tasks_test.py": "6f09468923c6cfb6162e94fe659264d6aee70816c18d51278fb4a581db7765a4"
+          },
+          "n_tasks": 115,
+          "license": "MIT (tau-bench)"
+        },
+        "workflow_version": 2,
+        "operators_version": 3,
+        "prompts_digest": "567b2ff3d9737f2bcf768eb248937ee149ecf6724cd7cea1c9c5df8f70614183",
+        "actor_response_schema": true,
+        "num_ctx": 16384,
+        "model_digest": "e7249b94677fa4b92c87eeffcc1b63f795a19f130b705b8ce099cc4c89e0ea8e"
+      }
+    },
+    {
+      "generation_dir": "benchmark/runs/gen-v2-1",
+      "identity": {
+        "backend": "ollama",
+        "model": "qwen2.5:32b",
+        "temperature": 0.0,
+        "seeds": [
+          0
+        ],
+        "max_steps": 60,
+        "domain_source": {
+          "kind": "tau-bench",
+          "repo": "sierra-research/tau-bench",
+          "ref": "main",
+          "commit": "59a200c6d575d595120f1cb70fea53cef0632f6b",
+          "files": {
+            "users.json": "6f4fd104cc5e80b92166c4035315c31532c6cea52a90dcdf18425ee7f87c2b82",
+            "orders.json": "2598a12586d28f2d6bd16bc86f4c800029b6af18e0abb5c475ef5c869c11ced1",
+            "products.json": "a9eabcc1a9742c5f5288c2779acce52b9308423383ed24706bbaf0889f762a0f",
+            "policy.md": "d539fd2a46a8b8dd2e934ff9ed92f43e9f6b56bc7a718db8d2803ba8ad8f6bf7",
+            "tasks_test.py": "6f09468923c6cfb6162e94fe659264d6aee70816c18d51278fb4a581db7765a4"
+          },
+          "n_tasks": 115,
+          "license": "MIT (tau-bench)"
+        },
+        "workflow_version": 2,
+        "operators_version": 3,
+        "prompts_digest": "567b2ff3d9737f2bcf768eb248937ee149ecf6724cd7cea1c9c5df8f70614183",
+        "actor_response_schema": true,
+        "num_ctx": 16384,
+        "model_digest": "e7249b94677fa4b92c87eeffcc1b63f795a19f130b705b8ce099cc4c89e0ea8e"
+      }
+    },
+    {
+      "generation_dir": "benchmark/runs/gen-v2-2",
+      "identity": {
+        "backend": "ollama",
+        "model": "qwen2.5:32b",
+        "temperature": 0.0,
+        "seeds": [
+          0
+        ],
+        "max_steps": 60,
+        "domain_source": {
+          "kind": "tau-bench",
+          "repo": "sierra-research/tau-bench",
+          "ref": "main",
+          "commit": "59a200c6d575d595120f1cb70fea53cef0632f6b",
+          "files": {
+            "users.json": "6f4fd104cc5e80b92166c4035315c31532c6cea52a90dcdf18425ee7f87c2b82",
+            "orders.json": "2598a12586d28f2d6bd16bc86f4c800029b6af18e0abb5c475ef5c869c11ced1",
+            "products.json": "a9eabcc1a9742c5f5288c2779acce52b9308423383ed24706bbaf0889f762a0f",
+            "policy.md": "d539fd2a46a8b8dd2e934ff9ed92f43e9f6b56bc7a718db8d2803ba8ad8f6bf7",
+            "tasks_test.py": "6f09468923c6cfb6162e94fe659264d6aee70816c18d51278fb4a581db7765a4"
+          },
+          "n_tasks": 115,
+          "license": "MIT (tau-bench)"
+        },
+        "workflow_version": 2,
+        "operators_version": 3,
+        "prompts_digest": "567b2ff3d9737f2bcf768eb248937ee149ecf6724cd7cea1c9c5df8f70614183",
+        "actor_response_schema": true,
+        "num_ctx": 16384,
+        "model_digest": "e7249b94677fa4b92c87eeffcc1b63f795a19f130b705b8ce099cc4c89e0ea8e"
+      }
+    },
+    {
+      "generation_dir": "benchmark/runs/gen-v2-3",
+      "identity": {
+        "backend": "ollama",
+        "model": "qwen2.5:32b",
+        "temperature": 0.0,
+        "seeds": [
+          0
+        ],
+        "max_steps": 60,
+        "domain_source": {
+          "kind": "tau-bench",
+          "repo": "sierra-research/tau-bench",
+          "ref": "main",
+          "commit": "59a200c6d575d595120f1cb70fea53cef0632f6b",
+          "files": {
+            "users.json": "6f4fd104cc5e80b92166c4035315c31532c6cea52a90dcdf18425ee7f87c2b82",
+            "orders.json": "2598a12586d28f2d6bd16bc86f4c800029b6af18e0abb5c475ef5c869c11ced1",
+            "products.json": "a9eabcc1a9742c5f5288c2779acce52b9308423383ed24706bbaf0889f762a0f",
+            "policy.md": "d539fd2a46a8b8dd2e934ff9ed92f43e9f6b56bc7a718db8d2803ba8ad8f6bf7",
+            "tasks_test.py": "6f09468923c6cfb6162e94fe659264d6aee70816c18d51278fb4a581db7765a4"
+          },
+          "n_tasks": 115,
+          "license": "MIT (tau-bench)"
+        },
+        "workflow_version": 2,
+        "operators_version": 3,
+        "prompts_digest": "567b2ff3d9737f2bcf768eb248937ee149ecf6724cd7cea1c9c5df8f70614183",
+        "actor_response_schema": true,
+        "num_ctx": 16384,
+        "model_digest": "e7249b94677fa4b92c87eeffcc1b63f795a19f130b705b8ce099cc4c89e0ea8e"
+      }
+    }
+  ],
+  "agentrx_export": {
+    "train": 113,
+    "calibration": 43,
+    "test": 100
+  },
+  "gold_hash": "75e8bc3f07771bbf77ed9cb483105a9c1a76370c5f4e4dcc19b0448c7b0f5017",
+  "views": [
+    "full",
+    "output_only"
+  ]
+}

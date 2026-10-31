@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"find_user_id_by_email\", \"arguments\": {\"email\": \"isabella.johansson@example.com\"}, \"context\": {\"email\": \"isabella.johansson@example.com\"}}", "tokens_in": 2445, "tokens_out": 47, "model": "qwen2.5:32b", "lenient": false}

@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"handoff\", \"to\": \"product_agent\", \"message\": \"User wants to know the return policy for a vacuum cleaner.\", \"context\": {\"user_id\": \"daiki_johnson_9523\"}, \"content\": \"\"}", "tokens_in": 3890, "tokens_out": 55, "model": "qwen2.5:32b", "lenient": false}

@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"There was an error processing the request as the order could not be found. Please verify the order details and try again.\"}", "tokens_in": 2694, "tokens_out": 36, "model": "qwen2.5:32b", "lenient": false}

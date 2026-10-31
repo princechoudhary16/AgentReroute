@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I see that your profile has a credit card on file, but there is no gift card listed. Could you confirm if you have a gift card associated with your account? If so, I can assist you further.\"}", "tokens_in": 4871, "tokens_out": 55, "model": "qwen2.5:32b", "lenient": false}

@@ -1,0 +1,78 @@
+[
+  {
+    "domain": "tau",
+    "variant": "agentrx",
+    "repetition": 0,
+    "confusion_matrix": {
+      "MisinterpretationOfToolOutput": {
+        "Instruction/PlanAdherenceFailure": 1,
+        "InvalidInvocation": 4,
+        "<failed>": 2
+      },
+      "Instruction/PlanAdherenceFailure": {
+        "Instruction/PlanAdherenceFailure": 2,
+        "InvalidInvocation": 1
+      },
+      "UnderspecifiedUserIntent": {
+        "Instruction/PlanAdherenceFailure": 6,
+        "InvalidInvocation": 2
+      },
+      "IntentPlanMisalignment": {
+        "Instruction/PlanAdherenceFailure": 4,
+        "InvalidInvocation": 3
+      },
+      "InvalidInvocation": {
+        "InvalidInvocation": 1
+      },
+      "IntentNotSupported": {
+        "Instruction/PlanAdherenceFailure": 2
+      },
+      "SystemFailure": {
+        "Instruction/PlanAdherenceFailure": 1
+      }
+    }
+  },
+  {
+    "domain": "magentic",
+    "variant": "agentrx",
+    "repetition": 0,
+    "confusion_matrix": {
+      "InventionOfNewInformation": {
+        "Instruction/PlanAdherenceFailure": 2,
+        "GuardrailsTriggered": 1,
+        "InventionOfNewInformation": 1
+      },
+      "MisinterpretationOfToolOutput": {
+        "Instruction/PlanAdherenceFailure": 7,
+        "SystemFailure": 3,
+        "MisinterpretationOfToolOutput": 3,
+        "InventionOfNewInformation": 1,
+        "GuardrailsTriggered": 1
+      },
+      "GuardrailsTriggered": {
+        "Instruction/PlanAdherenceFailure": 2,
+        "GuardrailsTriggered": 3,
+        "InventionOfNewInformation": 3,
+        "<failed>": 1
+      },
+      "IntentPlanMisalignment": {
+        "Instruction/PlanAdherenceFailure": 3,
+        "SystemFailure": 1
+      },
+      "IntentNotSupported": {
+        "Instruction/PlanAdherenceFailure": 1,
+        "<failed>": 1,
+        "GuardrailsTriggered": 1
+      },
+      "Instruction/PlanAdherenceFailure": {
+        "Instruction/PlanAdherenceFailure": 4,
+        "<failed>": 1,
+        "UnderspecifiedUserIntent": 1,
+        "InventionOfNewInformation": 2
+      },
+      "SystemFailure": {
+        "Instruction/PlanAdherenceFailure": 1
+      }
+    }
+  }
+]

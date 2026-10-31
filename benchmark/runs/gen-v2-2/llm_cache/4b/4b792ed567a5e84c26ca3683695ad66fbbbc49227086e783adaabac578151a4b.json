@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"The shipping address for order #W1092119 has been successfully changed to 760 Elm Avenue, Suite 564, Houston, TX 77034. Additionally, the user's default address has been updated to the same address.\"}", "tokens_in": 3889, "tokens_out": 69, "model": "qwen2.5:32b", "lenient": false}

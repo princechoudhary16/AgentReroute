@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"get_product_details\", \"arguments\": {\"product_id\": \"8560156827\"}, \"context\": {\"user_id\": \"yusuf_hernandez_6785\", \"order_id\": \"#W2466703\", \"item_id\": \"9385662952\"}, \"content\": \"\"}", "tokens_in": 4941, "tokens_out": 89, "model": "qwen2.5:32b", "lenient": false}

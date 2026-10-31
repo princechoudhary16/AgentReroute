@@ -1,0 +1,2218 @@
+[
+  {
+    "trajectory_id": "tr-0091d8de9a4b9f5c",
+    "status": "clean",
+    "split": "calibration",
+    "source": "clean_run",
+    "domain": "retail",
+    "task_template": "retail-026",
+    "measurement_kind": "model",
+    "critical": null
+  },
+  {
+    "trajectory_id": "tr-053cdfba63cd0bd3",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 27,
+      "agent": "returns_agent",
+      "mode": "misinterpretation_of_tool_output"
+    },
+    "fault_step": 27,
+    "acceptable_steps": [
+      27
+    ],
+    "injection": {
+      "operator": "misread_value",
+      "mode": "misinterpretation_of_tool_output",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {
+        "target": "argument"
+      },
+      "timing": "early",
+      "variant": "misread_value[target=argument]"
+    }
+  },
+  {
+    "trajectory_id": "tr-079b45de7b81c483",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "irrelevant_tool",
+      "mode": "drift",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {
+        "persistence": "once"
+      },
+      "timing": "middle",
+      "variant": "irrelevant_tool[persistence=once]"
+    }
+  },
+  {
+    "trajectory_id": "tr-08c6a9cc65fd7f2f",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-095",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=once,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-0904579a920e46d5",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-092",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "misroute",
+      "mode": "drift",
+      "method": "message_routing",
+      "level": "agent",
+      "params": {
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "misroute[persistence=once]"
+    }
+  },
+  {
+    "trajectory_id": "tr-130cfacfafed8dfa",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-092",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 33,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 33,
+    "acceptable_steps": [
+      33
+    ],
+    "injection": {
+      "operator": "skip_write",
+      "mode": "instruction_adherence",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "middle",
+      "variant": "skip_write"
+    }
+  },
+  {
+    "trajectory_id": "tr-13f81bfdc6bc98a3",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-092",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "omit_detail",
+      "mode": "missing_details",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "early",
+      "variant": "omit_detail"
+    }
+  },
+  {
+    "trajectory_id": "tr-141be217b486b90e",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 10,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 10,
+    "acceptable_steps": [
+      10
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "truncate",
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=once,variant=truncate]"
+    }
+  },
+  {
+    "trajectory_id": "tr-1903f3d6b2099342",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 25,
+      "agent": "returns_agent",
+      "mode": "drift"
+    },
+    "fault_step": 25,
+    "acceptable_steps": [
+      25
+    ],
+    "injection": {
+      "operator": "irrelevant_tool",
+      "mode": "drift",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {
+        "persistence": "persistent"
+      },
+      "timing": "early",
+      "variant": "irrelevant_tool[persistence=persistent]"
+    }
+  },
+  {
+    "trajectory_id": "tr-240c15ca83dc0998",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "skip_write",
+      "mode": "instruction_adherence",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "late",
+      "variant": "skip_write"
+    }
+  },
+  {
+    "trajectory_id": "tr-2673615c327c6e16",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-026",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "misroute",
+      "mode": "drift",
+      "method": "message_routing",
+      "level": "agent",
+      "params": {
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "misroute[persistence=once]"
+    }
+  },
+  {
+    "trajectory_id": "tr-27a2a96fe6611195",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 16,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 16,
+    "acceptable_steps": [
+      16
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=once,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-2f370547ce783e28",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 17,
+      "agent": "returns_agent",
+      "mode": "cycles"
+    },
+    "fault_step": 14,
+    "acceptable_steps": [
+      14,
+      15,
+      17,
+      19
+    ],
+    "injection": {
+      "operator": "stuck_processing",
+      "mode": "cycles",
+      "method": "tool_perturbation",
+      "level": "environment",
+      "params": {},
+      "timing": "middle",
+      "variant": "stuck_processing"
+    }
+  },
+  {
+    "trajectory_id": "tr-3062e011bcd2f374",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-026",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 25,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 25,
+    "acceptable_steps": [
+      25
+    ],
+    "injection": {
+      "operator": "skip_write",
+      "mode": "instruction_adherence",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "early",
+      "variant": "skip_write"
+    }
+  },
+  {
+    "trajectory_id": "tr-3192ca086562910a",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "misroute",
+      "mode": "drift",
+      "method": "message_routing",
+      "level": "agent",
+      "params": {
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "misroute[persistence=once]"
+    }
+  },
+  {
+    "trajectory_id": "tr-35f34f39cce066c7",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-095",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 16,
+      "agent": "planner",
+      "mode": "drift"
+    },
+    "fault_step": 16,
+    "acceptable_steps": [
+      16
+    ],
+    "injection": {
+      "operator": "misroute",
+      "mode": "drift",
+      "method": "message_routing",
+      "level": "agent",
+      "params": {
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "misroute[persistence=once]"
+    }
+  },
+  {
+    "trajectory_id": "tr-371fbe41623a44ae",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 16,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 16,
+    "acceptable_steps": [
+      16
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "persistent"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=persistent,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-3947483f79a1df65",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "stale_output",
+      "mode": "tool_failure",
+      "method": "tool_perturbation",
+      "level": "environment",
+      "params": {
+        "cell": "silent_transient"
+      },
+      "timing": "early",
+      "variant": "stale_output[cell=silent_transient]"
+    }
+  },
+  {
+    "trajectory_id": "tr-399a4915c2f3c4f6",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "stuck_processing",
+      "mode": "cycles",
+      "method": "tool_perturbation",
+      "level": "environment",
+      "params": {},
+      "timing": "middle",
+      "variant": "stuck_processing"
+    }
+  },
+  {
+    "trajectory_id": "tr-3c0367fc1d7c6997",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "omit_detail",
+      "mode": "missing_details",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "middle",
+      "variant": "omit_detail"
+    }
+  },
+  {
+    "trajectory_id": "tr-3ce857a421b29e27",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "misroute",
+      "mode": "drift",
+      "method": "message_routing",
+      "level": "agent",
+      "params": {
+        "persistence": "once"
+      },
+      "timing": "middle",
+      "variant": "misroute[persistence=once]"
+    }
+  },
+  {
+    "trajectory_id": "tr-3fb840bffb9f77f4",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "irrelevant_tool",
+      "mode": "drift",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "irrelevant_tool[persistence=once]"
+    }
+  },
+  {
+    "trajectory_id": "tr-426045aadf1a918f",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-026",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "omit_detail",
+      "mode": "missing_details",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "middle",
+      "variant": "omit_detail"
+    }
+  },
+  {
+    "trajectory_id": "tr-428b3507772ab2c8",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 24,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 24,
+    "acceptable_steps": [
+      24
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "persistent"
+      },
+      "timing": "middle",
+      "variant": "drop_context[persistence=persistent,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-44936770d308c650",
+    "status": "clean",
+    "split": "calibration",
+    "source": "clean_run",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null
+  },
+  {
+    "trajectory_id": "tr-466df6ba92cf669d",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-095",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "omit_detail",
+      "mode": "missing_details",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "early",
+      "variant": "omit_detail"
+    }
+  },
+  {
+    "trajectory_id": "tr-49cc99c105fc914e",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "tool_error",
+      "mode": "tool_failure",
+      "method": "tool_perturbation",
+      "level": "environment",
+      "params": {
+        "cell": "explicit_transient"
+      },
+      "timing": "early",
+      "variant": "tool_error[cell=explicit_transient]"
+    }
+  },
+  {
+    "trajectory_id": "tr-49e937954441defe",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-026",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "omit_detail",
+      "mode": "missing_details",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "early",
+      "variant": "omit_detail"
+    }
+  },
+  {
+    "trajectory_id": "tr-4b00948cafc5d080",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "stale_output",
+      "mode": "tool_failure",
+      "method": "tool_perturbation",
+      "level": "environment",
+      "params": {
+        "cell": "silent_transient"
+      },
+      "timing": "middle",
+      "variant": "stale_output[cell=silent_transient]"
+    }
+  },
+  {
+    "trajectory_id": "tr-4d4689dd787ab691",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 15,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 15,
+    "acceptable_steps": [
+      15
+    ],
+    "injection": {
+      "operator": "policy_contradiction",
+      "mode": "instruction_adherence",
+      "method": "prompt_mutation",
+      "level": "agent",
+      "params": {
+        "directive": "no_writes"
+      },
+      "timing": "early",
+      "variant": "policy_contradiction[directive=no_writes]"
+    }
+  },
+  {
+    "trajectory_id": "tr-50475cbf788e866a",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "stale_output",
+      "mode": "tool_failure",
+      "method": "tool_perturbation",
+      "level": "environment",
+      "params": {
+        "cell": "silent_transient"
+      },
+      "timing": "middle",
+      "variant": "stale_output[cell=silent_transient]"
+    }
+  },
+  {
+    "trajectory_id": "tr-51e49e078242fb2e",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-026",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 24,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 24,
+    "acceptable_steps": [
+      24
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "persistent"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=persistent,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-533cd54c10159d11",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 17,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 17,
+    "acceptable_steps": [
+      17
+    ],
+    "injection": {
+      "operator": "policy_contradiction",
+      "mode": "instruction_adherence",
+      "method": "prompt_mutation",
+      "level": "agent",
+      "params": {
+        "directive": "no_writes"
+      },
+      "timing": "early",
+      "variant": "policy_contradiction[directive=no_writes]"
+    }
+  },
+  {
+    "trajectory_id": "tr-58661523340d52e1",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 25,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 25,
+    "acceptable_steps": [
+      25
+    ],
+    "injection": {
+      "operator": "skip_write",
+      "mode": "instruction_adherence",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "middle",
+      "variant": "skip_write"
+    }
+  },
+  {
+    "trajectory_id": "tr-5ba9d613bd6f53cb",
+    "status": "clean",
+    "split": "calibration",
+    "source": "clean_run",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": null
+  },
+  {
+    "trajectory_id": "tr-5da47d602f5a8f22",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 27,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 27,
+    "acceptable_steps": [
+      27
+    ],
+    "injection": {
+      "operator": "skip_write",
+      "mode": "instruction_adherence",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "late",
+      "variant": "skip_write"
+    }
+  },
+  {
+    "trajectory_id": "tr-5fd8c16927993ba5",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 25,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 25,
+    "acceptable_steps": [
+      25
+    ],
+    "injection": {
+      "operator": "policy_contradiction",
+      "mode": "instruction_adherence",
+      "method": "prompt_mutation",
+      "level": "agent",
+      "params": {
+        "directive": "no_writes"
+      },
+      "timing": "middle",
+      "variant": "policy_contradiction[directive=no_writes]"
+    }
+  },
+  {
+    "trajectory_id": "tr-638fa6b5cca7672b",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "policy_contradiction",
+      "mode": "instruction_adherence",
+      "method": "prompt_mutation",
+      "level": "agent",
+      "params": {
+        "directive": "no_writes"
+      },
+      "timing": "late",
+      "variant": "policy_contradiction[directive=no_writes]"
+    }
+  },
+  {
+    "trajectory_id": "tr-64ec76ed1bb0814f",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=once,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-6c486cfe6cdbfd6f",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 10,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 10,
+    "acceptable_steps": [
+      10
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "persistent"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=persistent,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-6efd4e92636765dd",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "omit_detail",
+      "mode": "missing_details",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "early",
+      "variant": "omit_detail"
+    }
+  },
+  {
+    "trajectory_id": "tr-700a8c498f1dff60",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 13,
+      "agent": "returns_agent",
+      "mode": "drift"
+    },
+    "fault_step": 13,
+    "acceptable_steps": [
+      13
+    ],
+    "injection": {
+      "operator": "irrelevant_tool",
+      "mode": "drift",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {
+        "persistence": "persistent"
+      },
+      "timing": "middle",
+      "variant": "irrelevant_tool[persistence=persistent]"
+    }
+  },
+  {
+    "trajectory_id": "tr-778c1de110a9316c",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "omit_detail",
+      "mode": "missing_details",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "early",
+      "variant": "omit_detail"
+    }
+  },
+  {
+    "trajectory_id": "tr-77bed9e375eea314",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-026",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 25,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 25,
+    "acceptable_steps": [
+      25
+    ],
+    "injection": {
+      "operator": "policy_contradiction",
+      "mode": "instruction_adherence",
+      "method": "prompt_mutation",
+      "level": "agent",
+      "params": {
+        "directive": "no_writes"
+      },
+      "timing": "early",
+      "variant": "policy_contradiction[directive=no_writes]"
+    }
+  },
+  {
+    "trajectory_id": "tr-7f567a2ca944ba04",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-026",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=once,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-82104dbd373703d1",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "once"
+      },
+      "timing": "middle",
+      "variant": "drop_context[persistence=once,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-8289a46e8fd8e6f4",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-092",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 30,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 30,
+    "acceptable_steps": [
+      30
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "persistent"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=persistent,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-828ce124309f8439",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 11,
+      "agent": "returns_agent",
+      "mode": "drift"
+    },
+    "fault_step": 11,
+    "acceptable_steps": [
+      11
+    ],
+    "injection": {
+      "operator": "irrelevant_tool",
+      "mode": "drift",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {
+        "persistence": "persistent"
+      },
+      "timing": "early",
+      "variant": "irrelevant_tool[persistence=persistent]"
+    }
+  },
+  {
+    "trajectory_id": "tr-847fef8d1a153dd1",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-092",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=once,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-8b76da67b47d3621",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 16,
+      "agent": "planner",
+      "mode": "drift"
+    },
+    "fault_step": 16,
+    "acceptable_steps": [
+      16
+    ],
+    "injection": {
+      "operator": "misroute",
+      "mode": "drift",
+      "method": "message_routing",
+      "level": "agent",
+      "params": {
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "misroute[persistence=once]"
+    }
+  },
+  {
+    "trajectory_id": "tr-8c8b4181fe5c1411",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-092",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "truncate",
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=once,variant=truncate]"
+    }
+  },
+  {
+    "trajectory_id": "tr-8dd0e940520de9e3",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-092",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 31,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 31,
+    "acceptable_steps": [
+      31
+    ],
+    "injection": {
+      "operator": "skip_write",
+      "mode": "instruction_adherence",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "early",
+      "variant": "skip_write"
+    }
+  },
+  {
+    "trajectory_id": "tr-8ec3e08bf422e358",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-095",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 17,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 17,
+    "acceptable_steps": [
+      17
+    ],
+    "injection": {
+      "operator": "skip_write",
+      "mode": "instruction_adherence",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "early",
+      "variant": "skip_write"
+    }
+  },
+  {
+    "trajectory_id": "tr-902e66320c2c3abf",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 15,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 15,
+    "acceptable_steps": [
+      15
+    ],
+    "injection": {
+      "operator": "skip_write",
+      "mode": "instruction_adherence",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "early",
+      "variant": "skip_write"
+    }
+  },
+  {
+    "trajectory_id": "tr-90e9fbac14749797",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=once,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-9523f05690cf6aed",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 10,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 10,
+    "acceptable_steps": [
+      10
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "truncate",
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=once,variant=truncate]"
+    }
+  },
+  {
+    "trajectory_id": "tr-98684e65d5142315",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 22,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 22,
+    "acceptable_steps": [
+      22
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "persistent"
+      },
+      "timing": "middle",
+      "variant": "drop_context[persistence=persistent,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-99aadf9c4473cdd2",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "persistent"
+      },
+      "timing": "late",
+      "variant": "drop_context[persistence=persistent,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-9ad10be885d7b718",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 23,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 23,
+    "acceptable_steps": [
+      23
+    ],
+    "injection": {
+      "operator": "policy_contradiction",
+      "mode": "instruction_adherence",
+      "method": "prompt_mutation",
+      "level": "agent",
+      "params": {
+        "directive": "no_writes"
+      },
+      "timing": "middle",
+      "variant": "policy_contradiction[directive=no_writes]"
+    }
+  },
+  {
+    "trajectory_id": "tr-a345aad86ade0cb1",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "omit_detail",
+      "mode": "missing_details",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "early",
+      "variant": "omit_detail"
+    }
+  },
+  {
+    "trajectory_id": "tr-a57b40dc20a190c0",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-095",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 17,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 17,
+    "acceptable_steps": [
+      17
+    ],
+    "injection": {
+      "operator": "policy_contradiction",
+      "mode": "instruction_adherence",
+      "method": "prompt_mutation",
+      "level": "agent",
+      "params": {
+        "directive": "no_writes"
+      },
+      "timing": "early",
+      "variant": "policy_contradiction[directive=no_writes]"
+    }
+  },
+  {
+    "trajectory_id": "tr-a5c8fdb5176d338e",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "truncate",
+        "persistence": "once"
+      },
+      "timing": "middle",
+      "variant": "drop_context[persistence=once,variant=truncate]"
+    }
+  },
+  {
+    "trajectory_id": "tr-a85353134646073b",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-026",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 24,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 24,
+    "acceptable_steps": [
+      24
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "truncate",
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=once,variant=truncate]"
+    }
+  },
+  {
+    "trajectory_id": "tr-aab281d39de26dad",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "once"
+      },
+      "timing": "middle",
+      "variant": "drop_context[persistence=once,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-afef8ae6bd060591",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 15,
+      "agent": "returns_agent",
+      "mode": "misinterpretation_of_tool_output"
+    },
+    "fault_step": 15,
+    "acceptable_steps": [
+      15
+    ],
+    "injection": {
+      "operator": "misread_value",
+      "mode": "misinterpretation_of_tool_output",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {
+        "target": "argument"
+      },
+      "timing": "early",
+      "variant": "misread_value[target=argument]"
+    }
+  },
+  {
+    "trajectory_id": "tr-b258bf243688e9a5",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 11,
+      "agent": "returns_agent",
+      "mode": "drift"
+    },
+    "fault_step": 11,
+    "acceptable_steps": [
+      11
+    ],
+    "injection": {
+      "operator": "irrelevant_tool",
+      "mode": "drift",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "irrelevant_tool[persistence=once]"
+    }
+  },
+  {
+    "trajectory_id": "tr-b34d62c65c1463db",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "stale_output",
+      "mode": "tool_failure",
+      "method": "tool_perturbation",
+      "level": "environment",
+      "params": {
+        "cell": "silent_transient"
+      },
+      "timing": "early",
+      "variant": "stale_output[cell=silent_transient]"
+    }
+  },
+  {
+    "trajectory_id": "tr-b61fc7a3bc9eef0c",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 11,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 11,
+    "acceptable_steps": [
+      11
+    ],
+    "injection": {
+      "operator": "skip_write",
+      "mode": "instruction_adherence",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "early",
+      "variant": "skip_write"
+    }
+  },
+  {
+    "trajectory_id": "tr-ba7a3a81c6ef12e1",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 22,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 22,
+    "acceptable_steps": [
+      22
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "truncate",
+        "persistence": "once"
+      },
+      "timing": "middle",
+      "variant": "drop_context[persistence=once,variant=truncate]"
+    }
+  },
+  {
+    "trajectory_id": "tr-bc5a25186e7d5b89",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "tool_error",
+      "mode": "tool_failure",
+      "method": "tool_perturbation",
+      "level": "environment",
+      "params": {
+        "cell": "explicit_transient"
+      },
+      "timing": "early",
+      "variant": "tool_error[cell=explicit_transient]"
+    }
+  },
+  {
+    "trajectory_id": "tr-c1eec6199c849646",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "truncate",
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=once,variant=truncate]"
+    }
+  },
+  {
+    "trajectory_id": "tr-c8edeff689d162cb",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-092",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 31,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 31,
+    "acceptable_steps": [
+      31
+    ],
+    "injection": {
+      "operator": "policy_contradiction",
+      "mode": "instruction_adherence",
+      "method": "prompt_mutation",
+      "level": "agent",
+      "params": {
+        "directive": "no_writes"
+      },
+      "timing": "early",
+      "variant": "policy_contradiction[directive=no_writes]"
+    }
+  },
+  {
+    "trajectory_id": "tr-c915a658b2a4766a",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "tool_error",
+      "mode": "tool_failure",
+      "method": "tool_perturbation",
+      "level": "environment",
+      "params": {
+        "cell": "explicit_transient"
+      },
+      "timing": "middle",
+      "variant": "tool_error[cell=explicit_transient]"
+    }
+  },
+  {
+    "trajectory_id": "tr-cca1fdf2c5c619df",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 23,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 23,
+    "acceptable_steps": [
+      23
+    ],
+    "injection": {
+      "operator": "skip_write",
+      "mode": "instruction_adherence",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "middle",
+      "variant": "skip_write"
+    }
+  },
+  {
+    "trajectory_id": "tr-cd7438de48ae236e",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "misroute",
+      "mode": "drift",
+      "method": "message_routing",
+      "level": "agent",
+      "params": {
+        "persistence": "once"
+      },
+      "timing": "late",
+      "variant": "misroute[persistence=once]"
+    }
+  },
+  {
+    "trajectory_id": "tr-d112456421cc12f8",
+    "status": "clean",
+    "split": "calibration",
+    "source": "clean_run",
+    "domain": "retail",
+    "task_template": "retail-092",
+    "measurement_kind": "model",
+    "critical": null
+  },
+  {
+    "trajectory_id": "tr-d4e17fa0efd5da40",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 10,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 10,
+    "acceptable_steps": [
+      10
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "persistent"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=persistent,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-d5e7c4066077ffec",
+    "status": "clean",
+    "split": "calibration",
+    "source": "clean_run",
+    "domain": "retail",
+    "task_template": "retail-095",
+    "measurement_kind": "model",
+    "critical": null
+  },
+  {
+    "trajectory_id": "tr-d7a496e00323faf3",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "stuck_processing",
+      "mode": "cycles",
+      "method": "tool_perturbation",
+      "level": "environment",
+      "params": {},
+      "timing": "early",
+      "variant": "stuck_processing"
+    }
+  },
+  {
+    "trajectory_id": "tr-d993c6fd83d306b4",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "tool_error",
+      "mode": "tool_failure",
+      "method": "tool_perturbation",
+      "level": "environment",
+      "params": {
+        "cell": "explicit_transient"
+      },
+      "timing": "middle",
+      "variant": "tool_error[cell=explicit_transient]"
+    }
+  },
+  {
+    "trajectory_id": "tr-da37aaadaf2b59a1",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "irrelevant_tool",
+      "mode": "drift",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {
+        "persistence": "persistent"
+      },
+      "timing": "middle",
+      "variant": "irrelevant_tool[persistence=persistent]"
+    }
+  },
+  {
+    "trajectory_id": "tr-dc31d678ed6b8193",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-095",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "omit_detail",
+      "mode": "missing_details",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "middle",
+      "variant": "omit_detail"
+    }
+  },
+  {
+    "trajectory_id": "tr-e576c2f92dbfd1e1",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-095",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 16,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 16,
+    "acceptable_steps": [
+      16
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "persistent"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=persistent,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-e5c8fbd0f18bb8ff",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-095",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 16,
+      "agent": "planner",
+      "mode": "context_propagation"
+    },
+    "fault_step": 16,
+    "acceptable_steps": [
+      16
+    ],
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "truncate",
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "drop_context[persistence=once,variant=truncate]"
+    }
+  },
+  {
+    "trajectory_id": "tr-e5da5ddd80776c80",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 11,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 11,
+    "acceptable_steps": [
+      11
+    ],
+    "injection": {
+      "operator": "policy_contradiction",
+      "mode": "instruction_adherence",
+      "method": "prompt_mutation",
+      "level": "agent",
+      "params": {
+        "directive": "no_writes"
+      },
+      "timing": "early",
+      "variant": "policy_contradiction[directive=no_writes]"
+    }
+  },
+  {
+    "trajectory_id": "tr-e63d87dd1e8aab6d",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 22,
+      "agent": "planner",
+      "mode": "drift"
+    },
+    "fault_step": 22,
+    "acceptable_steps": [
+      22
+    ],
+    "injection": {
+      "operator": "misroute",
+      "mode": "drift",
+      "method": "message_routing",
+      "level": "agent",
+      "params": {
+        "persistence": "once"
+      },
+      "timing": "middle",
+      "variant": "misroute[persistence=once]"
+    }
+  },
+  {
+    "trajectory_id": "tr-ebea0a90a7944c22",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "drop_ids",
+        "persistence": "once"
+      },
+      "timing": "late",
+      "variant": "drop_context[persistence=once,variant=drop_ids]"
+    }
+  },
+  {
+    "trajectory_id": "tr-ee1a477f19ca9030",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "misroute",
+      "mode": "drift",
+      "method": "message_routing",
+      "level": "agent",
+      "params": {
+        "persistence": "once"
+      },
+      "timing": "early",
+      "variant": "misroute[persistence=once]"
+    }
+  },
+  {
+    "trajectory_id": "tr-f110147a430fdc80",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 15,
+      "agent": "returns_agent",
+      "mode": "cycles"
+    },
+    "fault_step": 12,
+    "acceptable_steps": [
+      12,
+      13,
+      15,
+      17
+    ],
+    "injection": {
+      "operator": "stuck_processing",
+      "mode": "cycles",
+      "method": "tool_perturbation",
+      "level": "environment",
+      "params": {},
+      "timing": "early",
+      "variant": "stuck_processing"
+    }
+  },
+  {
+    "trajectory_id": "tr-fa2e669852e714bb",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "irrelevant_tool",
+      "mode": "drift",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {
+        "persistence": "once"
+      },
+      "timing": "middle",
+      "variant": "irrelevant_tool[persistence=once]"
+    }
+  },
+  {
+    "trajectory_id": "tr-fbc53501bd2b816c",
+    "status": "tolerated",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-083",
+    "measurement_kind": "model",
+    "critical": null,
+    "injection": {
+      "operator": "drop_context",
+      "mode": "context_propagation",
+      "method": "message_manipulation",
+      "level": "agent",
+      "params": {
+        "variant": "truncate",
+        "persistence": "once"
+      },
+      "timing": "late",
+      "variant": "drop_context[persistence=once,variant=truncate]"
+    }
+  },
+  {
+    "trajectory_id": "tr-fc359b378c341c8c",
+    "status": "clean",
+    "split": "calibration",
+    "source": "clean_run",
+    "domain": "retail",
+    "task_template": "retail-001",
+    "measurement_kind": "model",
+    "critical": null
+  },
+  {
+    "trajectory_id": "tr-ffeb4a274cfe927b",
+    "status": "failed",
+    "split": "calibration",
+    "source": "injected",
+    "domain": "retail",
+    "task_template": "retail-011",
+    "measurement_kind": "model",
+    "critical": {
+      "step_index": 17,
+      "agent": "returns_agent",
+      "mode": "instruction_adherence"
+    },
+    "fault_step": 17,
+    "acceptable_steps": [
+      17
+    ],
+    "injection": {
+      "operator": "skip_write",
+      "mode": "instruction_adherence",
+      "method": "response_rewrite",
+      "level": "agent",
+      "params": {},
+      "timing": "early",
+      "variant": "skip_write"
+    }
+  }
+]

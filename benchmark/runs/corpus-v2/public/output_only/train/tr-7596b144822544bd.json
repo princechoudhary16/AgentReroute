@@ -1,0 +1,401 @@
+{
+  "trajectory_id": "tr-7596b144822544bd",
+  "domain": "retail",
+  "instruction": "Hello, my name is Ivan Johnson. I recently ordered a perfume and I'd like to upgrade to the largest size available. Can you assist with that?",
+  "instruction_source": "first_user_message",
+  "view": "output_only",
+  "steps": [
+    {
+      "index": 1,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Hello, my name is Ivan Johnson. I recently ordered a perfume and I'd like to upgrade to the largest size available. Can you assist with that?"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"find_user_id_by_name_zip\", \"arguments\": {\"first_name\": \"Ivan\", \"last_name\": \"Johnson\", \"zip\": \"10001\"}, \"context\": {}, \"content\": \"\"}",
+          "tool_calls": [
+            {
+              "id": "call-2",
+              "name": "find_user_id_by_name_zip",
+              "arguments": {
+                "first_name": "Ivan",
+                "last_name": "Johnson",
+                "zip": "10001"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "Error: user not found",
+          "name": "find_user_id_by_name_zip"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"I couldn't find your account with the information provided. Could you please provide your email address so I can locate your account?\"}"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Sure, my zip code is 94183. Could you use that to find my order?"
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"find_user_id_by_name_zip\", \"arguments\": {\"first_name\": \"Ivan\", \"last_name\": \"Johnson\", \"zip\": \"94183\"}, \"context\": {}, \"content\": \"\"}",
+          "tool_calls": [
+            {
+              "id": "call-6",
+              "name": "find_user_id_by_name_zip",
+              "arguments": {
+                "first_name": "Ivan",
+                "last_name": "Johnson",
+                "zip": "94183"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "ivan_johnson_6036",
+          "name": "find_user_id_by_name_zip"
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"get_user_details\", \"arguments\": {\"user_id\": \"ivan_johnson_6036\"}, \"context\": {\"user_id\": \"ivan_johnson_6036\"}, \"content\": \"\"}",
+          "tool_calls": [
+            {
+              "id": "call-8",
+              "name": "get_user_details",
+              "arguments": {
+                "user_id": "ivan_johnson_6036"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "{\"name\": {\"first_name\": \"Ivan\", \"last_name\": \"Johnson\"}, \"address\": {\"address1\": \"581 Hillcrest Drive\", \"address2\": \"Suite 869\", \"city\": \"San Francisco\", \"country\": \"USA\", \"state\": \"CA\", \"zip\": \"94183\"}, \"email\": \"ivan.johnson5749@example.com\", \"payment_methods\": {\"paypal_6918118\": {\"source\": \"paypal\", \"id\": \"paypal_6918118\"}}, \"orders\": [\"#W1671835\"]}",
+          "name": "get_user_details"
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"#W1671835\"}, \"context\": {\"user_id\": \"ivan_johnson_6036\", \"order_id\": \"#W1671835\"}, \"content\": \"\"}",
+          "tool_calls": [
+            {
+              "id": "call-10",
+              "name": "get_order_details",
+              "arguments": {
+                "order_id": "#W1671835"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "{\"order_id\": \"#W1671835\", \"user_id\": \"ivan_johnson_6036\", \"address\": {\"address1\": \"851 Pine Lane\", \"address2\": \"Suite 428\", \"city\": \"Fort Worth\", \"country\": \"USA\", \"state\": \"TX\", \"zip\": \"76115\"}, \"items\": [{\"name\": \"Perfume\", \"product_id\": \"6858788497\", \"item_id\": \"5081446110\", \"price\": 322.52, \"options\": {\"scent family\": \"woody\", \"size\": \"30ml\", \"gender\": \"men\"}}], \"fulfillments\": [{\"tracking_id\": [\"820626058356\"], \"item_ids\": [\"5081446110\"]}], \"status\": \"delivered\", \"payment_history\": [{\"transaction_type\": \"payment\", \"amount\": 322.52, \"payment_method_id\": \"paypal_6918118\"}]}",
+          "name": "get_order_details"
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"I found your order for the perfume. The order is already delivered, so we can't modify it directly. However, we can process an exchange for the largest size available. Could you confirm if you want to proceed with the exchange?\"}"
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Yes, please proceed with the exchange to the largest size available."
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"handoff\", \"to\": \"returns_agent\", \"message\": \"User wants to exchange the perfume for the largest size available. Order ID: [omitted], Item ID: [omitted], User ID: [omitted], Payment Method: [omitted]\", \"context\": {\"item_id\": \"5081446110\"}}"
+        },
+        {
+          "sub_index": 2,
+          "role": "planner",
+          "content": "{\"handoff_to\": \"returns_agent\", \"message\": \"User wants to exchange the perfume for the largest size available. Order ID: [omitted], Item ID: [omitted], User ID: [omitted], Payment Method: [omitted]\", \"context\": {\"item_id\": \"5081446110\"}}",
+          "name": "handoff"
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "returns_agent",
+          "content": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"[omitted]\"}, \"content\": \"Retrieving order details to confirm the order status and gather necessary information for the exchange.\"}",
+          "tool_calls": [
+            {
+              "id": "call-15",
+              "name": "get_order_details",
+              "arguments": {
+                "order_id": "[omitted]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "Error: order not found",
+          "name": "get_order_details"
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "returns_agent",
+          "content": "{\"action\": \"reply\", \"content\": \"There was an error retrieving the order details. Please provide the correct order ID or contact support for further assistance.\"}"
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"I encountered an issue while processing your request. Could you please confirm the order ID for the perfume you want to exchange? If you're unsure, you can find it in your order confirmation email.\"}"
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "I don't have the order ID at hand. Is there any other way you can identify the order? Maybe by the date or the product name?"
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"get_user_details\", \"arguments\": {\"user_id\": \"ivan_johnson_6036\"}, \"context\": {\"user_id\": \"ivan_johnson_6036\"}, \"content\": \"\"}",
+          "tool_calls": [
+            {
+              "id": "call-20",
+              "name": "get_user_details",
+              "arguments": {
+                "user_id": "ivan_johnson_6036"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "{\"name\": {\"first_name\": \"Ivan\", \"last_name\": \"Johnson\"}, \"address\": {\"address1\": \"581 Hillcrest Drive\", \"address2\": \"Suite 869\", \"city\": \"San Francisco\", \"country\": \"USA\", \"state\": \"CA\", \"zip\": \"94183\"}, \"email\": \"ivan.johnson5749@example.com\", \"payment_methods\": {\"paypal_6918118\": {\"source\": \"paypal\", \"id\": \"paypal_6918118\"}}, \"orders\": [\"#W1671835\"]}",
+          "name": "get_user_details"
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"#W1671835\"}, \"context\": {\"user_id\": \"ivan_johnson_6036\", \"order_id\": \"#W1671835\"}, \"content\": \"\"}",
+          "tool_calls": [
+            {
+              "id": "call-22",
+              "name": "get_order_details",
+              "arguments": {
+                "order_id": "#W1671835"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "{\"order_id\": \"#W1671835\", \"user_id\": \"ivan_johnson_6036\", \"address\": {\"address1\": \"851 Pine Lane\", \"address2\": \"Suite 428\", \"city\": \"Fort Worth\", \"country\": \"USA\", \"state\": \"TX\", \"zip\": \"76115\"}, \"items\": [{\"name\": \"Perfume\", \"product_id\": \"6858788497\", \"item_id\": \"5081446110\", \"price\": 322.52, \"options\": {\"scent family\": \"woody\", \"size\": \"30ml\", \"gender\": \"men\"}}], \"fulfillments\": [{\"tracking_id\": [\"820626058356\"], \"item_ids\": [\"5081446110\"]}], \"status\": \"delivered\", \"payment_history\": [{\"transaction_type\": \"payment\", \"amount\": 322.52, \"payment_method_id\": \"paypal_6918118\"}]}",
+          "name": "get_order_details"
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"handoff\", \"to\": \"returns_agent\", \"message\": \"User wants to exchange the perfume for the largest size available. Order ID: [omitted], Item ID: [omitted], User ID: [omitted], Payment Method: [omitted]\", \"context\": {\"item_id\": \"5081446110\"}}"
+        },
+        {
+          "sub_index": 2,
+          "role": "planner",
+          "content": "{\"handoff_to\": \"returns_agent\", \"message\": \"User wants to exchange the perfume for the largest size available. Order ID: [omitted], Item ID: [omitted], User ID: [omitted], Payment Method: [omitted]\", \"context\": {\"item_id\": \"5081446110\"}}",
+          "name": "handoff"
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "returns_agent",
+          "content": "{\"action\": \"tool\", \"tool\": \"get_order_details\", \"arguments\": {\"order_id\": \"[omitted]\"}, \"content\": \"Retrieving order details to confirm the order status and gather necessary information for the exchange.\"}",
+          "tool_calls": [
+            {
+              "id": "call-25",
+              "name": "get_order_details",
+              "arguments": {
+                "order_id": "[omitted]"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 26,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "tool",
+          "content": "Error: order not found",
+          "name": "get_order_details"
+        }
+      ]
+    },
+    {
+      "index": 27,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "returns_agent",
+          "content": "{\"action\": \"reply\", \"content\": \"There was an error retrieving the order details. Please provide the correct order ID or contact support for further assistance.\"}"
+        }
+      ]
+    },
+    {
+      "index": 28,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "planner",
+          "content": "{\"action\": \"reply\", \"content\": \"I'm encountering some difficulties processing your request. Could you please provide the order ID for the perfume you wish to exchange? If you're unable to locate it, you can contact our support team for further assistance.\"}"
+        }
+      ]
+    },
+    {
+      "index": 29,
+      "substeps": [
+        {
+          "sub_index": 1,
+          "role": "user",
+          "content": "Unfortunately, I don't have the order ID. Since you're having trouble processing the exchange without it, I'll need to contact your support team for further assistance. ###STOP###"
+        }
+      ]
+    }
+  ],
+  "agents": [
+    "order_agent",
+    "planner",
+    "product_agent",
+    "returns_agent"
+  ]
+}

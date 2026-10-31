@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"tool\", \"tool\": \"get_user_details\", \"arguments\": {\"user_id\": \"noah_patel_6952\"}, \"context\": {\"user_id\": \"noah_patel_6952\"}, \"content\": \"\"}", "tokens_in": 2521, "tokens_out": 56, "model": "qwen2.5:32b", "lenient": false}

@@ -1,0 +1,2154 @@
+{
+  "measurement_kind": "model_measurement",
+  "measurement_scope": "available_release_subset",
+  "corpus_hash": "a88bb71540b729814a49c511db738e2044305a0090f84ccb122ea6489bf5c16e",
+  "experiment_identity": "de4380bd875447fe25743dec21d83aba6f87de77ac6e04de45f3e9aa88576a7d",
+  "domains": {
+    "tau": {
+      "expected": 39,
+      "available": 29,
+      "trajectory_ids": [
+        "2",
+        "3",
+        "4",
+        "12",
+        "20",
+        "21",
+        "28",
+        "31",
+        "32",
+        "34",
+        "38",
+        "39",
+        "41",
+        "47",
+        "55",
+        "59",
+        "63",
+        "71",
+        "72",
+        "74",
+        "79",
+        "80",
+        "82",
+        "87",
+        "91",
+        "98",
+        "99",
+        "104",
+        "105"
+      ],
+      "status": "available_subset"
+    },
+    "magentic": {
+      "expected": 44,
+      "available": 44,
+      "trajectory_ids": [
+        "5f982798-16b9-4051-ab57-cfc7ebdb2a91",
+        "c7afe00869f98cf363fd83677ac41757ed5e57f03eacc3d1304feb0a92084bd1",
+        "ebbc1f13-d24d-40df-9068-adcf735b4240",
+        "52f7224e9c79431e7926afe317782711a0028750693e7456cde22ef6f4bd8bd5",
+        "3af8028c2a59e28ca88baff0e6d91f2a9f170c5ef91003f1c8406755a2760ad4",
+        "e6bc98089608217e45b6956a46518fe3cce64a799b3ac43c6974c449ae14c408",
+        "a1e91b78-d3d8-4675-bb8d-62741b4b68a6",
+        "08cae58d-4084-4616-b6dd-dd6534e4825b",
+        "ccec2229ced20a4b0cb4897e3a99120a3017ea030903e01c9bda6b13d40b0b14",
+        "6b06d186921b8b390c65aebd0d16f09f60a47d2f1288ebe36953f734e84c0a3c",
+        "8b3379c0-0981-4f5b-8407-6444610cb212",
+        "840bfca7-4f7b-481a-8794-c560c340185d",
+        "8ad84bd6fe38481ba49e7ad1f6fbd43219a999074e5c6fc940003281f55ec65b",
+        "1f975693-876d-457b-a649-393859e79bf3",
+        "114d5fd0-e2ae-4b6d-a65a-870da2d19c08",
+        "2ddae3b7a208e3c25f14d82d7a1faaaa1832fbf950b4dac345e755c4c361f294",
+        "0ec4371851b96837b0a81b3dd3df401415061bb532fbafeb4609f3337c358508",
+        "5d0080cb-90d7-4712-bc33-848150e917d3",
+        "6e3be83d1949fa52cba03fb1ce4b5b3bf7e37a83fd7d67694b10b2e439d90cf8",
+        "797f7a5b65ca28b7e7156e7db1e9f117bd4a021de0cd512bfdbb0be897d89eab",
+        "624cbf11-6a41-4692-af9c-36b3e5ca3130",
+        "16d825ff-1623-4176-a5b5-42e0f5c2b0ac",
+        "55f4258484c5b398956133128a50462a767da211f8f72aa5ac5bbffb9bcbba1a",
+        "557e78eceec08ca8b0da5f9fdaca6e1c7ec6140a8ce600983ee716327dab005e",
+        "72c06643-a2fa-4186-aa5c-9ec33ae9b445",
+        "2dfc4c37-fec1-4518-84a7-10095d30ad75",
+        "a3fbeb63-0e8c-4a11-bff6-0e3b484c3e9c",
+        "929b45f34805280d77c61d1e093e3d4e551d77ddb6ecd73552b12b1af286388d",
+        "42576abe-0deb-4869-8c63-225c2d75a95a",
+        "14569e28-c88c-43e4-8c32-097d35b9a67d",
+        "2aa5dd83fbcd0dce9a3dd4592106e5b5edf738008d932e357d477bba80e59ccf",
+        "42d4198c-5895-4f0a-b0c0-424a66465d83",
+        "72e110e7-464c-453c-a309-90a95aed6538",
+        "748899d9d70c09beb3bd48ac8a3658bdcfd2f9114fe6dc4c4b8d2f9541ef4607",
+        "9baaa267c95f9d8b75741ee9169c50563d297cfa592c20deaffd30dbc5984c74",
+        "b36ef2d8f2643b80e74a44ce3403f674ecb2aed7fd36afeaa289061a59feef92",
+        "73c1b9fe-ee1d-4cf4-96ca-35c08f97b054",
+        "0a65cb96-cb6e-4a6a-8aae-c1084f613456",
+        "56137764-b4e0-45b8-9c52-1866420c3df5",
+        "9e31099fffa6a3891c94934fd4fc2f3f522d51c1904ff3561f3a10e4bf245821",
+        "b816bfce-3d80-4913-a07d-69b752ce6377",
+        "57d9dc6935e8a40b02e7f8ec81768fe70e68a0c05f6866927c9fda38db38a486",
+        "a9074997e698f912b9e751779ea19c1e92fa148404e90e0ae997acea3f9559b0",
+        "f88066d274e265edd6cd9d61cd80a41accb3a14baf2297652fdd05cdf716d455"
+      ],
+      "status": "complete_count_unverified_membership"
+    },
+    "flash": {
+      "expected": 42,
+      "available": 0,
+      "trajectory_ids": [],
+      "status": "blocked_missing_data"
+    },
+    "relwork": {
+      "expected": 45,
+      "available": 0,
+      "trajectory_ids": [],
+      "status": "blocked_missing_data"
+    }
+  },
+  "results": [
+    {
+      "variant": "mp_rl_seeds_ckpt",
+      "domain": "tau",
+      "denominator": 29,
+      "repetitions": [
+        {
+          "denominator": 29,
+          "numerators": {
+            "step_accuracy": 2,
+            "acc_at_1": 2,
+            "acc_at_3": 8,
+            "acc_at_5": 10,
+            "agent_accuracy": 21,
+            "critical_category_accuracy": 1,
+            "any_category_accuracy": 3,
+            "earliest_category_accuracy": 2,
+            "terminal_category_accuracy": 1
+          },
+          "metrics": {
+            "step_accuracy": 0.06896551724137931,
+            "acc_at_1": 0.06896551724137931,
+            "acc_at_3": 0.27586206896551724,
+            "acc_at_5": 0.3448275862068966,
+            "agent_accuracy": 0.7241379310344828,
+            "critical_category_accuracy": 0.034482758620689655,
+            "any_category_accuracy": 0.10344827586206896,
+            "earliest_category_accuracy": 0.06896551724137931,
+            "terminal_category_accuracy": 0.034482758620689655,
+            "average_step_distance": 12.379310344827585
+          },
+          "valid_step_predictions": 29,
+          "category_predictions": 29,
+          "missing_jobs": 0,
+          "failed_jobs": 0,
+          "invalid_predictions": 0,
+          "abstentions": 0,
+          "partial_checker_jobs": 0,
+          "confusion_matrix": {
+            "MisinterpretationOfToolOutput": {
+              "Instruction/PlanAdherenceFailure": 3,
+              "InvalidInvocation": 4
+            },
+            "Instruction/PlanAdherenceFailure": {
+              "InvalidInvocation": 2,
+              "MisinterpretationOfToolOutput": 1
+            },
+            "UnderspecifiedUserIntent": {
+              "InvalidInvocation": 4,
+              "Instruction/PlanAdherenceFailure": 3,
+              "MisinterpretationOfToolOutput": 1
+            },
+            "IntentPlanMisalignment": {
+              "InvalidInvocation": 5,
+              "Instruction/PlanAdherenceFailure": 1,
+              "MisinterpretationOfToolOutput": 1
+            },
+            "InvalidInvocation": {
+              "InvalidInvocation": 1
+            },
+            "IntentNotSupported": {
+              "InvalidInvocation": 1,
+              "MisinterpretationOfToolOutput": 1
+            },
+            "SystemFailure": {
+              "InvalidInvocation": 1
+            }
+          },
+          "per_trajectory": [
+            {
+              "domain": "tau",
+              "trajectory_id": "2",
+              "state": "valid",
+              "gold": {
+                "failure_id": "2",
+                "step_index": 7,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 3,
+                "agent": "assistant",
+                "rationale": "No perspective violations; step 3 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 3,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 4
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "3",
+              "state": "valid",
+              "gold": {
+                "failure_id": "4",
+                "step_index": 7,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 19,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 19 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.018.",
+                "evidence_refs": [
+                  {
+                    "step_index": 19,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 12
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "4",
+              "state": "valid",
+              "gold": {
+                "failure_id": "5",
+                "step_index": 15,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 31,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 31 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.038.",
+                "evidence_refs": [
+                  {
+                    "step_index": 31,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 16
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "12",
+              "state": "valid",
+              "gold": {
+                "failure_id": "6",
+                "step_index": 19,
+                "category": "Instruction/PlanAdherenceFailure",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 17,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 17 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.040.",
+                "evidence_refs": [
+                  {
+                    "step_index": 17,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 2
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "20",
+              "state": "valid",
+              "gold": {
+                "failure_id": "7",
+                "step_index": 21,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 43,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 43 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.043.",
+                "evidence_refs": [
+                  {
+                    "step_index": 43,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 22
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "21",
+              "state": "valid",
+              "gold": {
+                "failure_id": "11",
+                "step_index": 28,
+                "category": "UnderspecifiedUserIntent",
+                "agent": "User"
+              },
+              "prediction": {
+                "step_index": 19,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 19 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.037.",
+                "evidence_refs": [
+                  {
+                    "step_index": 19,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 9
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "28",
+              "state": "valid",
+              "gold": {
+                "failure_id": "13",
+                "step_index": 33,
+                "category": "IntentPlanMisalignment",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 39,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 39 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.003.",
+                "evidence_refs": [
+                  {
+                    "step_index": 39,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 6
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "31",
+              "state": "valid",
+              "gold": {
+                "failure_id": "14",
+                "step_index": 31,
+                "category": "IntentPlanMisalignment",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 3,
+                "agent": "assistant",
+                "rationale": "No perspective violations; step 3 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 3,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 28
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "32",
+              "state": "valid",
+              "gold": {
+                "failure_id": "15",
+                "step_index": 11,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 3,
+                "agent": "assistant",
+                "rationale": "No perspective violations; step 3 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 3,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 8
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "34",
+              "state": "valid",
+              "gold": {
+                "failure_id": "16",
+                "step_index": 17,
+                "category": "InvalidInvocation",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 5,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 5 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.188.",
+                "evidence_refs": [
+                  {
+                    "step_index": 5,
+                    "substep_index": 1
+                  },
+                  {
+                    "step_index": 6,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 12
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "38",
+              "state": "valid",
+              "gold": {
+                "failure_id": "19",
+                "step_index": 37,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 7,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 7 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.121.",
+                "evidence_refs": [
+                  {
+                    "step_index": 7,
+                    "substep_index": 1
+                  },
+                  {
+                    "step_index": 8,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 30
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "39",
+              "state": "valid",
+              "gold": {
+                "failure_id": "20",
+                "step_index": 17,
+                "category": "IntentPlanMisalignment",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 5,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 5 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.050.",
+                "evidence_refs": [
+                  {
+                    "step_index": 5,
+                    "substep_index": 1
+                  },
+                  {
+                    "step_index": 6,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 12
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "41",
+              "state": "valid",
+              "gold": {
+                "failure_id": "21",
+                "step_index": 17,
+                "category": "IntentPlanMisalignment",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 19,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 19 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.026.",
+                "evidence_refs": [
+                  {
+                    "step_index": 19,
+                    "substep_index": 1
+                  },
+                  {
+                    "step_index": 20,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 2
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "47",
+              "state": "valid",
+              "gold": {
+                "failure_id": "22",
+                "step_index": 19,
+                "category": "IntentNotSupported",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 19,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 19 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.007.",
+                "evidence_refs": [
+                  {
+                    "step_index": 19,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 0
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "55",
+              "state": "valid",
+              "gold": {
+                "failure_id": "23",
+                "step_index": 32,
+                "category": "UnderspecifiedUserIntent",
+                "agent": "User"
+              },
+              "prediction": {
+                "step_index": 5,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 5 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.029.",
+                "evidence_refs": [
+                  {
+                    "step_index": 5,
+                    "substep_index": 1
+                  },
+                  {
+                    "step_index": 6,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 27
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "59",
+              "state": "valid",
+              "gold": {
+                "failure_id": "24",
+                "step_index": 14,
+                "category": "UnderspecifiedUserIntent",
+                "agent": "User"
+              },
+              "prediction": {
+                "step_index": 3,
+                "agent": "assistant",
+                "rationale": "No perspective violations; step 3 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 3,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 11
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "63",
+              "state": "valid",
+              "gold": {
+                "failure_id": "25",
+                "step_index": 32,
+                "category": "UnderspecifiedUserIntent",
+                "agent": "User"
+              },
+              "prediction": {
+                "step_index": 25,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 25 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.028.",
+                "evidence_refs": [
+                  {
+                    "step_index": 25,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 7
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "71",
+              "state": "valid",
+              "gold": {
+                "failure_id": "26",
+                "step_index": 24,
+                "category": "UnderspecifiedUserIntent",
+                "agent": "User"
+              },
+              "prediction": {
+                "step_index": 21,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 21 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.018.",
+                "evidence_refs": [
+                  {
+                    "step_index": 21,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 3
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "72",
+              "state": "valid",
+              "gold": {
+                "failure_id": "28",
+                "step_index": 21,
+                "category": "IntentPlanMisalignment",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 19,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 19 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.018.",
+                "evidence_refs": [
+                  {
+                    "step_index": 19,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 2
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "74",
+              "state": "valid",
+              "gold": {
+                "failure_id": "29",
+                "step_index": 21,
+                "category": "Instruction/PlanAdherenceFailure",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 21,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 21 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.017.",
+                "evidence_refs": [
+                  {
+                    "step_index": 21,
+                    "substep_index": 1
+                  },
+                  {
+                    "step_index": 22,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 0
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "79",
+              "state": "valid",
+              "gold": {
+                "failure_id": "31",
+                "step_index": 20,
+                "category": "UnderspecifiedUserIntent",
+                "agent": "User"
+              },
+              "prediction": {
+                "step_index": 3,
+                "agent": "assistant",
+                "rationale": "No perspective violations; step 3 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 3,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 17
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "80",
+              "state": "valid",
+              "gold": {
+                "failure_id": "32",
+                "step_index": 26,
+                "category": "SystemFailure",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 21,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 21 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.014.",
+                "evidence_refs": [
+                  {
+                    "step_index": 21,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 5
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "82",
+              "state": "valid",
+              "gold": {
+                "failure_id": "33",
+                "step_index": 20,
+                "category": "UnderspecifiedUserIntent",
+                "agent": "User"
+              },
+              "prediction": {
+                "step_index": 3,
+                "agent": "assistant",
+                "rationale": "No perspective violations; step 3 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 3,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 17
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "87",
+              "state": "valid",
+              "gold": {
+                "failure_id": "34",
+                "step_index": 37,
+                "category": "IntentPlanMisalignment",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 19,
+                "agent": "assistant",
+                "rationale": "P2_TOOL_EXECUTION flagged 1 violation(s) at step 19 (p2_seed_valid_tool_invocation); assistant blame under P2_TOOL_EXECUTION = 0.018.",
+                "evidence_refs": [
+                  {
+                    "step_index": 19,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "InvalidInvocation"
+              },
+              "step_distance": 18
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "91",
+              "state": "valid",
+              "gold": {
+                "failure_id": "35",
+                "step_index": 34,
+                "category": "UnderspecifiedUserIntent",
+                "agent": "User"
+              },
+              "prediction": {
+                "step_index": 11,
+                "agent": "assistant",
+                "rationale": "P3_HANDOFF_GROUNDING flagged 1 violation(s) at step 11 (p3_seed_handoff_and_fact_grounding); assistant blame under P3_HANDOFF_GROUNDING = 0.022.",
+                "evidence_refs": [
+                  {
+                    "step_index": 11,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "MisinterpretationOfToolOutput"
+              },
+              "step_distance": 23
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "98",
+              "state": "valid",
+              "gold": {
+                "failure_id": "36",
+                "step_index": 21,
+                "category": "IntentPlanMisalignment",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 13,
+                "agent": "assistant",
+                "rationale": "P3_HANDOFF_GROUNDING flagged 1 violation(s) at step 13 (p3_seed_handoff_and_fact_grounding); assistant blame under P3_HANDOFF_GROUNDING = 0.046.",
+                "evidence_refs": [
+                  {
+                    "step_index": 13,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "MisinterpretationOfToolOutput"
+              },
+              "step_distance": 8
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "99",
+              "state": "valid",
+              "gold": {
+                "failure_id": "37",
+                "step_index": 35,
+                "category": "Instruction/PlanAdherenceFailure",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 33,
+                "agent": "assistant",
+                "rationale": "P3_HANDOFF_GROUNDING flagged 1 violation(s) at step 33 (p3_seed_handoff_and_fact_grounding); assistant blame under P3_HANDOFF_GROUNDING = 0.007.",
+                "evidence_refs": [
+                  {
+                    "step_index": 33,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "MisinterpretationOfToolOutput"
+              },
+              "step_distance": 2
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "104",
+              "state": "valid",
+              "gold": {
+                "failure_id": "38",
+                "step_index": 57,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 3,
+                "agent": "assistant",
+                "rationale": "No perspective violations; step 3 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 3,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 54
+            },
+            {
+              "domain": "tau",
+              "trajectory_id": "105",
+              "state": "valid",
+              "gold": {
+                "failure_id": "39",
+                "step_index": 43,
+                "category": "IntentNotSupported",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 41,
+                "agent": "assistant",
+                "rationale": "P3_HANDOFF_GROUNDING flagged 1 violation(s) at step 41 (p3_seed_handoff_and_fact_grounding); assistant blame under P3_HANDOFF_GROUNDING = 0.004.",
+                "evidence_refs": [
+                  {
+                    "step_index": 41,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "MisinterpretationOfToolOutput"
+              },
+              "step_distance": 2
+            }
+          ],
+          "tie_policy": "any category at earliest/terminal temporal step",
+          "distance_denominator": 29,
+          "repetition": 0
+        }
+      ],
+      "aggregate": {
+        "step_accuracy": {
+          "mean": 0.06896551724137931,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "acc_at_1": {
+          "mean": 0.06896551724137931,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "acc_at_3": {
+          "mean": 0.27586206896551724,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "acc_at_5": {
+          "mean": 0.3448275862068966,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "agent_accuracy": {
+          "mean": 0.7241379310344828,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "critical_category_accuracy": {
+          "mean": 0.034482758620689655,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "any_category_accuracy": {
+          "mean": 0.10344827586206896,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "earliest_category_accuracy": {
+          "mean": 0.06896551724137931,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "terminal_category_accuracy": {
+          "mean": 0.034482758620689655,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "average_step_distance": {
+          "mean": 12.379310344827585,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        }
+      }
+    },
+    {
+      "variant": "mp_rl_seeds_ckpt",
+      "domain": "magentic",
+      "denominator": 44,
+      "repetitions": [
+        {
+          "denominator": 44,
+          "numerators": {
+            "step_accuracy": 1,
+            "acc_at_1": 1,
+            "acc_at_3": 10,
+            "acc_at_5": 13,
+            "agent_accuracy": 21,
+            "critical_category_accuracy": 8,
+            "any_category_accuracy": 25,
+            "earliest_category_accuracy": 23,
+            "terminal_category_accuracy": 4
+          },
+          "metrics": {
+            "step_accuracy": 0.022727272727272728,
+            "acc_at_1": 0.022727272727272728,
+            "acc_at_3": 0.22727272727272727,
+            "acc_at_5": 0.29545454545454547,
+            "agent_accuracy": 0.4772727272727273,
+            "critical_category_accuracy": 0.18181818181818182,
+            "any_category_accuracy": 0.5681818181818182,
+            "earliest_category_accuracy": 0.5227272727272727,
+            "terminal_category_accuracy": 0.09090909090909091,
+            "average_step_distance": 18.204545454545453
+          },
+          "valid_step_predictions": 44,
+          "category_predictions": 44,
+          "missing_jobs": 0,
+          "failed_jobs": 0,
+          "invalid_predictions": 0,
+          "abstentions": 0,
+          "partial_checker_jobs": 0,
+          "confusion_matrix": {
+            "InventionOfNewInformation": {
+              "Instruction/PlanAdherenceFailure": 4
+            },
+            "MisinterpretationOfToolOutput": {
+              "Instruction/PlanAdherenceFailure": 15
+            },
+            "GuardrailsTriggered": {
+              "Instruction/PlanAdherenceFailure": 9
+            },
+            "IntentPlanMisalignment": {
+              "Instruction/PlanAdherenceFailure": 4
+            },
+            "IntentNotSupported": {
+              "Instruction/PlanAdherenceFailure": 3
+            },
+            "Instruction/PlanAdherenceFailure": {
+              "Instruction/PlanAdherenceFailure": 8
+            },
+            "SystemFailure": {
+              "Instruction/PlanAdherenceFailure": 1
+            }
+          },
+          "per_trajectory": [
+            {
+              "domain": "magentic",
+              "trajectory_id": "5f982798-16b9-4051-ab57-cfc7ebdb2a91",
+              "state": "valid",
+              "gold": {
+                "failure_id": "3",
+                "step_index": 33,
+                "category": "InventionOfNewInformation",
+                "agent": "FileSurfer"
+              },
+              "prediction": {
+                "step_index": 54,
+                "agent": "Orchestrator (-> WebSurfer)",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 54 (p1_seed_nonempty_progress); orchestrator blame under P1_INTENT_PLAN = 0.004.",
+                "evidence_refs": [
+                  {
+                    "step_index": 54,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 21
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "c7afe00869f98cf363fd83677ac41757ed5e57f03eacc3d1304feb0a92084bd1",
+              "state": "valid",
+              "gold": {
+                "failure_id": "2",
+                "step_index": 10,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 74,
+                "agent": "Orchestrator (-> WebSurfer)",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 74 (p1_seed_nonempty_progress); orchestrator blame under P1_INTENT_PLAN = 0.003.",
+                "evidence_refs": [
+                  {
+                    "step_index": 74,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 64
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "ebbc1f13-d24d-40df-9068-adcf735b4240",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 17,
+                "category": "GuardrailsTriggered",
+                "agent": "Websurfer"
+              },
+              "prediction": {
+                "step_index": 69,
+                "agent": "Orchestrator (-> WebSurfer)",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 69 (p1_seed_nonempty_progress); orchestrator blame under P1_INTENT_PLAN = 0.003.",
+                "evidence_refs": [
+                  {
+                    "step_index": 69,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 52
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "52f7224e9c79431e7926afe317782711a0028750693e7456cde22ef6f4bd8bd5",
+              "state": "valid",
+              "gold": {
+                "failure_id": "3",
+                "step_index": 11,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 9
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "3af8028c2a59e28ca88baff0e6d91f2a9f170c5ef91003f1c8406755a2760ad4",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 4,
+                "category": "IntentPlanMisalignment",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 2
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "e6bc98089608217e45b6956a46518fe3cce64a799b3ac43c6974c449ae14c408",
+              "state": "valid",
+              "gold": {
+                "failure_id": "2",
+                "step_index": 7,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 5
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "a1e91b78-d3d8-4675-bb8d-62741b4b68a6",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 5,
+                "category": "IntentNotSupported",
+                "agent": "Websurfer"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 3
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "08cae58d-4084-4616-b6dd-dd6534e4825b",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 5,
+                "category": "Instruction/PlanAdherenceFailure",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 3
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "ccec2229ced20a4b0cb4897e3a99120a3017ea030903e01c9bda6b13d40b0b14",
+              "state": "valid",
+              "gold": {
+                "failure_id": "3",
+                "step_index": 10,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 8
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "6b06d186921b8b390c65aebd0d16f09f60a47d2f1288ebe36953f734e84c0a3c",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 17,
+                "category": "GuardrailsTriggered",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 15
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "8b3379c0-0981-4f5b-8407-6444610cb212",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 4,
+                "category": "IntentPlanMisalignment",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 2
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "840bfca7-4f7b-481a-8794-c560c340185d",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 25,
+                "category": "GuardrailsTriggered",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 23
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "8ad84bd6fe38481ba49e7ad1f6fbd43219a999074e5c6fc940003281f55ec65b",
+              "state": "valid",
+              "gold": {
+                "failure_id": "2",
+                "step_index": 10,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 8
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "1f975693-876d-457b-a649-393859e79bf3",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 4,
+                "category": "IntentNotSupported",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 30,
+                "agent": "Assistant",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 30 (p1_seed_nonempty_progress); assistant blame under P1_INTENT_PLAN = 0.287.",
+                "evidence_refs": [
+                  {
+                    "step_index": 30,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 26
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "114d5fd0-e2ae-4b6d-a65a-870da2d19c08",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 19,
+                "category": "IntentNotSupported",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 25,
+                "agent": "FileSurfer",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 25 (p1_seed_nonempty_progress); filesurfer blame under P1_INTENT_PLAN = 0.055.",
+                "evidence_refs": [
+                  {
+                    "step_index": 25,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 6
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "2ddae3b7a208e3c25f14d82d7a1faaaa1832fbf950b4dac345e755c4c361f294",
+              "state": "valid",
+              "gold": {
+                "failure_id": "2",
+                "step_index": 13,
+                "category": "Instruction/PlanAdherenceFailure",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 77,
+                "agent": "Orchestrator (-> WebSurfer)",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 77 (p1_seed_nonempty_progress); orchestrator blame under P1_INTENT_PLAN = 0.008.",
+                "evidence_refs": [
+                  {
+                    "step_index": 77,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 64
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "0ec4371851b96837b0a81b3dd3df401415061bb532fbafeb4609f3337c358508",
+              "state": "valid",
+              "gold": {
+                "failure_id": "2",
+                "step_index": 10,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 8
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "5d0080cb-90d7-4712-bc33-848150e917d3",
+              "state": "valid",
+              "gold": {
+                "failure_id": "2",
+                "step_index": 15,
+                "category": "InventionOfNewInformation",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 13
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "6e3be83d1949fa52cba03fb1ce4b5b3bf7e37a83fd7d67694b10b2e439d90cf8",
+              "state": "valid",
+              "gold": {
+                "failure_id": "2",
+                "step_index": 10,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 8
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "797f7a5b65ca28b7e7156e7db1e9f117bd4a021de0cd512bfdbb0be897d89eab",
+              "state": "valid",
+              "gold": {
+                "failure_id": "2",
+                "step_index": 7,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 102,
+                "agent": "Orchestrator (-> WebSurfer)",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 102 (p1_seed_nonempty_progress); orchestrator blame under P1_INTENT_PLAN = 0.001.",
+                "evidence_refs": [
+                  {
+                    "step_index": 102,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 95
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "624cbf11-6a41-4692-af9c-36b3e5ca3130",
+              "state": "valid",
+              "gold": {
+                "failure_id": "5",
+                "step_index": 27,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 25
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "16d825ff-1623-4176-a5b5-42e0f5c2b0ac",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 5,
+                "category": "Instruction/PlanAdherenceFailure",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 62,
+                "agent": "Orchestrator (-> WebSurfer)",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 62 (p1_seed_nonempty_progress); orchestrator blame under P1_INTENT_PLAN = 0.005.",
+                "evidence_refs": [
+                  {
+                    "step_index": 62,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 57
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "55f4258484c5b398956133128a50462a767da211f8f72aa5ac5bbffb9bcbba1a",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 5,
+                "category": "Instruction/PlanAdherenceFailure",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 3
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "557e78eceec08ca8b0da5f9fdaca6e1c7ec6140a8ce600983ee716327dab005e",
+              "state": "valid",
+              "gold": {
+                "failure_id": "2",
+                "step_index": 14,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 30,
+                "agent": "Orchestrator (-> WebSurfer)",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 30 (p1_seed_nonempty_progress); orchestrator blame under P1_INTENT_PLAN = 0.004.",
+                "evidence_refs": [
+                  {
+                    "step_index": 30,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 16
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "72c06643-a2fa-4186-aa5c-9ec33ae9b445",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 9,
+                "category": "GuardrailsTriggered",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 7
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "2dfc4c37-fec1-4518-84a7-10095d30ad75",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 17,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 15
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "a3fbeb63-0e8c-4a11-bff6-0e3b484c3e9c",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 21,
+                "category": "GuardrailsTriggered",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 19
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "929b45f34805280d77c61d1e093e3d4e551d77ddb6ecd73552b12b1af286388d",
+              "state": "valid",
+              "gold": {
+                "failure_id": "2",
+                "step_index": 7,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 2 (p1_seed_nonempty_progress); orchestrator blame under P1_INTENT_PLAN = 0.102.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 5
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "42576abe-0deb-4869-8c63-225c2d75a95a",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 2,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 0
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "14569e28-c88c-43e4-8c32-097d35b9a67d",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 12,
+                "category": "InventionOfNewInformation",
+                "agent": "Assistant"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 10
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "2aa5dd83fbcd0dce9a3dd4592106e5b5edf738008d932e357d477bba80e59ccf",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 5,
+                "category": "GuardrailsTriggered",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 3
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "42d4198c-5895-4f0a-b0c0-424a66465d83",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 19,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 17
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "72e110e7-464c-453c-a309-90a95aed6538",
+              "state": "valid",
+              "gold": {
+                "failure_id": "2",
+                "step_index": 9,
+                "category": "GuardrailsTriggered",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 7
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "748899d9d70c09beb3bd48ac8a3658bdcfd2f9114fe6dc4c4b8d2f9541ef4607",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 32,
+                "category": "Instruction/PlanAdherenceFailure",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 15,
+                "agent": "Orchestrator (-> WebSurfer)",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 15 (p1_seed_nonempty_progress); orchestrator blame under P1_INTENT_PLAN = 0.018.",
+                "evidence_refs": [
+                  {
+                    "step_index": 15,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 17
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "9baaa267c95f9d8b75741ee9169c50563d297cfa592c20deaffd30dbc5984c74",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 21,
+                "category": "Instruction/PlanAdherenceFailure",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 19,
+                "agent": "Orchestrator (-> WebSurfer)",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 19 (p1_seed_nonempty_progress); orchestrator blame under P1_INTENT_PLAN = 0.033.",
+                "evidence_refs": [
+                  {
+                    "step_index": 19,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 2
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "b36ef2d8f2643b80e74a44ce3403f674ecb2aed7fd36afeaa289061a59feef92",
+              "state": "valid",
+              "gold": {
+                "failure_id": "2",
+                "step_index": 7,
+                "category": "MisinterpretationOfToolOutput",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 5
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "73c1b9fe-ee1d-4cf4-96ca-35c08f97b054",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 13,
+                "category": "GuardrailsTriggered",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 11
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "0a65cb96-cb6e-4a6a-8aae-c1084f613456",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 56,
+                "category": "Instruction/PlanAdherenceFailure",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 19,
+                "agent": "Orchestrator (-> WebSurfer)",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 19 (p1_seed_nonempty_progress); orchestrator blame under P1_INTENT_PLAN = 0.022.",
+                "evidence_refs": [
+                  {
+                    "step_index": 19,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 37
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "56137764-b4e0-45b8-9c52-1866420c3df5",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 5,
+                "category": "GuardrailsTriggered",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 3
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "9e31099fffa6a3891c94934fd4fc2f3f522d51c1904ff3561f3a10e4bf245821",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 41,
+                "category": "Instruction/PlanAdherenceFailure",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 43,
+                "agent": "Orchestrator (-> WebSurfer)",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 43 (p1_seed_nonempty_progress); orchestrator blame under P1_INTENT_PLAN = 0.013.",
+                "evidence_refs": [
+                  {
+                    "step_index": 43,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 2
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "b816bfce-3d80-4913-a07d-69b752ce6377",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 17,
+                "category": "InventionOfNewInformation",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 15
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "57d9dc6935e8a40b02e7f8ec81768fe70e68a0c05f6866927c9fda38db38a486",
+              "state": "valid",
+              "gold": {
+                "failure_id": "3",
+                "step_index": 31,
+                "category": "IntentPlanMisalignment",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 29
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "a9074997e698f912b9e751779ea19c1e92fa148404e90e0ae997acea3f9559b0",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 4,
+                "category": "IntentPlanMisalignment",
+                "agent": "Orchestrator"
+              },
+              "prediction": {
+                "step_index": 50,
+                "agent": "Orchestrator (-> WebSurfer)",
+                "rationale": "P1_INTENT_PLAN flagged 1 violation(s) at step 50 (p1_seed_nonempty_progress); orchestrator blame under P1_INTENT_PLAN = 0.001.",
+                "evidence_refs": [
+                  {
+                    "step_index": 50,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 46
+            },
+            {
+              "domain": "magentic",
+              "trajectory_id": "f88066d274e265edd6cd9d61cd80a41accb3a14baf2297652fdd05cdf716d455",
+              "state": "valid",
+              "gold": {
+                "failure_id": "1",
+                "step_index": 17,
+                "category": "SystemFailure",
+                "agent": "WebSurfer"
+              },
+              "prediction": {
+                "step_index": 2,
+                "agent": "Orchestrator (thought)",
+                "rationale": "No perspective violations; step 2 ranked by temporal prior.",
+                "evidence_refs": [
+                  {
+                    "step_index": 2,
+                    "substep_index": 1
+                  }
+                ],
+                "category": "Instruction/PlanAdherenceFailure"
+              },
+              "step_distance": 15
+            }
+          ],
+          "tie_policy": "any category at earliest/terminal temporal step",
+          "distance_denominator": 44,
+          "repetition": 0
+        }
+      ],
+      "aggregate": {
+        "step_accuracy": {
+          "mean": 0.022727272727272728,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "acc_at_1": {
+          "mean": 0.022727272727272728,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "acc_at_3": {
+          "mean": 0.22727272727272727,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "acc_at_5": {
+          "mean": 0.29545454545454547,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "agent_accuracy": {
+          "mean": 0.4772727272727273,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "critical_category_accuracy": {
+          "mean": 0.18181818181818182,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "any_category_accuracy": {
+          "mean": 0.5681818181818182,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "earliest_category_accuracy": {
+          "mean": 0.5227272727272727,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "terminal_category_accuracy": {
+          "mean": 0.09090909090909091,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        },
+        "average_step_distance": {
+          "mean": 18.204545454545453,
+          "std": 0,
+          "n": 1,
+          "expected_repetitions": 1
+        }
+      }
+    }
+  ],
+  "std_convention": "sample standard deviation across independent repetitions",
+  "replication_claim": "No exact numeric replication claimed; original corpus membership/model settings require verification."
+}

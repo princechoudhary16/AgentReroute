@@ -8,7 +8,20 @@ from .io import digest, read_json, write_json
 from .perspectives import FEATURES, ORDER
 from .taxonomy import agent
 
-THETA0 = (0.8, 0.9, 0.85, 1.1, 1.3, 1.2, 1.5, 0.9, 0.7, 1.2)
+# Initial theta over the 10 candidate features, in order: blame per perspective (0-2), violation
+# density per perspective (3-5), python-check share (6), temporal position (7), perspective breadth (8),
+# max density (9).
+#
+# Two deliberate moves from the first vector (..., 1.5, 0.9, 0.7, ...):
+#   f6 1.5 -> 0.85 so a python check cannot drown out an LLM nl_check. This has no effect on a seed-only
+#     run, where every check is a python check and f6 is a constant across candidates, so it is
+#     unmeasurable until constraint synthesis is on (it changes nothing in the external-trace ablation).
+#   f7 0.9 -> 0.45 so temporal position cannot override violation density (1.15-1.35) or breadth (0.90).
+#     On the 29 external tau traces this moves exact step 10.3% -> 13.8% and acc@3 34.5% -> 41.4%.
+# f7 = 0.0 reaches the same 13.8% exact with worse acc@3 (37.9%), and is NOT adopted: picking a weight
+# because it maximises the set we report on is the overfitting this evaluation exists to avoid. Training
+# on corpus-v2 is where theta is supposed to move.
+THETA0 = (0.85, 0.95, 0.90, 1.15, 1.35, 1.25, 0.85, 0.45, 0.90, 1.20)
 
 
 def _snippet(value, limit=500):
@@ -112,20 +125,42 @@ def outcome_reward(accepted, verifier_score=None):
     return max(0.25, value) if accepted else min(-0.25, value)
 
 
+def verifier_reward(verified, score_before=0.0, score_after=None, stopped_early=False):
+    """Cross-branch verifier deltas -> R in [-1, 1]: +1 verified, -1 stopped early, else ΔV-scaled penalty.
+
+    Unverified repairs stay negative (at most -0.1, the spec's step penalty) but rank by score_after - score_before.
+    """
+    if verified:
+        return 1.0
+    if stopped_early:
+        return -1.0
+    delta = max(-1.0, min(1.0, float(score_before if score_after is None else score_after) - float(score_before)))
+    return min(-0.1, 0.5 * delta - 0.5)
+
+
 class DualLoopRLJudge:
     """[C2] linear-softmax policy pi_theta(k, t) over candidate features h_{k,t}, plus prompt memory M_i."""
 
     def __init__(self, weights=None, learning_rate=0.05, temperature=0.5, ucb_alpha=0.1,
-                 baseline_reward=0.0, action_counts=None, memory=None, episodes=0):
+                 baseline_reward=0.0, action_counts=None, memory=None, episodes=0, pairwise_lr=0.15,
+                 read_only=False, progress=None):
+        # read_only is a load-time guard, not serialized state: a checkpoint loaded for evaluation
+        # refuses save() so a frozen run cannot overwrite the weights it is reading.
+        self.read_only = bool(read_only)
         self.weights = list(weights or THETA0)
         if len(self.weights) != FEATURES:
             raise ValueError(f'RL weights must have {FEATURES} entries')
         self.learning_rate, self.temperature, self.ucb_alpha = learning_rate, temperature, ucb_alpha
-        self.baseline_reward, self.episodes = baseline_reward, episodes
+        self.baseline_reward, self.episodes, self.pairwise_lr = baseline_reward, episodes, pairwise_lr
         self.action_counts = dict(action_counts or {})
         self.memory = memory or PromptMemoryBank()
         # ponytail: in-process only, not serialized; persist if record_recovery_outcome must survive restarts.
         self.pending = {}
+        # Opaque to the policy; the training loop owns its meaning. It rides inside this checkpoint
+        # rather than a sibling file so one atomic write covers both theta and the record of which
+        # episodes produced it. Two files would leave a window where an interruption between them
+        # replays an episode whose gradient is already in theta.
+        self.progress = dict(progress or {})
 
     @staticmethod
     def action_key(candidate):
@@ -149,7 +184,8 @@ class DualLoopRLJudge:
         ranked = [{**candidates[i], 'probability': probs[i], 'logit': logits[i], 'rank': rank + 1,
                    'candidate_index': i} for rank, i in enumerate(order)]
         if trajectory_id is not None:
-            self.pending[str(trajectory_id)] = {'candidates': candidates, 'probs': probs, 'constraints_used': []}
+            self.pending[str(trajectory_id)] = {'candidates': candidates, 'probs': probs, 'top1': order[0],
+                                               'constraints_used': []}
         return ranked[0], ranked, probs
 
     def update_policy(self, chosen_idx, candidates, probs, reward):
@@ -166,22 +202,41 @@ class DualLoopRLJudge:
         self.episodes += 1
         return {'reward': reward, 'Advantage': advantage, 'gradient': gradient, 'updated_weights': list(self.weights)}
 
-    def record_recovery_outcome(self, trajectory_id, chosen_step, chosen_agent, accepted, verifier_score=None,
-                                rollout_trace=None):
+    def record_recovery_outcome(self, trajectory_id, chosen_step=None, chosen_agent=None, accepted=None,
+                                verifier_score=None, rollout_trace=None, *, verified=None, verifier_score_before=0.0,
+                                verifier_score_after=None, stopped_early=False, failed_steps=()):
         """Cross-branch hook: observable verifier/acceptance outcome (never ScoreLedger gold) closes the loop.
 
+        Feedback is either (accepted, verifier_score) or the verifier deltas (verified, verifier_score_before/after,
+        stopped_early). chosen_step/chosen_agent name the repaired candidate; omitted, the top-1 action is credited.
+        failed_steps are candidates tried and rejected before a rewarded one: each gets a pairwise ranking update
+        theta += pairwise_lr * (h_chosen - h_failed), so the order in which hypotheses are tried is learned directly.
         rollout_trace is accepted for the orchestrator/RecoveryEnv contract; standalone mode does not inspect it.
         """
+        if accepted is None and verified is None:
+            raise ValueError('Pass accepted or verified')
         decision = self.pending.pop(str(trajectory_id), None)
         if decision is None:
             raise KeyError(f'No pending decision for trajectory {trajectory_id!r}; call select_action with trajectory_id')
         candidates, probs = decision['candidates'], decision['probs']
-        index = next((i for i, c in enumerate(candidates) if c['step_index'] == chosen_step
-                      and agent(c['agent']) == agent(chosen_agent)), None)
+        if chosen_step is None:
+            index = decision['top1']
+        else:
+            index = next((i for i, c in enumerate(candidates) if c['step_index'] == chosen_step
+                          and (chosen_agent is None or agent(c['agent']) == agent(chosen_agent))), None)
         if index is None:
             raise ValueError('Recovery outcome does not match a ranked candidate')
-        reward = outcome_reward(accepted, verifier_score)
+        reward = (verifier_reward(verified, verifier_score_before, verifier_score_after, stopped_early)
+                  if verified is not None else outcome_reward(accepted, verifier_score))
         telemetry = self.update_policy(index, candidates, probs, reward)
+        telemetry['pairwise_steps'] = []
+        for step in dict.fromkeys(failed_steps) if reward > 0 else ():
+            j = next((i for i, c in enumerate(candidates) if c['step_index'] == step and i != index), None)
+            if j is not None:
+                self.weights = [w + self.pairwise_lr * (a - b) for w, a, b in
+                                zip(self.weights, candidates[index]['features'], candidates[j]['features'])]
+                telemetry['pairwise_steps'].append(step)
+        telemetry['updated_weights'] = list(self.weights)
         telemetry['memory_scores'] = self.memory.record_episode_feedback(
             candidates[index]['dominant_perspective'], decision['constraints_used'], reward)
         return telemetry
@@ -190,20 +245,27 @@ class DualLoopRLJudge:
         return {'version': 1, 'weights': list(self.weights), 'learning_rate': self.learning_rate,
                 'temperature': self.temperature, 'ucb_alpha': self.ucb_alpha,
                 'baseline_reward': self.baseline_reward, 'action_counts': dict(self.action_counts),
-                'episodes': self.episodes, 'memory': self.memory.to_dict()}
+                'episodes': self.episodes, 'pairwise_lr': self.pairwise_lr, 'memory': self.memory.to_dict(),
+                'progress': self.progress}
 
     @classmethod
     def from_dict(cls, data):
         return cls(data['weights'], data.get('learning_rate', 0.05), data.get('temperature', 0.5),
                    data.get('ucb_alpha', 0.1), data.get('baseline_reward', 0.0), data.get('action_counts'),
-                   PromptMemoryBank.from_dict(data.get('memory', {})), data.get('episodes', 0))
+                   PromptMemoryBank.from_dict(data.get('memory', {})), data.get('episodes', 0),
+                   data.get('pairwise_lr', 0.15), progress=data.get('progress'))
 
     def save(self, path):
+        if self.read_only:
+            raise RuntimeError(f'refusing to save a read-only RL checkpoint to {path} '
+                               '(loaded for evaluation; train into a run directory instead)')
         write_json(path, self.to_dict())
 
     @classmethod
-    def load(cls, path):
-        return cls.from_dict(read_json(path)) if Path(path).exists() else cls()
+    def load(cls, path, read_only=False):
+        judge = cls.from_dict(read_json(path)) if Path(path).exists() else cls()
+        judge.read_only = bool(read_only)
+        return judge
 
 
 def _window(trajectory, steps):
@@ -405,3 +467,43 @@ def verify_and_score_state_change(trajectory, checks, effective_constraints, rec
                                              f"Repair verified as {result['feedback']} (R={result['reward']:.2f})")
         rl_judge.pending.pop(str(trajectory['trajectory_id']), None)
     return result
+
+
+def repair_cascade(trajectory, checks, effective_constraints, ranked, candidates, probs,
+                   policy, tools, provider, context, top_k=3):
+    """[C6] Repair-and-verify cascade over the top-k blamed candidates.
+
+    Walks the ranked candidates in order; for each one it regenerates the step ([C3]) and runs the
+    same 3-layer verifier ([C4]). The first candidate whose repair verifies '+' -- total violations
+    strictly down with no other lens regressed -- becomes the answer. If none verify, the cascade is
+    inconclusive and the caller keeps the ranked top-1.
+
+    This is inference only: no gold label is read, and ``rl_judge`` is deliberately not passed to the
+    verifier, so theta never moves and each trajectory is scored independently of every other.
+    """
+    memory = PromptMemoryBank()          # fresh per trajectory: anti-repeat within, no carry-over across
+    attempts = []
+    for cand in ranked[:max(0, int(top_k))]:
+        entry = {'rank': cand['rank'], 'candidate_index': cand['candidate_index'],
+                 'candidate': {'step_index': cand['step_index'], 'agent': cand['raw_agent'],
+                               'category': cand['dominant_category'],
+                               'perspective': cand['dominant_perspective'],
+                               'probability': cand['probability']}}
+        try:
+            recovery = live_dynamic_recover(trajectory, cand, policy, tools, provider, memory)
+            verification = verify_and_score_state_change(trajectory, checks, effective_constraints, recovery,
+                                                         cand, candidates, probs, provider, context, None)
+        except Exception as exc:
+            entry.update(status='error', error=f'{type(exc).__name__}: {exc}', accepted=False)
+            attempts.append(entry)
+            continue
+        entry.update(status='ok', mode=recovery['mode'], layer1_passed=recovery['layer1_passed'],
+                     feedback=verification['feedback'], reward=verification['reward'],
+                     v_before=verification.get('v_before'), v_after=verification.get('v_after'),
+                     delta_v=verification.get('delta_v'), accepted=verification['feedback'] == '+')
+        attempts.append(entry)
+        if entry['accepted']:
+            return {'status': 'ok', 'resolution': 'verified', 'accepted_rank': cand['rank'],
+                    'chosen': cand, 'attempts': attempts, 'top_k': int(top_k)}
+    return {'status': 'ok', 'resolution': 'exhausted', 'accepted_rank': None,
+            'chosen': ranked[0] if ranked else None, 'attempts': attempts, 'top_k': int(top_k)}

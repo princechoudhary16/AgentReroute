@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I'm sorry, but there seems to be an issue with the order ID. Could you please double-check the order ID and provide it again? If you're certain it's correct, we might need to escalate this to a human agent for further assistance.\"}", "tokens_in": 5171, "tokens_out": 63, "model": "qwen2.5:32b", "lenient": false}

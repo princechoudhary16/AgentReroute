@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"Your most recent order (#W6729841) has a total payment of $829.43. This order includes a Bluetooth Speaker and an Air Purifier. Is there anything else you would like to know about this order?\"}", "tokens_in": 3180, "tokens_out": 64, "model": "qwen2.5:32b", "lenient": false}

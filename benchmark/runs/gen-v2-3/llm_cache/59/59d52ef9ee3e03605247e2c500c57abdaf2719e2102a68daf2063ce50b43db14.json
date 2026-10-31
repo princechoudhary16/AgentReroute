@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"handoff\", \"to\": \"returns_agent\", \"message\": \"Return all items from order #W7387996 with refund to paypal_9497703.\", \"context\": {\"user_id\": \"mia_garcia_4516\", \"order_id\": \"#W7387996\", \"items\": [\"5796612084\"], \"payment_method\": \"paypal_9497703\"}}", "tokens_in": 4903, "tokens_out": 108, "model": "qwen2.5:32b", "lenient": false}

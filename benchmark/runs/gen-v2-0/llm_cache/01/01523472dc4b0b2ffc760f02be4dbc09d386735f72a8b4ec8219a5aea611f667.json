@@ -1,0 +1,1 @@
+{"text": "{\"action\": \"reply\", \"content\": \"I'm sorry for the inconvenience, but there seems to be an issue locating your order with the provided order ID. Could you please verify the order ID and try again? If the problem continues, please contact us directly for further assistance.\"}", "tokens_in": 4089, "tokens_out": 59, "model": "qwen2.5:32b", "lenient": false}
