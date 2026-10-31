@@ -20,7 +20,7 @@ class PresentPageTests(unittest.TestCase):
 
     def test_scenes_are_pinned_and_have_handlers(self):
         scenes = re.findall(r'data-scene="(\w+)"', PAGE)
-        self.assertEqual(scenes, ['trace', 'gap', 'network', 'lenses', 'select', 'verifier', 'dots'])
+        self.assertEqual(scenes, ['activation', 'gap', 'network', 'lenses', 'select', 'verifier', 'dots'])
         for scene in scenes:
             self.assertIn(f' {scene}(el,p)', PAGE, f'scene {scene} needs a scroll handler')
 
