@@ -9,12 +9,11 @@ from html import escape
 
 from .present_css import CSS
 from .present_data import (CHAPTERS, CONTROLS, CORPUS, DISTANCE_DISCOUNT, HARM_P, ORCHESTRATOR_ABSTAINED,
-                           ORCHESTRATOR_REJECTED, RECOVERY, RECOVERY_EPISODES, REPAIR_CONFIRMED_CLAIMS, RQ2_P,
-                           STRATEGIES, VERIFIER_CONFIRMED_CLAIMS)
+                           ORCHESTRATOR_REJECTED, RECOVERY, RECOVERY_EPISODES, RQ2_P, STRATEGIES)
 from .story_data import DOMAINS, FINAL_ROWS, HEADLINE, SELECTOR_ROWS, paired, summarize
 from .studio_theme import MARK
 
-BEATS_PER_CHAPTER = (3, 3, 5, 2, 3, 2)
+BEATS_PER_CHAPTER = (3, 3, 4, 2, 4, 2)
 
 # The intro ring: the planner in the centre, the customer and the three specialists around it
 # (ids, label, role, x%, y%). HOPS is case II, Wrong specialist, as the activation order T+0 … T+6.
@@ -255,7 +254,7 @@ def rq1_beat(chapter, index, hint):
     in_pool = {d: 100 * r['in_pool_hits'] / r['in_pool_n'] for d, r in recall.items()}
     out_pool = {d: 100 * r['out_pool_hits'] / (r['n'] - r['in_pool_n']) for d, r in recall.items()}
     return beat(chapter, index, f'''
-{head(f'RQ1 · {total} published traces · exact step match', 'It edges past AgentRx.<br>Not significantly. Recall is the limit.', tone='violet', width='min(1100px,80vw)')}
+{head(f'First, attribution · RQ1 · {total} published traces · exact step match', 'It edges past AgentRx.<br>Not significantly. Recall is the limit.', tone='violet', width='min(1100px,80vw)')}
 <div style="display:grid;grid-template-columns:minmax(0,2.4fr) minmax(0,1fr);gap:clamp(20px,3vw,50px);margin-top:3vh;align-items:start">
  <div class="grid2" style="gap:20px">{chart('tau', HEADLINE['tau'])}{chart('magentic', HEADLINE['magentic'])}</div>
  <div class="stack" style="gap:30px">
@@ -336,10 +335,9 @@ def chapter_attribution():
   <div class="nogold">GOLD LABELS NEVER ENTER THIS CALL · scored afterwards</div>
  </div>
 </div>
-{foot('script b2-3 · scene: the wires draw toward the judge as it arrives')}''', scene='select', length=2)
+{foot('script b2-3 · scene: the wires draw toward the judge as it arrives', '→ hand-off: Prince')}''', scene='select', length=2)
 
-    rq1 = rq1_beat(2, 5, '→ hand-off: Prince')
-    return architecture + check + gather + select + rq1
+    return architecture + check + gather + select
 
 
 # ------------------------------------------------------------------------------ 04 repair and orchestrator
@@ -416,10 +414,11 @@ def chapter_benchmark():
     legend += (f'<span><i style="background:#4e6068"></i>clean · {c["clean"]}</span>'
                f'<span><i style="background:#2b3a42"></i>tolerated the fault · {c["tolerated"]}</span>'
                f'<span><i style="background:#1c2a31"></i>dropped · {c["dropped"]}</span>')
-    corpus = beat(4, 1, f'''
+    rq1 = rq1_beat(4, 1, '→ next beat')
+    corpus = beat(4, 2, f'''
 <div class="grid2" style="grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)">
  <div>
-  {head('Why we built our own', 'Published traces are recordings.<br>Ours can be replayed.', lead=f'A recording cannot tell you whether a repair works. So we reimplemented all {c["tasks"]} tau-bench retail tasks as the four-agent workflow, inject faults into tasks whose clean run succeeds, and keep only the runs that really fail. Every failure has a known step, agent and type.', width='100%')}
+  {head('Why we built our own', 'Published traces are recordings.<br>Ours can be replayed.', lead=f'A recording can’t tell you whether a repair works. So we rebuilt all {c["tasks"]} tau-bench retail tasks as this four-agent workflow, injected faults into runs that otherwise succeed, and kept only the runs that really failed. Every failure has a known step, agent and type.', width='100%')}
   <div class="row rv" style="--d:3;margin-top:4vh;gap:36px">
    <div><div class="big">{c['tasks']}</div><div class="src" style="margin-top:6px">TASKS</div></div>
    <div><div class="counter" id="dot-counter">0</div><div class="src" style="margin-top:6px">GENERATED</div></div>
@@ -446,23 +445,23 @@ def chapter_benchmark():
     ours = next(r for r in RECOVERY if r['id'] == 'verified')
     theirs = next(r for r in RECOVERY if r['id'] == 'verified_agentrx')
     repair_row = next(r for r in RECOVERY if r['id'] == 'repair')
-    overclaim = beat(4, 2, f'''
+    overclaim = beat(4, 3, f'''
 <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:clamp(24px,4vw,70px)">
  <div>
   {head('Finding 1 · RQ2', 'Finding the right fault matters.', tone='violet', width='100%')}
   <div class="row rv" style="--d:2;margin-top:3vh;gap:14px"><span class="big" style="font-size:clamp(60px,6vw,96px);color:var(--mint)">{ours['recovered']}</span><span class="mono" style="font-size:26px;color:var(--dim)">vs</span><span class="big" style="font-size:clamp(60px,6vw,96px);color:var(--violet)">{theirs['recovered']}</span></div>
-  <p class="rv" style="--d:3;font-size:14px;line-height:1.65;color:var(--muted);margin-top:12px">Recoveries out of {RECOVERY_EPISODES}, same orchestrator, same verifier. Our attribution against AgentRx’s. p = {RQ2_P}, short of significance, and the honest sentence is “more, under the same machinery”.</p>
+  <p class="rv" style="--d:3;font-size:14px;line-height:1.65;color:var(--muted);margin-top:12px">With the same orchestrator and verifier, our diagnosis led to {ours['recovered']} recoveries out of {RECOVERY_EPISODES} and AgentRx’s to {theirs['recovered']}. Close, not significant: p = {RQ2_P}.</p>
  </div>
  <div>
   {head('Finding 2 · the one that matters most', 'Every system over-claims.<br>Ours included.', tone='amber', width='100%')}
-  <div class="rv" style="--d:2;margin-top:3vh" aria-label="Claimed versus confirmed recoveries per policy, out of 100 episodes">
-   <div style="display:flex;gap:18px;font:10px var(--mono);letter-spacing:1px;color:var(--muted);margin-bottom:6px"><span><i style="display:inline-block;width:14px;height:8px;border:1px solid var(--amber);border-radius:2px;vertical-align:middle;margin-right:6px"></i>CLAIMED by the system</span><span><i style="display:inline-block;width:14px;height:8px;background:var(--mint);border-radius:2px;vertical-align:middle;margin-right:6px"></i>CONFIRMED by the hidden ground truth</span></div>
+  <div class="rv" style="--d:2;margin-top:3vh" aria-label="Claimed versus actual recoveries per policy, out of 100 episodes">
+   <div style="display:flex;gap:18px;font:10px var(--mono);letter-spacing:1px;color:var(--muted);margin-bottom:6px"><span><i style="display:inline-block;width:14px;height:8px;border:1px solid var(--amber);border-radius:2px;vertical-align:middle;margin-right:6px"></i>CLAIMED by the system</span><span><i style="display:inline-block;width:14px;height:8px;background:var(--mint);border-radius:2px;vertical-align:middle;margin-right:6px"></i>ACTUALLY RECOVERED · hidden ground truth</span></div>
    {rows}
   </div>
-  <p class="rv" style="--d:6;font-size:clamp(13px,1.1vw,15px);line-height:1.65;margin-top:3vh">Our repair policy reported {repair_row['claimed']} recoveries; the hidden check confirmed {REPAIR_CONFIRMED_CLAIMS} of those claims. Even the strict verifier claimed {ours['claimed']} where {VERIFIER_CONFIRMED_CLAIMS} were real. <span style="color:var(--amber)">A system’s own judgement of its success cannot be trusted.</span></p>
+  <p class="rv" style="--d:6;font-size:clamp(13px,1.1vw,15px);line-height:1.65;margin-top:3vh">Our repair policy claimed {repair_row['claimed']} recoveries; {repair_row['recovered']} were real. Even our strict verifier claimed {ours['claimed']} for {ours['recovered']}. <span style="color:var(--amber)">A system’s own judgement of its success cannot be trusted.</span></p>
  </div>
 </div>
-{foot('final report, Table 2 · replaces opening the PDF at page 5')}''')
+{foot('final report, Table 2 · the right-hand number is recoveries, not confirmed claims (script fix 2)')}''')
 
     def harm_card(r, tone, highlight=False):
         broken = ''.join('<i class="x"></i>' if j < (r['harmed'] or 0) else '<i></i>' for j in range(CONTROLS))
@@ -473,22 +472,22 @@ def chapter_benchmark():
                 f'<div style="font-size:12px;color:var(--muted);margin-top:6px">{note}</div><div class="cost"><i style="width:{int(r["cost"] * 100)}px"></i>cost {r["cost"]:.2f}× the original run</div></div>')
 
     fixed = next(r for r in RECOVERY if r['id'] == 'fixed')
-    harm = beat(4, 3, f'''
+    harm = beat(4, 4, f'''
 <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:clamp(24px,3vw,50px)">
  <div>
   {head('Finding 3 · RQ3', 'Simple rules recover the most.<br>They also break runs that were fine.', tone='red', width='100%')}
   <div class="grid3" style="margin-top:3vh">{harm_card(fixed, 'red')}{harm_card(repair_row, 'amber')}{harm_card(ours, 'mint', True)}</div>
-  <p class="rv" style="--d:5;font-size:clamp(13px,1.1vw,15px);line-height:1.65;margin-top:3vh">It recovered fewer because it refuses to accept a repair it cannot verify. Which error is worse, a missed recovery or a broken healthy run, is a value choice. <span style="color:var(--mint)">We argue it should be set explicitly, with escalation to a human, not hidden in a threshold.</span></p>
+  <p class="rv" style="--d:5;font-size:clamp(13px,1.1vw,15px);line-height:1.65;margin-top:3vh">It recovered fewer because it rejected {ORCHESTRATOR_REJECTED} repairs it couldn’t verify and abstained on {ORCHESTRATOR_ABSTAINED} for cost. Missing a recovery or breaking a healthy run: <span style="color:var(--mint)">which is worse is a value choice, and it should be made explicitly.</span></p>
  </div>
  <div>
   <div class="ol rv">Then, live</div>
   <div class="h3 rv" style="--d:1;margin-top:12px">Case IV · Healthy control.<br>Watch it check every step and abstain.</div>
   <div class="mini-live rv" style="--d:2;margin-top:3vh"><iframe title="Live retail system, Case IV: a healthy run the orchestrator leaves alone" data-widget="system" data-src="/widgets/system?scenario=clean_control_flow"></iframe></div>
-  <p class="rv" style="--d:3;font-size:12px;line-height:1.6;color:var(--muted);margin-top:14px"><strong data-guide="system-title" style="display:block;color:var(--text);font-size:13px;margin-bottom:4px">Follow the request through the agents.</strong><span data-guide="system-body">Scripted, no model call. The last frame stays on screen through the hand-off.</span></p>
+  <p class="rv" style="--d:3;font-size:12px;line-height:1.6;color:var(--muted);margin-top:14px"><strong data-guide="system-title" style="display:block;color:var(--text);font-size:13px;margin-bottom:4px">Follow the request through the agents.</strong><span data-guide="system-body">It checks every step, finds nothing, and does nothing. Scripted, no model call.</span></p>
  </div>
 </div>
 {foot('final report, Table 2 harm and cost rows · /widgets/system with Case IV preselected', '→ hand-off: William')}''')
-    return corpus + overclaim + harm
+    return rq1 + corpus + overclaim + harm
 
 
 # ------------------------------------------------------------------------------ 06 closing
