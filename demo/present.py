@@ -510,11 +510,6 @@ def chapter_closing():
 {foot('the closing script · home › three limits')}''')
 
     close = beat(5, 2, f'''
-<svg class="title-art" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" style="opacity:.55">
-<path d="M-20 820 C 300 820, 420 600, 760 600 S 1100 820, 1620 820" stroke="#1f2d33" stroke-width="2" fill="none"/>
-<path d="M-20 820 C 300 820, 420 600, 760 600 S 1100 820, 1620 820" stroke="#bcf783" stroke-width="2" fill="none" stroke-dasharray="6 10" opacity=".6"/>
-<circle cx="760" cy="600" r="6" fill="#bcf783"/>
-</svg>
 <div style="position:relative;margin-top:8vh;max-width:1200px">
  <div class="ol rv">The lesson we would carry beyond this project</div>
  <h1 class="h1 rv" style="--d:1;margin-top:20px;font-size:clamp(40px,5vw,78px)">Self-reported success<br>has to be checked by something<br><em>that cannot see the repair.</em></h1>
@@ -525,8 +520,8 @@ def chapter_closing():
  <div class="lim"><b>NEXT · 01</b>Higher-recall checks, so the true step reaches the pool more often.</div>
  <div class="lim"><b>NEXT · 02</b>An actor-independent verifier and a learned intervention threshold.</div>
 </div>
-<div class="row rv" style="--d:4;margin-top:4vh;position:relative;align-items:center"><span style="font-size:20px;font-weight:600;letter-spacing:-.02em">Thank you. We’re happy to take questions.</span><span class="src" style="font-size:11px">WILLIAM MODERATES · ANSWER FIRST · ONE NUMBER · 30 SECONDS</span></div>
-{foot('home › three limits and the closing line · the route art returns, so the scroll ends where it began', 'Esc · exit')}''')
+<div class="rv" style="--d:4;margin-top:4vh;position:relative"><span style="font-size:20px;font-weight:600;letter-spacing:-.02em">Thank you. We’re happy to take questions.</span></div>
+{foot('home › three limits and the closing line', 'Esc · exit')}''')
     return answers + close
 
 
