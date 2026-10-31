@@ -16,7 +16,7 @@ import json
 
 from agentrx.perspectives import PERSPECTIVES
 from agentrx.rl_cross_branch import MPRLRecoveryPolicy
-from agentrx.rl_policy import DualLoopRLJudge
+from agentrx.rl_policy import DualLoopRLJudge, THETA0
 from benchmark.env.retail import TOOL_SCHEMAS
 from benchmark.env.scripted import scripted_llm
 from benchmark.env.tasks import load_fixture
@@ -186,6 +186,8 @@ def run_scenario(scenario_id):
             replay[0]['narrative'] = 'Supervisor note applied. ' + replay[0]['narrative']
         frames += replay
     frames.append(_verify_frame(policy, judge, decision, tid))
+    if delivered:
+        frames.append(_standin_verifier_frame(trace['instruction'], domain.policy, runs[delivered].steps))
     for seq, frame in enumerate(frames, 1):
         frame['seq'] = seq
     op = spec['operator']
@@ -224,7 +226,7 @@ def _debug_frames(policy, judge, env, decision, tid):
         frames.append(_frame(**debug, debug_pct=50, active_phase=2, title=MILESTONES[1], focus=top['agent'],
                              step_index=top['step_index'], actor=top['agent'],
                              narrative=f"Top-1 blame: {top['agent']} at step {top['step_index']} "
-                                       f"({top['mode']}, uncalibrated policy score {top['confidence']:.3f}).",
+                                       f"({top['mode']}).",
                              payload={'milestone': MILESTONES[1], 'top1': {k: top[k] for k in (
                                  'agent', 'step_index', 'mode', 'category', 'confidence')},
                                       'hypotheses': hypotheses, 'ranking': ranking}))
@@ -235,9 +237,20 @@ def _debug_frames(policy, judge, env, decision, tid):
     attempts = policy.log[tid].attempts if tid in policy.log else []
     delivered = decision.get('delivered')
     if delivered:
+        from .recovery_example import decision_example
+        illustration = decision_example()
+        frames.append(_frame(phase='debugging', status='DEBUG', debug_pct=65, active_phase=3, kind='decision_example',
+                             title='III. Decide · separate EV illustration',
+                             narrative='Illustrative options scored by the real EV policy for a separate hypothetical example; they do not drive this retail replay.',
+                             payload={'example': illustration, 'illustrative': True}))
+    if delivered:
         directive = env.rollouts[delivered].directive
         accepted = next((a for a in attempts if a.get('rollout') == delivered), {})
         actor = hypotheses[0]['agent'] if hypotheses else None
+        from repair_strategies.context import Hypothesis
+        from agentrx.rl_cross_branch import _repairable
+        ladder = [v.spec.id for v in policy.engine.ladder(Hypothesis.from_mapping(_repairable(hypotheses[0])))] if hypotheses else []
+        correction = ('Redo step ' + str(directive['rollback_step']) + ' with order_id = #W1000001' if '#W1000001' in directive['text'] and scenario_is_context(directive['text']) else 'Redo step ' + str(directive['rollback_step']) + ' with the selected correction.')
         frames.append(_frame(**debug, debug_pct=75, active_phase=3, title=MILESTONES[2], focus=actor,
                              step_index=directive['rollback_step'],
                              narrative=f"Rollback to step {directive['rollback_step']} with a {directive['kind']} "
@@ -245,7 +258,7 @@ def _debug_frames(policy, judge, env, decision, tid):
                                        'from the same scripted simulator. No model is called.',
                              payload={'milestone': MILESTONES[2], 'rollback_step': directive['rollback_step'],
                                       'directive_kind': directive['kind'], 'directive': directive['text'],
-                                      'strategy': accepted.get('strategy'), 'attempts': attempts}))
+                                      'strategy': accepted.get('strategy'), 'attempts': attempts, 'ladder': ladder, 'correction': correction}))
     else:
         frames.append(_frame(**debug, debug_pct=75, active_phase=3, title=MILESTONES[2],
                              narrative=f"No rollback: {decision.get('status')} ({decision.get('notes', '')}).",
@@ -267,8 +280,8 @@ def _verify_frame(policy, judge, decision, tid):
     verified = any(a.get('accepted') for a in attempts)
     reward = None
     return _frame('verified', kind='verify', status='RECOVERED' if verified else 'FAULT', debug_pct=100,
-                  active_phase=4, title=MILESTONES[3], verified=verified, reward=reward,
-                  narrative=('The scripted replay passed the repair acceptance checks. Policy weights stay frozen; '
+                  active_phase=4, title='IV. Repair’s own acceptance check', verified=verified, reward=reward,
+                  narrative=('The scripted replay passed the repair’s own acceptance checks. Policy weights stay frozen; '
                              'this illustration is not a published benchmark result.' if verified else
                              'No scripted replay passed acceptance. Policy weights stay frozen.'),
                   payload={'milestone': MILESTONES[3], 'verified': verified, 'reward': reward, 'rl': rl,
@@ -282,3 +295,41 @@ def scenario_meta():
 
 def all_scenarios(ids=None):
     return [run_scenario(sid) for sid in (ids or SCENARIOS)]
+
+
+def scenario_is_context(text):
+    return 'handoff context' in text.lower()
+
+
+def _standin_verifier_frame(instruction, policy_text, steps):
+    """Deterministic fresh-context stand-in, using only task/policy and observed transcript.
+
+    This narrow fixture checks for a task-relevant write and a non-error tool response; it
+    does not certify full policy compliance. It receives no directive, strategy, or rationale.
+    """
+    import re
+    target = 'cancel_pending_order' if 'cancel' in instruction.lower() else 'return_delivered_order_items'
+    ids = re.findall(r'#W[0-9]+', instruction)
+    success = False
+    for i, step in enumerate(steps):
+        action = step.action or {}
+        if action.get('tool') != target or (ids and action.get('arguments', {}).get('order_id') not in ids):
+            continue
+        result = steps[i + 1] if i + 1 < len(steps) else None
+        if result is not None and result.kind == 'tool':
+            content = result.content.strip()
+            try:
+                parsed = json.loads(content)
+            except (ValueError, TypeError):
+                parsed = {}
+            if content and not content.lower().startswith('error') and not (isinstance(parsed, dict) and parsed.get('error')):
+                success = True
+    return _frame('verified', kind='verify', status='RECOVERED' if success else 'FAULT',
+                  debug_pct=100, active_phase=4, title='V. Independent stand-in verifier', verified=success, reward=None,
+                  narrative=('PASS: the transcript contains the requested write and a non-error tool response.' if success else
+                             'FAIL: the requested write and a non-error tool response were not found.'),
+                  payload={'verifier':'deterministic stand-in', 'verdict':'PASS' if success else 'FAIL',
+                           'sees':['task', 'policy', 'transcript'],
+                           'does_not_see':['repair directive', 'repair rationale', 'strategy'],
+                           'limits':'Checks only task-relevant write evidence; not full policy compliance.',
+                           'theta': [round(w, 4) for w in THETA0]})

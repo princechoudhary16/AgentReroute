@@ -54,6 +54,16 @@ async function fixtureServer(){
   assert.equal(await page.locator('#agentreroute-status').textContent(),'partial');assert.match(await page.locator('#agentreroute-checks').textContent(),/Seed-only fallback/);
   assert.ok(await page.locator('#agentreroute .stage.failed').count()>0);assert.match(await page.locator('#agentreroute-warning').textContent(),/Seed-only fallback/);
   assert.equal(await page.locator('#start-run').isEnabled(),true,'Partial is terminal');
+  // A trained checkpoint is a distinct frozen setting, retained in saved runs.
+  await page.selectOption('#model','fixture-model');await page.selectOption('#variant','seeds_select');
+  await page.selectOption('#policy-mode','trained');await page.locator('#start-run').click();
+  await page.waitForFunction(()=>document.querySelector('#run-status').textContent.startsWith('completed'));
+  const trainedId=await page.evaluate(()=>sessionStorage.getItem('comparison-job'));
+  const trained=await (await page.request.get(base+'/api/comparisons/'+trainedId)).json();
+  assert.equal(trained.policy_mode,'trained');assert.equal(trained.results.agentreroute.policy_mode,'trained');
+  assert.match(await page.locator('#record-context').textContent(),/trained checkpoint/);
+  await page.reload();await page.waitForFunction(()=>document.querySelector('#run-status').textContent.startsWith('completed'));
+  assert.equal(await page.locator('#policy-mode').inputValue(),'trained');
   // A full-trace decision may differ from the highest-policy-weight candidate.
   const outside=await browser.newPage();outside.on('pageerror',e=>errors.push(e.message));
   const custom=structuredClone(state);custom.id='b'.repeat(32);custom.results.agentreroute.prediction={agent:'assistant',step_index:999,category:'fixture',rationale:'Outside-pool test answer'};

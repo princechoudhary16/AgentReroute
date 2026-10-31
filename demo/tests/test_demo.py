@@ -65,9 +65,25 @@ class ScenarioTests(unittest.TestCase):
             ranks = [order.index(f['phase']) for f in frames]
             self.assertEqual(ranks, sorted(ranks), sid)
             debug = [(f['debug_pct'], f['active_phase']) for f in frames if f['phase'] in ('debugging', 'verified')]
-            self.assertEqual(debug, [(25, 1), (50, 2), (75, 3), (100, 4)], sid)
+            self.assertEqual(debug, ([(25, 1), (50, 2), (65, 3), (75, 3), (100, 4), (100, 4)] if result['decision'].get('delivered') else [(25, 1), (50, 2), (75, 3), (100, 4)]), sid)
             self.assertEqual(frames[-1]['phase'], 'verified')
             self.assertTrue(frames[-1]['verified'], sid)
+
+    def test_acceptance_and_independent_standin_are_separate(self):
+        for sid in IDS[:3]:
+            frames = self.results[sid]['frames']
+            self.assertIn('acceptance check', frames[-2]['title'])
+            verifier = frames[-1]
+            self.assertEqual(verifier['payload']['verifier'], 'deterministic stand-in')
+            self.assertEqual(verifier['payload']['sees'], ['task', 'policy', 'transcript'])
+            self.assertEqual(verifier['payload']['does_not_see'], ['repair directive', 'repair rationale', 'strategy'])
+            self.assertEqual(verifier['payload']['verdict'], 'PASS')
+        from demo.recovery_example import decision_example
+        example = decision_example()
+        self.assertEqual((example['first_verdict'], example['second_verdict']), ('FAIL', 'PASS'))
+        self.assertLess(example['belief_after'], example['belief_before'])
+        self.assertNotEqual(example['chosen']['strategy'], example['next']['strategy'])
+        self.assertEqual(example['chosen']['ev'], max(o['ev'] for o in example['options']))
 
     def test_tool_frames_carry_popper_payloads(self):
         tools = [f['tool'] for r in self.results.values() for f in r['frames'] if f['kind'] == 'tool']
@@ -130,7 +146,7 @@ class ScenarioTests(unittest.TestCase):
         self.assertEqual(r['decision']['status'], 'intervened')
         self.assertIsNone(r['rl'])
         self.assertTrue(r['frames'][-1]['verified'])
-        m3 = next(f for f in r['frames'] if f['active_phase'] == 3 and f['phase'] == 'debugging')
+        m3 = next(f for f in r['frames'] if f['active_phase'] == 3 and f['phase'] == 'debugging' and 'rollback_step' in f['payload'])
         self.assertEqual(m3['payload']['rollback_step'], rollback)
         if kind:
             self.assertEqual(m3['payload']['directive_kind'], kind)
@@ -154,7 +170,7 @@ class HtmlExportTests(unittest.TestCase):
                        'id="current-step"', 'id="live-trace"', 'Execution history', 'id="execution-cursor"', 'id="bar-fill"',
                        'wire-active', 'wire-gold', 'wire-fault', 'wire-recovered'):
             self.assertIn(needle, page)
-        for i, m in enumerate(['Identify constraints', 'Rank candidates', 'Replay correction', 'Verify replay'], 1):
+        for i, m in enumerate(['Identify constraints', 'Rank candidates', 'Choose repair', 'Replay correction', 'Repair acceptance', 'Stand-in verifier'], 1):
             self.assertIn(f'id="ms-{i}"', page)
             self.assertIn(m, page)
         for agent in ('planner', 'order_agent', 'product_agent', 'returns_agent'):

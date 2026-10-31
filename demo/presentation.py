@@ -1,0 +1,34 @@
+"""Presenter view built from the same evidence and widgets as the scrolling page."""
+CSS = r'''
+.presentation{position:fixed;inset:0;z-index:1000;background:#f6f5f1;color:#202724;display:flex;flex-direction:column}.presentation[hidden]{display:none}.presentation-header,.presentation-footer{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 4vw;border-bottom:1px solid #d7ded1;font:12px var(--mono)}.presentation-header strong{font:600 17px var(--sans)}.presentation-header button,.presentation-footer button{border:1px solid #c3d1bb;border-radius:30px;background:#fff;padding:10px 16px;color:#274532}.presentation-footer{border:0;border-top:1px solid #d7ded1}.presentation-main{flex:1;min-height:0;overflow:auto;padding:3vh 6vw;display:flex;align-items:center;justify-content:center}.presentation-slide{width:min(1180px,100%)}.presentation-slide h2{font-size:clamp(34px,4.8vw,65px);line-height:1.08;letter-spacing:-.04em;margin:0 0 22px}.presentation-slide>p{font-size:clamp(16px,1.6vw,21px);line-height:1.65;color:#667463;max-width:900px}.presentation-slide .approach{margin-top:18px}.presentation-slide .approach-note{max-width:none}.presentation-slide .training-flow span{font-size:15px;padding:20px}.presentation-slide .blame-example{font-size:16px}.presentation-slide .blame-example caption{font-size:13px}.presentation-slide .benchmark-dataset{margin-top:24px}.presentation-slide iframe{width:100%;height:65vh;border:0;border-radius:14px;background:#0b1418}.presentation-slide .evidence-stage{margin-top:18px}.presentation-slide .evidence-stage p{font-size:15px}.presentation-slide .lens-cards{margin-top:18px}.presentation-help{color:#71806a}.presentation-footer div{display:flex;gap:8px}@media(max-width:760px){.presentation-main{align-items:start;padding:25px}.presentation-header,.presentation-footer{padding:12px}.presentation-help{display:none}.presentation-slide .training-flow{grid-template-columns:1fr 1fr}.presentation-slide iframe{height:65vh}.presentation-slide .benchmark-dataset{grid-template-columns:1fr}}
+'''
+JS = r'''
+(function(){
+ const button=document.getElementById('presentation-toggle');
+ const overlay=document.createElement('section');overlay.className='presentation';overlay.hidden=true;overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Presentation mode');
+ overlay.innerHTML='<header class="presentation-header"><strong>AgentReroute / Presentation</strong><button type="button" id="present-close">Exit presentation ✕</button></header><main class="presentation-main" id="present-main"></main><footer class="presentation-footer"><span id="present-count"></span><span class="presentation-help">Click empty space or press → / Space to advance · ← to go back</span><div><button id="present-prev" type="button">← Back</button><button id="present-next" type="button">Next →</button></div></footer>';
+ document.body.append(overlay);const main=overlay.querySelector('#present-main'),count=overlay.querySelector('#present-count');let index=0;
+ const clone=(selector)=>document.querySelector(selector).outerHTML;
+ const slides=[
+  ()=>'<p class="overline">AN INSIDE LOOK AT FAULT ATTRIBUTION</p><h2>A wrong turn.<br><span>A trail of evidence.</span></h2><p>When an AI agent fails, which decision caused it?</p>',
+  ()=>'<p class="overline">THE EXISTING APPROACH</p><h2>AgentRx</h2>'+clone('.baseline-approach'),
+  ()=>'<p class="overline">OUR APPROACH</p><h2>AgentReroute</h2>'+clone('.multi-approach'),
+  ()=>'<p class="overline">01 / CHECK</p><h2>Three perspectives.<br>One recorded trace.</h2>'+clone('.evidence-stage-0'),
+  ()=>'<p class="overline">02 / GATHER</p><h2>Turn violations into evidence.</h2>'+clone('.evidence-stage-1'),
+  ()=>'<p class="overline">WHAT WE TRIED FIRST</p><h2>Training did not help.</h2>'+clone('.evidence-stage-training')+'<p>The 44% → 36% result is a held-out development experiment, not the published benchmark comparison.</p>',
+  ()=>'<p class="overline">03 / WHAT WE FINALISED</p><h2>Let the model select.</h2>'+clone('.evidence-stage-2'),
+  ()=>'<p class="overline">04 / SCORE</p><h2>Predict first. Reveal the answer afterward.</h2>'+clone('.evidence-stage-3'),
+  ()=>'<p class="overline">SCRIPTED RETAIL ILLUSTRATION</p><h2>Watch the recovery workflow.</h2><p>Interactive illustration, separate from benchmark results.</p><iframe title="Retail illustration" data-src="/widgets/system"></iframe>',
+  ()=>'<p class="overline">THE EVIDENCE / 73 PUBLISHED TRACES</p><h2>Small improvements. Wide uncertainty.</h2><p>The differences against AgentRx were not statistically significant.</p>'+clone('#benchmark-quality .benchmark-dataset'),
+  ()=>'<p class="overline">LIVE COMPARISON</p><h2>Two approaches. One trace.</h2><iframe title="Compare engines" data-src="/widgets/compare"></iframe>',
+  ()=>'<p class="overline">THE OPPORTUNITY</p><h2>Find the decision that started the failure.</h2><p>Inspect the evidence, understand the uncertainty, and explore how a correction might be tested.</p>'
+ ];
+ function show(){index=Math.max(0,Math.min(slides.length-1,index));main.innerHTML='<div class="presentation-slide">'+slides[index]()+'</div>';main.scrollTop=0;count.textContent=(index+1)+' / '+slides.length;overlay.querySelector('#present-prev').disabled=index===0;overlay.querySelector('#present-next').disabled=index===slides.length-1;main.querySelectorAll('iframe[data-src]').forEach(frame=>{frame.onload=()=>{try{frame.contentDocument.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close();return;}if(e.target.closest('input,textarea,select,[contenteditable=\"true\"]'))return;if(e.key==='ArrowLeft'){e.preventDefault();e.stopImmediatePropagation();prev();}else if(e.key==='ArrowRight'){e.preventDefault();e.stopImmediatePropagation();next();}},true);}catch(_){}};frame.src=frame.dataset.src;});}
+ function close(){overlay.hidden=true;main.replaceChildren();document.body.style.overflow='';button.focus();}
+ function next(){if(index<slides.length-1){index++;show();}}function prev(){if(index>0){index--;show();}}
+ button.addEventListener('click',()=>{overlay.hidden=false;document.body.style.overflow='hidden';index=0;show();overlay.querySelector('#present-close').focus();});
+ overlay.querySelector('#present-close').onclick=close;overlay.querySelector('#present-next').onclick=next;overlay.querySelector('#present-prev').onclick=prev;
+ main.addEventListener('click',e=>{if(!e.target.closest('button,a,select,input,textarea,summary,details,iframe'))next();});
+ document.addEventListener('keydown',e=>{if(overlay.hidden)return;if(e.key==='Escape'){e.preventDefault();close();return;}if(e.target.closest('input,textarea,select,[contenteditable="true"]'))return;if(e.key==='ArrowLeft'){e.preventDefault();prev();}else if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();next();}});
+})();
+'''

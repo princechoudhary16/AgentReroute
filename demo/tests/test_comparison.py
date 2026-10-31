@@ -119,6 +119,25 @@ class ComparisonExecutionTests(unittest.TestCase):
         self.assertEqual(blame['weights'], list(THETA0))
         self.assertEqual(len(service.snapshot(state['id'], events[-2]['seq'])['events']), 1)
 
+    def test_trained_checkpoint_is_loaded_read_only_and_recorded(self):
+        from demo.comparison import RL_CHECKPOINT
+        judge = DualLoopRLJudge.load(RL_CHECKPOINT, read_only=True)
+        with patch.object(DualLoopRLJudge, 'save', side_effect=AssertionError('No checkpoint writes')), \
+             patch.object(DualLoopRLJudge, 'record_recovery_outcome', side_effect=AssertionError('No online learning')):
+            service = self.service()
+            state = wait_done(service, service.start('tau:fixture-1', 'fixture-model', 'seeds_select', 'trained')['id'])
+        self.assertEqual(state['status'], 'completed')
+        self.assertEqual(state['policy_mode'], 'trained')
+        self.assertEqual(state['results']['agentreroute']['policy_mode'], 'trained')
+        blame = json.loads(next((self.root/'runs').rglob('blame_matrix.json')).read_text())
+        self.assertEqual(blame['weights'], judge.weights)
+        self.assertNotEqual(blame['weights'], list(THETA0))
+        self.assertEqual(self.service().snapshot(state['id'])['policy_mode'], 'trained')
+
+    def test_unknown_policy_mode_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'policy'):
+            self.service().start('tau:fixture-1', 'fixture-model', 'seeds_select', 'unknown')
+
     def test_allowlisted_input_discards_annotation_fields(self):
         row = fixture_record()
         row['trajectory']['gold'] = {'step': 4}

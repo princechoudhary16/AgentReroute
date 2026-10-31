@@ -13,6 +13,7 @@ from urllib.parse import parse_qs, urlparse
 from benchmark.env.workflow import AGENTS
 
 from .studio_theme import BASE_CSS, navigation
+from .recovery_example import example_html
 from .scenarios import MILESTONES, SCENARIOS, run_scenario, scenario_meta
 
 WORLD_W, WORLD_H = 1240, 560
@@ -110,9 +111,9 @@ def build_html(scenarios=None, live=False):
     svg, nodes = render_canvas()
     payload = json.dumps(data, ensure_ascii=False).replace('</', '<\\/')
     milestones = ''.join(f'<li class="milestone" id="ms-{i}"><span class="ms-dot"></span>{html.escape(m)}</li>'
-                         for i, m in enumerate(['Identify constraints', 'Rank candidates', 'Replay correction', 'Verify replay'], 1))
+                         for i, m in enumerate(['Identify constraints', 'Rank candidates', 'Choose repair', 'Replay correction', 'Repair acceptance', 'Stand-in verifier'], 1))
     return (PAGE.replace('__SVG__', svg).replace('__NODES__', nodes).replace('__BUTTONS__', _buttons(meta))
-            .replace('__MILESTONES__', milestones).replace('__MODE__', 'Interactive simulation' if live else 'Offline simulation')
+            .replace('__RECOVERY_EXAMPLE__', example_html()).replace('__MILESTONES__', milestones).replace('__MODE__', 'Interactive simulation' if live else 'Offline simulation')
             .replace('__WORLD_W__', str(WORLD_W)).replace('__WORLD_H__', str(WORLD_H)).replace('__DATA__', payload))
 
 
@@ -170,10 +171,10 @@ def make_server(host='127.0.0.1', port=8765, delay=0.9, comparison_service=None)
                     raise ValueError('Request must be a JSON object.')
                 path = urlparse(self.path).path
                 if path == '/api/comparisons':
-                    if not {'scenario', 'model'} <= set(body) or set(body) - {'scenario', 'model', 'variant'}:
-                        raise ValueError('Supply scenario, model and optional variant only.')
+                    if not {'scenario', 'model'} <= set(body) or set(body) - {'scenario', 'model', 'variant', 'policy_mode'}:
+                        raise ValueError('Supply scenario, model and optional variant and policy mode only.')
                     return self._json(202, comparisons.start(body['scenario'], body['model'],
-                                                            body.get('variant', 'seeds_select')))
+                                                            body.get('variant', 'seeds_select'), body.get('policy_mode', 'untrained')))
                 parts = path.strip('/').split('/')
                 if len(parts) == 4 and parts[:2] == ['api', 'comparisons'] and parts[3] == 'cancel':
                     if body:
@@ -289,6 +290,8 @@ PAGE = r'''<!doctype html>
 @media(max-width:1150px){.workspace-grid{grid-template-columns:minmax(0,1fr) 270px}.canvas{height:390px}.milestones{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:850px){.workspace-grid{grid-template-columns:1fr}.scenarios{grid-template-columns:repeat(2,1fr)}.canvas{height:410px}#current-step .panel-body{padding:18px}.inspector-footer{display:none}.milestones{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:540px){.scenario-btn{font-size:11px;padding:12px;gap:8px}.canvas{height:300px}.canvas-legend{gap:12px;padding:0 12px 13px}.canvas-legend small{display:none}.chart-head{padding:13px}.playback-bar{padding:12px;gap:4px;flex-wrap:wrap}.playback-bar input{order:5;flex-basis:70%;margin:6px 0}.frame-count{margin-left:auto}.milestones{grid-template-columns:repeat(2,1fr)}.progress{padding:14px}.progress-top{gap:8px}.progress-top .label{font-size:10px}.trace-row{grid-template-columns:26px 80px minmax(0,1fr)}.summary-details .summary{font-size:10px}}
+.decision-example{margin-top:22px;padding:25px}.decision-head{display:flex;justify-content:space-between;gap:20px;align-items:start}.decision-head h3{font-size:22px;margin:8px 0}.decision-example>p,.example-result p{font-size:12px;line-height:1.7;color:#aabeb6;margin:10px 0}.ev-formula{font-family:var(--mono);color:#c6f196!important}.ev-options{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;list-style:none;padding:0}.ev-option{padding:12px;border:1px solid #35464a;border-radius:8px;font-size:11px}.ev-option.chosen{border-color:#a5d981;background:#1c3024}.ev-option span,.example-ladder span{display:block;margin-top:6px;color:#91a99f}.ev-option em{color:#c7f292}.example-ladder{font-size:12px;line-height:1.5;margin:15px 0}.ladder-current{color:#c7f292!important}.ladder-next{opacity:.6}.example-result{margin-top:15px;padding:15px;background:#2d2023;border:1px solid #6b4148;border-radius:9px;font-size:12px}.example-result[hidden]{display:none}.repair-correction{color:#c5f18f;font-size:13px;line-height:1.5}.repair-ladder{font-size:11px;line-height:1.8;padding-left:20px}.repair-ladder .chosen{color:#c5f18f}.repair-ladder .next{opacity:.55}@media(max-width:760px){.ev-options{grid-template-columns:1fr}.decision-head{flex-direction:column}}
+.milestones{grid-template-columns:repeat(6,1fr)}@media(max-width:850px){.milestones{grid-template-columns:repeat(3,1fr)}}@media(max-width:540px){.milestones{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body><main class="studio-shell">
@@ -302,8 +305,9 @@ __NAV__
 <div class="canvas" id="canvas"><div id="world">__SVG____NODES__</div></div><div class="canvas-legend"><span>Active</span><span>Fault</span><span>Recovered</span><small>Drag to explore · Scroll to zoom</small></div>
 <div class="playback-bar"><button class="ctl" id="btn-prev" aria-label="Previous step">←</button><button class="ctl primary" id="btn-play" aria-label="Play or pause">▶ Play</button><button class="ctl" id="btn-next" aria-label="Next step">→</button><input id="execution-cursor" type="range" min="0" max="0" value="0" aria-label="Execution frame"><span class="frame-count" id="frame-count">0 / 0</span><select class="ctl" id="speed" aria-label="Playback speed"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option></select></div>
 <div class="progress" id="debugger"><div class="progress-top"><span class="label">Recovery loop</span><span class="badge b-normal" id="dbg-badge">Idle</span><span id="dbg-text"></span><span id="pct">0%</span></div><div class="bar"><div id="bar-fill"></div></div><ol class="milestones">__MILESTONES__</ol></div></section>
-<aside class="panel" id="current-step"><h3>Inside this step</h3><div class="panel-body"><p id="step-title">Preparing the system</p><div class="chips"><span class="badge b-normal" id="step-status">NORMAL</span><span class="chip" id="step-actor">actor</span><span class="chip" id="step-phase">phase</span><span class="chip" id="step-index">step</span></div><div id="step-fault"></div><p id="step-narrative"></p><details class="payload-details"><summary>Inspect step data</summary><pre id="step-payload">{}</pre></details></div><div class="inspector-footer">Select a frame to inspect the decision, tool call or recovery action at that moment.</div></aside>
+<aside class="panel" id="current-step"><h3>Inside this step</h3><div class="panel-body"><p id="step-title">Preparing the system</p><div class="chips"><span class="badge b-normal" id="step-status">NORMAL</span><span class="chip" id="step-actor">actor</span><span class="chip" id="step-phase">phase</span><span class="chip" id="step-index">step</span></div><div id="step-fault"></div><p id="step-narrative"></p><div id="step-repair-details"></div><details class="payload-details"><summary>Inspect step data</summary><pre id="step-payload">{}</pre></details></div><div class="inspector-footer">Select a frame to inspect the decision, tool call or recovery action at that moment.</div></aside>
 </div>
+__RECOVERY_EXAMPLE__
 <section class="dock"><details class="panel" id="live-trace"><summary>Execution history <span>Every step, in order</span></summary><ol id="trace"></ol></details></section>
 <footer class="studio-footer"><span>Scripted illustration · Frozen policy · No model calls · Separate from the published benchmark.</span><span>Observe → Attribute → Recover → Verify</span></footer>
 </main>
@@ -439,16 +443,17 @@ function paintProgress(f) {
   if (f.phase === 'debugging') { text = 'Debugging'; cls = 'b-debug'; }
   if (f.phase === 'recovery_replay') { text = 'Replaying repair'; cls = 'b-recovered'; }
   if (f.phase === 'verified') {
-    text = f.title.includes('Abstained') ? 'No checks flagged · abstained' : f.verified ? 'Replay accepted · policy frozen' : 'Not verified';
+    text = f.title.includes('Abstained') ? 'No checks flagged · abstained' : f.payload.verifier ? (f.verified ? 'Stand-in verifier · PASS' : 'Stand-in verifier · FAIL') : (f.verified ? 'Repair acceptance · PASS' : 'Repair acceptance · FAIL');
     cls = f.verified ? 'b-recovered' : 'b-fault';
   }
   if (f.phase === 'initial_run' && f.status === 'FAULT') { text = 'Fault observed'; cls = 'b-fault'; }
   badge.textContent = text; badge.className = 'badge ' + cls;
   $('dbg-text').textContent = f.active_phase ? DATA.milestones[f.active_phase - 1] : '';
-  for (let i = 1; i <= 4; i++) {
+  const stage=f.phase==='verified' ? (f.payload.verifier || f.title.includes('Abstained') ? 6 : 5) : f.phase==='recovery_replay' ? 4 : f.active_phase;
+  for (let i = 1; i <= 6; i++) {
     const m = $(`ms-${i}`);
-    m.classList.toggle('done', f.active_phase > i || (f.active_phase === i && i === 4));
-    m.classList.toggle('current', f.active_phase === i && i < 4);
+    m.classList.toggle('done', stage > i || (stage === i && i === 6));
+    m.classList.toggle('current', stage === i && i < 6);
   }
 }
 function paintStep(f) {
@@ -461,23 +466,30 @@ function paintStep(f) {
   const fault = $('step-fault');
   fault.style.display = f.fault ? 'block' : 'none';
   fault.textContent = f.fault ? `Injected fault: ${f.fault.operator} (${f.fault.mode}) — ${f.fault.note}` : '';
+  const details=$('step-repair-details');details.replaceChildren();
+  if(f.payload.example){const p=document.createElement('p');p.textContent='EV = Σ (belief × strategy prior × 0.97^distance) − cost. Separate scripted example.';details.append(p);const list=document.createElement('ol');for(const row of f.payload.example.options){const li=document.createElement('li');li.textContent=`Step ${row.rollback_step} · ${row.strategy.replaceAll('_',' ')} · EV ${row.ev.toFixed(3)}${row.strategy===f.payload.example.chosen.strategy && row.rollback_step===f.payload.example.chosen.rollback_step?' · selected':''}`;list.append(li);}details.append(list);}
+  if(f.payload.correction){const p=document.createElement('p');p.className='repair-correction';p.textContent=f.payload.correction;details.append(p);}
+  if(f.payload.ladder && f.payload.ladder.length){const h=document.createElement('strong');h.textContent='Repair ladder';details.append(h);const list=document.createElement('ol');list.className='repair-ladder';for(const name of f.payload.ladder){const item=document.createElement('li');item.textContent=name.replaceAll('_',' ')+(name===f.payload.strategy?' · selected':'');item.className=name===f.payload.strategy?'chosen':'next';list.append(item);}details.append(list);}
+  if(f.payload.verifier){const p=document.createElement('p');p.textContent='Sees: task, policy, transcript. Does not see: repair, rationale or strategy. '+f.payload.limits;details.append(p);}
   $('step-payload').textContent = JSON.stringify(f.payload, null, 2);
   if (window.storyGuide) window.storyGuide(systemGuide(f));
 }
 
 function systemGuide(f) {
+  if (f.phase === 'verified' && !f.payload.verifier && !f.title.includes('Abstained')) return {title:'The repair checks its own proposal.',body:'These are the repair’s acceptance checks. The next frame runs a separate deterministic stand-in verifier.'};
   if (f.phase === 'verified') return f.title.includes('Abstained')
     ? {title:'A healthy run can stay as it is.',body:'The policy found no fault to repair and abstained. Recovery also means knowing when to leave the execution alone.'}
-    : f.verified ? {title:'Check the outcome, not just the explanation.',body:'This replay passed the verifier. The weights stay frozen. This scripted example illustrates repair acceptance, not the current published-trace evaluation.'}
+    : f.verified ? {title:'Check the outcome, not just the explanation.',body:'A deterministic stand-in checks the task-relevant write in the transcript. It is not a model verifier or a full policy-compliance check.'}
     : {title:'The correction has not been verified.',body:'A plausible repair is not enough. This result did not pass verification; inspect the replay and the recorded checks.'};
   if (f.phase === 'recovery_replay') return {title:'Try a different path from the fault.',body:'The system is replaying with a correction applied. Watch the highlighted agent and its tools; verification comes after the new execution.'};
+  if (f.kind === 'decision_example') return {title:'Compare the recovery options.',body:'This separate hypothetical example uses the real expected-value policy. Its scores illustrate the decision; they do not drive this scripted retail replay.'};
   if (f.phase === 'debugging' && f.active_phase === 3 && f.payload.decision?.status === 'abstained')
     return {title:'No correction is needed here.',body:'The policy abstained and selected no rollback point. This execution will be left unchanged; the final verification records that decision.'};
   if (f.phase === 'debugging' && f.active_phase === 2 && !f.payload.top1)
     return {title:'No intervention point is selected.',body:'The ranking did not identify a usable fault target. Inspect the checks before assuming that a repair is needed.'};
   if (f.phase === 'debugging') return [null,
     {title:'Look at the trace from three perspectives.',body:'The policy checks the goal and plan, tool execution, and the facts shared between agents. These checks supply evidence for possible faults.'},
-    {title:'Rank the possible starting points.',body:'The policy combines the evidence into fault candidates. A higher policy score means a preferred intervention, not a calibrated probability.'},
+    {title:'Rank the possible starting points.',body:'The policy combines evidence into fault candidates, identifying the agent and step to inspect.'},
     {title:'Go back to the decision that matters.',body:'A rollback point and correction have been selected. The next replay tests whether changing this decision improves the outcome.'}][f.active_phase] || {title:'Inspect the evidence.',body:f.narrative};
   if (f.status === 'FAULT') return {title:'Here is the injected wrong turn.',body:'The highlighted action contains the scenario’s fault. This label helps you follow the demonstration; the recovery policy has to work from the observable trace.'};
   return {title:'Follow the request through the agents.',body:f.kind==='tool'
@@ -583,6 +595,7 @@ function selectScenario(sid) {
   S.es.addEventListener('end', done); S.es.onerror = done;
   S.playing = true; $('btn-play').textContent = '❚❚ Pause';
 }
+$('example-fail').onclick=()=>{ $('example-result').hidden=false; $('example-fail').hidden=true; document.querySelector('.ladder-current').textContent='1 · Restore handoff context — rejected';document.querySelector('.ladder-next').textContent='2 · Reground from tool output — selected next';document.querySelector('.ladder-next').style.opacity='1'; };
 document.querySelectorAll('.scenario-btn').forEach((b) => (b.onclick = () => selectScenario(b.dataset.sid)));
 fitView();
 let canvasWidth=canvas.clientWidth, canvasHeight=canvas.clientHeight;

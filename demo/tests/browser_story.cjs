@@ -13,9 +13,23 @@ const fs=require('node:fs');
   fs.mkdirSync('runs/ui-story-qa',{recursive:true});
   await page.goto(base);
   await page.screenshot({path:'runs/ui-story-qa/story-hero-desktop.png'});
+  await page.locator('#presentation-toggle').click();
+  assert.equal(await page.locator('.presentation').isVisible(),true);
+  assert.equal(await page.locator('#present-count').textContent(),'1 / 12');
+  await page.keyboard.press('ArrowRight');assert.match(await page.locator('#present-main').textContent(),/AgentRx/);
+  await page.keyboard.press('ArrowRight');assert.match(await page.locator('#present-main').textContent(),/AgentReroute/);
+  await page.keyboard.press('ArrowLeft');assert.match(await page.locator('#present-main').textContent(),/AgentRx/);
+  await page.locator('#present-main').click({position:{x:10,y:10}});assert.match(await page.locator('#present-main').textContent(),/AgentReroute/);
+  for(let i=0;i<3;i++)await page.keyboard.press('ArrowRight');
+  assert.match(await page.locator('#present-main').textContent(),/44% → 36%/);
+  for(let i=0;i<3;i++)await page.keyboard.press('ArrowRight');
+  await page.frameLocator('.presentation iframe').locator('#example-fail').click();
+  assert.match(await page.frameLocator('.presentation iframe').locator('#example-result').textContent(),/FAIL/);
+  await page.keyboard.press('Escape');assert.equal(await page.locator('.presentation').isVisible(),false);
+
   assert.equal(await page.locator('#story').count(),1,'Home must tell the story');
   assert.equal(await page.locator('#system-widget').getAttribute('src'),null,'Do not start the system before its chapter');
-  assert.equal(await page.locator('#mechanism-visual .evidence-stage').count(),4,'Explain all four attribution stages');
+  assert.equal(await page.locator('#mechanism-visual .evidence-stage').count(),5,'Explain all four attribution stages');
   await page.locator('a[href="#mechanism"]').first().click();
   for (const stage of [0, 2, 3]) {
     await page.locator(`[data-story-stage="${stage}"]`).click();

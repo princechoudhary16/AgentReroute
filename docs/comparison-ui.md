@@ -8,6 +8,20 @@ Open http://localhost:8765/. The scrolling page explains the current fault-attri
 method, its evidence and limitations, followed by two working widgets. Dedicated
 views are `/system` and `/compare`.
 
+## Presentation mode
+
+Choose **Presentation mode** in the top navigation. Click a slide or use the
+right arrow to advance, and the left arrow to return. Escape exits; interactive
+controls inside the two widgets remain available. The research and benchmark
+slides are derived from the same evidence as the scrolling page.
+
+The retail timeline separates the repair's acceptance check from a deterministic
+stand-in verifier. This verifier only checks for a requested write and a non-error
+tool response; it does not establish complete policy compliance. Its separate
+failed-repair example uses scripted replays and a stand-in verifier with the real
+recovery orchestrator and EV policy. It is a teaching scenario and does not control
+the retail replay above it.
+
 ## What changed with the research
 
 The final method combines perspective-scoped checks with an LLM that can choose
@@ -48,7 +62,7 @@ Choose a published trace and **fixed checks** or **written checks**, then run th
 comparison. Both arms receive the same observable input, policy and tools and use
 Gemini 3.1 Flash Lite at temperature zero. AgentRx retains the existing constraint,
 check and joint-judge path. AgentReroute uses the current trace selector, with no
-repair cascade and no weight updates. The selected prediction is distinct from
+repair cascade and no weight updates. The candidate policy selector defaults to untrained THETA0, matching the reported approach. The experimental trained setting loads the older `checkpoints/rl_state.json` in read-only mode; this is not the reported headline, and no learning occurs during the run. Both modes retain the full-trace LLM selector. The selected prediction is distinct from
 the evidence shortlist: the selector may choose a step outside it.
 
 Gold labels are held separately and used only after attribution for scoring. The

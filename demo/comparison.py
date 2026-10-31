@@ -16,6 +16,8 @@ from . import model_settings
 SYSTEMS = ('agentrx', 'agentreroute')
 TERMINAL = ('completed', 'partial', 'error', 'canceled')
 CORPUS = Path(__file__).resolve().parents[1] / 'data' / 'benchmark'
+RL_CHECKPOINT = Path(__file__).resolve().parents[1] / 'checkpoints' / 'rl_state.json'
+POLICY_MODES = ('untrained', 'trained')
 VARIANTS = {
     'seeds_select': {'evidence': False, 'protocol': 'mp_rl', 'llm_selector': 'trace', 'selector_pool': 5},
     'synth_select_p10': {'evidence': True, 'protocol': 'mp_rl', 'llm_selector': 'trace', 'selector_pool': 10},
@@ -127,14 +129,15 @@ class PublishedInput:
         self.input_hash = digest({'trajectory': self.trace, 'policy': self.policy, 'tools': self.tools})
 
 
-def run_system(system, case, raw_provider, output, emit, cancel, variant='seeds_select'):
+def run_system(system, case, raw_provider, output, emit, cancel, variant='seeds_select', policy_mode='untrained'):
     """Finish a blind attribution arm. The service scores only after both arms have returned."""
     output = Path(output)
     provider = MeasuredProvider(raw_provider, emit, output, cancel)
     started = time.monotonic()
     result = {'system': system, 'status': 'running', 'input_hash': case.input_hash,
               'variant': variant if system == 'agentreroute' else 'agentrx',
-              'policy_state': 'THETA0 frozen; inference only' if system == 'agentreroute' else 'joint judge',
+              'policy_mode': policy_mode if system == 'agentreroute' else None,
+              'policy_state': ('trained checkpoint frozen; inference only' if policy_mode == 'trained' else 'THETA0 frozen; inference only') if system == 'agentreroute' else 'joint judge',
               'provider': copy.deepcopy(provider.identity), 'degradation_reasons': []}
     emit({'kind': 'system_started', **result})
     try:
@@ -146,7 +149,10 @@ def run_system(system, case, raw_provider, output, emit, cancel, variant='seeds_
                    'protocol': 'joint', 'recovery_loop': False})
         result['config'] = config
         if system == 'agentreroute':
-            judge = DualLoopRLJudge(read_only=True)
+            if policy_mode == 'trained' and not RL_CHECKPOINT.is_file():
+                raise FileNotFoundError('Trained RL checkpoint is unavailable.')
+            judge = (DualLoopRLJudge.load(RL_CHECKPOINT, read_only=True) if policy_mode == 'trained'
+                     else DualLoopRLJudge(read_only=True))
             diagnosed = diagnose_mp_rl(copy.deepcopy(case.trace), case.policy, copy.deepcopy(case.tools), config,
                                       provider, output/'diagnosis', rl_judge=judge)
         else:
@@ -254,7 +260,7 @@ class ComparisonService:
         return {'models': models, 'provider': 'test', 'configured': True,
                 'default_model': models[0] if models else None}
 
-    def start(self, scenario, model, variant='seeds_select'):
+    def start(self, scenario, model, variant='seeds_select', policy_mode='untrained'):
         info = self.model_info()
         if not info['configured']:
             raise ValueError(info['message'])
@@ -262,6 +268,10 @@ class ComparisonService:
             raise ValueError('Select an available model.')
         if not isinstance(variant, str) or variant not in VARIANTS:
             raise ValueError('Select fixed checks (seeds_select) or written checks (synth_select_p10).')
+        if policy_mode not in POLICY_MODES:
+            raise ValueError('Select a valid policy mode.')
+        if policy_mode == 'trained' and not RL_CHECKPOINT.is_file():
+            raise ValueError('Trained RL checkpoint is unavailable at checkpoints/rl_state.json.')
         records = self._records()
         if not records:
             raise ValueError(self.catalog_error)
@@ -279,7 +289,7 @@ class ComparisonService:
                 self.jobs.pop(next(iter(self.jobs)))
             jid = uuid.uuid4().hex
             job = {'id': jid, 'scenario': scenario, 'model': model, 'variant': variant,
-                   'mode': 'published_attribution', 'legacy': False, 'status': 'running', 'events': [], 'results': {},
+                   'mode': 'published_attribution', 'policy_mode': policy_mode, 'legacy': False, 'status': 'running', 'events': [], 'results': {},
                    'provider': info['provider'], 'cancel': threading.Event(), 'created': time.time()}
             self.jobs[jid] = job
             threading.Thread(target=self._run, args=(job, case, records[scenario]), daemon=True,
@@ -297,7 +307,7 @@ class ComparisonService:
         try:
             write_json(output/'input.json', {'trajectory': case.trace, 'policy': case.policy, 'tools': case.tools})
             self._emit(job, {'kind': 'input_ready', 'trace': case.trace, 'input_hash': case.input_hash,
-                             'notice': 'Published benchmark trace. Matched model settings; sequential attribution; THETA0 frozen. Labels are scored after both predictions.'})
+                             'notice': 'Published benchmark trace. Matched model settings; sequential attribution; selected policy frozen. Labels are scored after both predictions.'})
             # One transport means one rolling token budget across BOTH systems, including retries.
             provider = self.provider_factory(job['model'])
             for system in SYSTEMS:
@@ -305,7 +315,7 @@ class ComparisonService:
                     break
                 result = run_system(system, case, provider, output/system,
                                     lambda e, s=system: self._emit(job, {**e, 'system': s}),
-                                    job['cancel'], job['variant'])
+                                    job['cancel'], job['variant'], job['policy_mode'])
                 with self.lock:
                     job['results'][system] = result
             # Gold is first accessed here, after every model decision. It never enters a prompt.
@@ -338,7 +348,7 @@ class ComparisonService:
         with self.lock:
             job = self._lookup(job_id)
             return copy.deepcopy({k: job[k] for k in
-                ('id','scenario','model','provider','status','results','variant','mode','legacy')}) | {
+                ('id','scenario','model','provider','status','results','variant','mode','legacy','policy_mode')}) | {
                 'cancel_requested': job['cancel'].is_set(), 'events': copy.deepcopy(job['events'][after:]),
                 'artifact_dir': str((self.output/job_id).resolve())}
 
@@ -367,6 +377,7 @@ class ComparisonService:
             job['legacy'] = saved.get('mode') != 'published_attribution'
             job['mode'] = saved.get('mode', 'legacy_recovery')
             job['variant'] = saved.get('variant', 'legacy')
+            job['policy_mode'] = saved.get('policy_mode', 'untrained' if not job['legacy'] else 'legacy')
         except (OSError, ValueError, TypeError):
             raise KeyError(job_id) from None
         while len(self.jobs) >= self.max_jobs:

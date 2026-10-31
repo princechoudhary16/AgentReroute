@@ -12,6 +12,8 @@ const fs=require('node:fs');
     const page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[];
     page.on('pageerror',e=>errors.push(e.message));
     await page.goto(base+'/system');
+    await page.locator('#example-fail').click();
+    assert.match(await page.locator('#example-result').textContent(),/FAIL[\s\S]*0\.60 to 0\.31[\s\S]*reground/);
     await page.waitForFunction(()=>document.querySelector('#pct').textContent==='100%');
     assert.equal(await page.locator('#execution-cursor').count(),1,'System explorer needs frame scrubbing');
     const total=Number(await page.locator('#execution-cursor').getAttribute('max'));
