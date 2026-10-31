@@ -175,10 +175,10 @@ def chapter_existing():
 <div class="net-wrap" aria-label="The agent network: a planner connected to order, product and returns specialists">
  <div class="net" id="net">
   <svg viewBox="0 0 900 844" width="900" height="844" aria-hidden="true" style="position:absolute;inset:0">
-   <path d="M190 400 C 300 400, 330 180, 470 180" fill="none" stroke="#2b3a42" stroke-width="2"/>
-   <path id="sig-path" d="M190 400 C 300 400, 330 400, 470 400" fill="none" stroke="#2b3a42" stroke-width="2"/>
+   <path class="wire" pathLength="1" d="M190 400 C 300 400, 330 180, 470 180"/>
+   <path class="wire" pathLength="1" d="M190 400 C 300 400, 330 400, 470 400"/>
+   <path class="wire" pathLength="1" d="M190 400 C 300 400, 330 620, 470 620"/>
    <path class="signal" d="M190 400 C 300 400, 330 400, 470 400" fill="none" stroke="#bcf783" stroke-width="2" stroke-dasharray="8 12"/>
-   <path d="M190 400 C 300 400, 330 620, 470 620" fill="none" stroke="#2b3a42" stroke-width="2"/>
   </svg>
   <div class="signal-dot" style="position:absolute;width:10px;height:10px;border-radius:50%;background:#bcf783;box-shadow:0 0 14px #bcf783;offset-path:path('M190 400 C 300 400, 330 400, 470 400');offset-distance:0"></div>
   <div class="node p" style="left:0;top:350px"><div class="ol mint">Planner</div><strong>planner</strong><small>routes, authenticates, hands off</small></div>
@@ -187,7 +187,7 @@ def chapter_existing():
   <div class="node spec" style="left:470px;top:570px"><div class="ol">Returns</div><strong>returns_agent</strong><small>6 tools</small><div class="tools" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
  </div>
 </div>
-{foot('/system › the agent network · scene: the network grows out of one dot', '→ hand-off: Nischit')}''', scene='network', length=3)
+{foot('/system › the agent network · scene: the planner slides in from the right, then the specialists, then the wires, then the signal', '→ hand-off: Nischit')}''', scene='network', length=3)
     return agentrx + gap + network
 
 
@@ -561,14 +561,20 @@ JS = r'''
    el.querySelector('#gapviz').classList.toggle('closed',p>=.72);
   },
   network(el,p){
-   /* the drawing is 900×844; fit it to the stage and centre it, scaling around the planner (21%, 48%) */
+   /* the drawing is 900×844, fitted to the stage. The planner slides in from the right edge (0 → .28),
+      the three specialists follow (.3 → .7), the wires draw (.66 → .86), then the signal runs. */
    const net=el.querySelector('#net'),wrap=net.parentElement;
    const fit=Math.min(1,(wrap.clientHeight-24)/844,(wrap.clientWidth-24)/900);
    net.style.left=Math.round((wrap.clientWidth-900*fit)/2-189*(1-fit))+'px';
    net.style.top=Math.round((wrap.clientHeight-844*fit)/2-405*(1-fit))+'px';
-   const s=lerp(.06,fit,ease(clamp(p/.6,0,1)));
-   net.style.transform=`scale(${s.toFixed(4)})`;
-   net.classList.toggle('show-specs',p>=.45);net.classList.toggle('show-tools',p>=.72);net.classList.toggle('show-signal',p>=.85);
+   net.style.transform=`scale(${fit.toFixed(4)})`;
+   const far=wrap.clientWidth/fit+320;
+   const slide=(node,start,len)=>{const t=ease(clamp((p-start)/len,0,1));node.style.transform=`translateX(${Math.round(far*(1-t))}px)`;};
+   slide(net.querySelector('.node.p'),0,.28);
+   net.querySelectorAll('.node.spec').forEach((s,i)=>slide(s,.3+i*.1,.22));
+   const draw=ease(clamp((p-.66)/.2,0,1));
+   net.querySelectorAll('path.wire').forEach(w=>{w.style.strokeDashoffset=String((1-draw).toFixed(3));});
+   net.classList.toggle('show-signal',p>=.9);
   },
   lenses(el,p){
    const track=el.querySelector('#lens-track'),lenses=[...track.querySelectorAll('.lens')],w=track.clientWidth;

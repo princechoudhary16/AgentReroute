@@ -145,13 +145,11 @@ h1,h2,h3,p{margin:0}svg{display:block}
 .gapviz.closed .mark{opacity:1;transform:none}
 .net-wrap{position:absolute;left:calc(var(--rail) + 44%);right:0;top:var(--top);bottom:0;overflow:hidden;background-image:radial-gradient(#1b262c 1px,transparent 1px);background-size:28px 28px}
 .net{position:absolute;left:0;top:0;width:900px;height:844px;transform-origin:21% 48%;will-change:transform}
-.node{position:absolute;width:190px;border:1px solid #2b3a42;border-radius:12px;background:var(--surface);padding:14px 16px;box-shadow:0 10px 30px #00000066;transition:opacity .4s,transform .4s}
+.node{position:absolute;width:190px;border:1px solid #2b3a42;border-radius:12px;background:var(--surface);padding:14px 16px;box-shadow:0 10px 30px #00000066;will-change:transform}
 .node .ol{font-size:9px}.node strong{display:block;font-size:17px;font-weight:600;margin-top:6px}.node small{display:block;font-size:11px;color:var(--muted);margin-top:4px}
 .node.p{border-color:var(--mint);background:#13201a}
-.node.spec{opacity:0;transform:translateX(30px)}
-.net.show-specs .node.spec{opacity:1;transform:none}
-.tools{display:flex;gap:4px;margin-top:10px;opacity:0;transition:opacity .4s}
-.net.show-tools .tools{opacity:1}
+.net path.wire{fill:none;stroke:#2b3a42;stroke-width:2;stroke-dasharray:1;stroke-dashoffset:1}
+.tools{display:flex;gap:4px;margin-top:10px}
 .tools i{width:26px;height:18px;border-radius:4px;background:#1c2a31;border:1px solid #2b3a42}
 .net .signal{opacity:0}
 .net.show-signal .signal{opacity:1;animation:dash 3s linear infinite}
