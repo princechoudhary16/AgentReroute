@@ -131,6 +131,7 @@ def make_server(host='127.0.0.1', port=8765, delay=0.9, comparison_service=None)
     """ThreadingHTTPServer serving the page, /api/scenarios and /api/stream (SSE). ``delay``: seconds per frame."""
     from .comparison import ComparisonService
     from .comparison_page import PAGE as COMPARISON_PAGE
+    from .present import PAGE as PRESENT_PAGE
     from .story_page import PAGE as STORY_PAGE
     from .widget_bridge import embed
     comparisons = comparison_service or ComparisonService()
@@ -198,6 +199,8 @@ def make_server(host='127.0.0.1', port=8765, delay=0.9, comparison_service=None)
                 return self._send(200, page, 'text/html; charset=utf-8')
             if url.path == '/compare':
                 return self._send(200, COMPARISON_PAGE.encode('utf-8'), 'text/html; charset=utf-8')
+            if url.path == '/present':
+                return self._send(200, PRESENT_PAGE.encode('utf-8'), 'text/html; charset=utf-8')
             if url.path == '/api/models':
                 try:
                     return self._json(200, comparisons.model_info())
@@ -603,7 +606,9 @@ window.addEventListener('resize', () => {
   if(canvas.clientWidth===canvasWidth && canvas.clientHeight===canvasHeight)return;
   canvasWidth=canvas.clientWidth;canvasHeight=canvas.clientHeight;fitView();
 });
-if (DATA.scenarios.length) selectScenario(DATA.scenarios[0].id);
+const requested = new URLSearchParams(location.search).get('scenario');   // ?scenario=<id> preselects one
+const initial = DATA.scenarios.find((m) => m.id === requested) || DATA.scenarios[0];
+if (initial) selectScenario(initial.id);
 </script>
 </body>
 </html>
