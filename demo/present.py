@@ -10,11 +10,11 @@ from html import escape
 from .present_css import CSS
 from .present_data import (CHAPTERS, CONTROLS, CORPUS, DISTANCE_DISCOUNT, HARM_P, ORCHESTRATOR_ABSTAINED,
                            ORCHESTRATOR_REJECTED, RECOVERY, RECOVERY_EPISODES, REPAIR_CONFIRMED_CLAIMS, RQ2_P,
-                           STRATEGIES, TRAINING, VERIFIER_CONFIRMED_CLAIMS)
+                           STRATEGIES, VERIFIER_CONFIRMED_CLAIMS)
 from .story_data import DOMAINS, FINAL_ROWS, HEADLINE, SELECTOR_ROWS, paired, summarize
 from .studio_theme import MARK
 
-BEATS_PER_CHAPTER = (3, 3, 4, 3, 3, 2)
+BEATS_PER_CHAPTER = (3, 3, 5, 3, 3, 2)
 
 # The intro ring: the planner in the centre, the customer and the three specialists around it
 # (ids, label, role, x%, y%). HOPS is case II, Wrong specialist, as the activation order T+0 … T+6.
@@ -192,75 +192,46 @@ def chapter_existing():
 
 
 # ------------------------------------------------------------------------------ 03 fault attribution
-def chapter_attribution():
-    mini = ''.join(f'<div class="step" data-i="{i}">{i}</div>' for i in range(1, 29))
-    check = beat(2, 1, f'''
-<div class="grid2" style="align-items:end">
- {head('01 / Check', 'One recorded trace.<br>Three sets of questions.')}
- <p class="lead rv" style="--d:2">Each reviewer looks for one kind of mistake. Each check sees the trace only up to the step it judges, so a verdict can never lean on what happened later.</p>
-</div>
-<div class="lens-track" id="lens-track">
- <div class="lens a" data-k="0"><div class="ol">Intent &amp; plan</div><strong>Did this step serve the request, within policy?</strong></div>
- <div class="lens b" data-k="1"><div class="ol">Tool execution</div><strong>Was the call well formed, did it succeed, was it read right?</strong></div>
- <div class="lens c" data-k="2"><div class="ol">Handoffs &amp; grounding</div><strong>Were the facts passed between agents actually observed?</strong></div>
-</div>
-<div class="trace-mini" id="trace-mini" aria-label="A 28-step trace; steps light up as the lenses pass">{mini}<div class="edge" id="edge" style="left:0"><span>PREFIX EDGE · nothing right of this line is visible to a check</span></div></div>
-<div class="vios" id="vios">
- <div class="vio" data-step="5" style="color:var(--mint)"><i style="background:var(--mint)"></i>step 5 · intent</div>
- <div class="vio" data-step="10" style="color:var(--amber)"><i style="background:var(--amber)"></i>step 10 · handoff</div>
- <div class="vio" data-step="16" style="color:var(--cyan)"><i style="background:var(--cyan)"></i>step 16 · tool</div>
- <div class="vio" data-step="24" style="color:var(--amber)"><i style="background:var(--amber)"></i>step 24 · grounding</div>
-</div>
-{foot('home › follow the evidence › beat 01 and the lens cards · scene: three lenses sweep the pinned trace, prefix only')}''', scene='lenses', length=3)
+ARCH_CAPTIONS = (
+    'AgentRx: constraints from the policy and tools, checks on the trace, and one judge for the verdict.',
+    'We keep the constraints and the checks. The one judge becomes three reviewers, one kind of mistake each.',
+    'The reviewers produce evidence, not a verdict: a blame matrix and ten features per candidate step.',
+    'Framed as RL: the state is the trace and its evidence, the action is which step to blame, the repair system is the environment, its acceptance check is the reward.',
+    'The reward was gameable, so the policy is frozen. One LLM call reads the evidence as an argument and names the step, the agent and the obligation it broke.',
+)
 
-    t = TRAINING
-    gather = beat(2, 2, f'''
-<div class="grid2">
- <div>
-  {head('02 / Gather', 'Turn violations<br>into evidence.', lead='Violations go into a blame matrix: how often each agent breaks each reviewer’s rules. Every candidate step gets ten features, including its position, because a root cause comes before its symptoms.', width='100%')}
-  <div class="card rv" style="--d:3;padding:22px;margin-top:4vh">
-   <div class="ol" style="font-size:9px;margin-bottom:12px">Blame matrix · lost-context retail trace · violation rate</div>
-   <table class="blame" aria-label="Violation rate per agent per perspective"><thead><tr><th>Agent</th><th>Intent</th><th>Tool</th><th>Grounding</th></tr></thead>
-   <tbody><tr><td>Planner</td><td class="hot">30%</td><td>0%</td><td>8.3%</td></tr><tr><td>Order agent</td><td class="max">50%</td><td>0%</td><td>0%</td></tr></tbody></table>
-   <p style="margin-top:14px;font-size:12px;color:var(--muted);line-height:1.6">Ten features per candidate: blame by perspective, position, pool size, violation count, agent role…</p>
-  </div>
- </div>
- <div>
-  <div class="ol red rv">What we tried first · a dead end we kept</div>
-  <div class="h3 rv" style="--d:1;font-size:clamp(24px,2.2vw,32px);margin-top:14px">Training made it worse.</div>
-  <p class="rv" style="--d:2;font-size:14px;line-height:1.65;color:var(--muted);margin-top:14px">A linear softmax policy ranked the candidates, trained with REINFORCE. The reward was whether the repair passed its acceptance check. Passing that check is easier than actually recovering, so the policy learned which steps produce repairs that get accepted. That is reward hacking, and we could measure it.</p>
-  <div class="tflow rv" style="--d:3;margin-top:3vh" aria-label="Training flow: features, policy, proxy reward, held-out accuracy fell, weights frozen">
-   <div><b>INPUT</b>Candidate features</div><div><b>POLICY</b>Linear softmax · REINFORCE</div><div><b>REWARD</b>Repair acceptance, no gold labels</div>
-   <div class="bad"><b style="color:var(--red)">HELD OUT</b>{t['before']}% → {t['after']}%<br>{t['lost']} lost · {t['gained']} gained · p = {t['p']:.3f}</div><div><b>SHIPPED</b>Hand-set weights, frozen</div>
-  </div>
-  <div class="row rv" style="--d:4;margin-top:3vh">
-   <div><div class="big" style="color:var(--red)">−{t['lost']}<small> pts</small></div><div style="font-size:12px;color:var(--muted);margin-top:6px">on {t['test_episodes']} held-out episodes</div></div>
-   <div><div class="big" style="color:var(--amber)">+{t['reward_gap']}</div><div style="font-size:12px;color:var(--muted);margin-top:6px">proxy reward sat above real recovery</div></div>
-  </div>
- </div>
-</div>
-{foot('home › evidence stage 02 and the training strip · results/README.md')}''')
 
-    select = beat(2, 3, f'''
-{head('03 / What we finalised', 'The evidence stops deciding.<br>One model call decides.', lead='The matrix and the features become an argument. The model gets the trace, the blame matrix and each candidate’s broken rule, and names the critical step and the responsible agent. It may pick a step our checks never flagged.')}
-<div class="cands" id="cands" style="flex:1;margin-top:3vh;min-height:360px">
- <svg class="wires" id="wires" viewBox="0 0 1000 400" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%">
-  <path d="M250 40 C 450 40, 560 120, 640 120"/><path class="pick" d="M250 130 C 450 130, 560 130, 640 130"/><path d="M250 220 C 450 220, 560 140, 640 140"/><path d="M250 310 C 450 310, 560 150, 640 150"/><path class="out" d="M420 380 C 540 380, 600 200, 640 165"/>
- </svg>
- <div class="cand" style="left:0;top:0"><b>CANDIDATE · STEP 6 · PLANNER</b>Intent: routed the cancellation to the product specialist</div>
- <div class="cand pick" style="left:0;top:23%"><b>CANDIDATE · STEP 21 · PLANNER</b>Tool: order status read as “pending”, tool said “delivered”</div>
- <div class="cand" style="left:0;top:46%"><b>CANDIDATE · STEP 24 · ORDER AGENT</b>Grounding: order id not present in any earlier message</div>
- <div class="cand" style="left:0;top:69%"><b>CANDIDATE · STEP 31 · ORDER AGENT</b>Intent: claimed the write without calling the tool</div>
- <div class="cand outside" style="left:28%;bottom:0;border-color:#4a3f78;width:min(260px,24vw)"><b style="color:var(--violet)">OUTSIDE THE POOL · ANY STEP</b>The selector may also choose a step with no violation at all</div>
- <div class="selcard" id="selcard">
-  <div class="ol mint">Full-trace selector · one call</div><strong>“Step 21, planner.”</strong>
-  <p>Reads the whole trace, the blame matrix and the candidates. Returns the step, the agent, and the obligation it believes was broken, so the diagnosis carries its evidence into repair.</p>
-  <div class="inputs" aria-label="Inputs to the selector"><span>trace</span><span>blame matrix</span><span>candidates + broken rules</span><span>frozen THETA0</span></div>
-  <div class="nogold">GOLD LABELS NEVER ENTER THIS CALL · scored afterwards</div>
- </div>
+def architecture_beat(chapter, index):
+    """The attribution architecture as one diagram that builds in five stages as the viewer scrolls."""
+    captions = ''.join(f'<p class="acap" data-stage="{i}">{escape(c)}</p>' for i, c in enumerate(ARCH_CAPTIONS))
+    return beat(chapter, index, f'''
+<div class="grid2" style="align-items:end;gap:clamp(20px,3vw,50px)">
+ {head('Fault attribution · the architecture', 'AgentRx’s checks, split three ways.<br>Then one call decides.', width='100%')}
+ <p class="lead rv" style="--d:2">What we kept from AgentRx, what we replaced, how the whole thing was framed as a learning problem, and where the model sits in the final design.</p>
 </div>
-{foot('home › follow the evidence › beat 03 · scene: the wires draw toward the selector as it arrives')}''', scene='select', length=2)
+<div class="arch" id="arch" data-stage="0" aria-label="Pipeline: failed trace, constraints and checks kept from AgentRx, the single judge replaced by three reviewers, evidence, a decision stage, a diagnosis handed to recovery; an RL loop below that is frozen in the final design">
+ <div class="arch-row">
+  <div class="acol" data-from="0"><div class="abox"><b>Failed trace</b><small>recorded steps</small></div></div>
+  <div class="acol" data-from="0"><div class="alabel violet">from AgentRx · kept</div><div class="abox violet"><b>Constraints</b><small>from policy and tools</small></div><div class="abox violet"><b>Check each step</b><small>prefix only</small></div></div>
+  <div class="acol judge" data-from="0">
+   <div class="one"><div class="alabel violet">from AgentRx · replaced</div><div class="abox violet"><b>One judge</b><small>every kind of error at once</small></div></div>
+   <div class="three"><div class="alabel mint">ours · multi-perspective</div><div class="abox la"><b>Intent &amp; plan</b></div><div class="abox lb"><b>Tool execution</b></div><div class="abox lc"><b>Handoffs &amp; grounding</b></div></div>
+  </div>
+  <div class="acol" data-from="2"><div class="alabel">evidence, not a verdict</div><div class="abox"><b>Blame matrix</b><small>agent × perspective</small></div><div class="abox"><b>Candidate steps</b><small>ten features each</small></div></div>
+  <div class="acol decide" data-from="3"><div class="policy"><div class="alabel">tried first</div><div class="abox"><b>Linear policy θ</b><small>ranks the candidates</small></div></div><div class="llm"><div class="alabel mint">final · one call</div><div class="abox mint"><b>LLM judge</b><small>reads the trace and the evidence</small></div></div></div>
+  <div class="acol" data-from="4"><div class="abox mint"><b>Diagnosis</b><small>step · agent · broken obligation</small></div><div class="abox"><b>Recovery</b><small>Prince’s part</small></div></div>
+ </div>
+ <div class="rl" data-from="3">
+  <div class="alabel">RL framing · REINFORCE</div>
+  <div class="rl-chips"><span><b>State</b>the trace and its evidence</span><i>→</i><span><b>Action</b>which step to blame</span><i>→</i><span><b>Environment</b>the repair system: roll back, replay</span><i>→</i><span><b>Reward</b>the repair’s acceptance check</span><i>↺</i><span><b>Update θ</b>no gold labels needed</span></div>
+  <div class="frozen">FROZEN · passing your own check is easier than recovering</div>
+ </div>
+ <div class="acaps">{captions}</div>
+</div>
+{foot('scene · the diagram builds in five stages: AgentRx, three reviewers, evidence, the RL loop, the LLM judge')}''', scene='architecture', length=3)
 
+
+def rq1_beat(chapter, index, hint):
     def chart(domain, arms):
         rows = []
         for i, arm in enumerate(arms):
@@ -283,7 +254,7 @@ def chapter_attribution():
     total = sum(arms[0]['n'] for arms in HEADLINE.values())
     in_pool = {d: 100 * r['in_pool_hits'] / r['in_pool_n'] for d, r in recall.items()}
     out_pool = {d: 100 * r['out_pool_hits'] / (r['n'] - r['in_pool_n']) for d, r in recall.items()}
-    rq1 = beat(2, 4, f'''
+    return beat(chapter, index, f'''
 {head(f'RQ1 · {total} published traces · exact step match', 'It edges past AgentRx.<br>Not significantly. Recall is the limit.', tone='violet', width='min(1100px,80vw)')}
 <div style="display:grid;grid-template-columns:minmax(0,2.4fr) minmax(0,1fr);gap:clamp(20px,3vw,50px);margin-top:3vh;align-items:start">
  <div class="grid2" style="gap:20px">{chart('tau', HEADLINE['tau'])}{chart('magentic', HEADLINE['magentic'])}</div>
@@ -292,8 +263,83 @@ def chapter_attribution():
   <div class="stat rv" style="--d:4"><b style="color:var(--mint)">{ablation['wins']} : {ablation['losses']}</b><span>Selector against our own ranker, paired over {ablation['n']} traces. p = {ablation['p']:.2f}. The one significant result, and it is internal.</span></div>
  </div>
 </div>
-{foot('home › the evidence charts and recall stats, same CSV-derived values · bars grow once, then hold', '→ hand-off: Prince')}''')
-    return check + gather + select + rq1
+{foot('home › the evidence charts and recall stats, same CSV-derived values · bars grow once, then hold', hint)}''')
+
+
+def chapter_attribution():
+    architecture = architecture_beat(2, 1)
+
+    mini = ''.join(f'<div class="step" data-i="{i}">{i}</div>' for i in range(1, 29))
+    check = beat(2, 2, f'''
+<div class="grid2" style="align-items:end">
+ {head('01 / Check', 'One recorded trace.<br>Three reviewers.')}
+ <p class="lead rv" style="--d:2">AgentRx asks one judge to look for every kind of error at once. We split that question among three reviewers, each looking for one kind of mistake. Each check sees only the steps so far, never what came after.</p>
+</div>
+<div class="lens-track" id="lens-track">
+ <div class="lens a" data-k="0"><div class="ol">Intent &amp; plan</div><strong>Did this step serve the request, within policy?</strong></div>
+ <div class="lens b" data-k="1"><div class="ol">Tool execution</div><strong>Was the call well formed, did it succeed, was it read right?</strong></div>
+ <div class="lens c" data-k="2"><div class="ol">Handoffs &amp; grounding</div><strong>Were the facts passed between agents actually observed?</strong></div>
+</div>
+<div class="trace-mini" id="trace-mini" aria-label="A 28-step trace; steps light up as the lenses pass">{mini}<div class="edge" id="edge" style="left:0"><span>PREFIX EDGE · nothing right of this line is visible to a check</span></div></div>
+<div class="vios" id="vios">
+ <div class="vio" data-step="5" style="color:var(--mint)"><i style="background:var(--mint)"></i>step 5 · intent</div>
+ <div class="vio" data-step="10" style="color:var(--amber)"><i style="background:var(--amber)"></i>step 10 · handoff</div>
+ <div class="vio" data-step="16" style="color:var(--cyan)"><i style="background:var(--cyan)"></i>step 16 · tool</div>
+ <div class="vio" data-step="24" style="color:var(--amber)"><i style="background:var(--amber)"></i>step 24 · grounding</div>
+</div>
+{foot('script b2-1 · scene: three reviewers sweep the pinned trace, prefix only')}''', scene='lenses', length=3)
+
+    gather = beat(2, 3, f'''
+<div class="grid2">
+ <div>
+  {head('02 / Gather', 'Evidence,<br>not a verdict.', lead='A blame matrix of how often each agent breaks each reviewer’s rules, and ten features per candidate step, including its position.', width='100%')}
+  <div class="card rv" style="--d:3;padding:22px;margin-top:4vh">
+   <div class="ol" style="font-size:9px;margin-bottom:12px">Blame matrix · lost-context retail trace · violation rate</div>
+   <table class="blame" aria-label="Violation rate per agent per perspective"><thead><tr><th>Agent</th><th>Intent</th><th>Tool</th><th>Grounding</th></tr></thead>
+   <tbody><tr><td>Planner</td><td class="hot">30%</td><td>0%</td><td>8.3%</td></tr><tr><td>Order agent</td><td class="max">50%</td><td>0%</td><td>0%</td></tr></tbody></table>
+   <p style="margin-top:14px;font-size:12px;color:var(--muted);line-height:1.6">Ten features per candidate: blame by perspective, position, pool size, violation count, agent role…</p>
+  </div>
+ </div>
+ <div>
+  <div class="ol rv">What we tried first</div>
+  <div class="h3 rv" style="--d:1;font-size:clamp(24px,2.2vw,32px);margin-top:14px">That looked like a<br>reinforcement learning problem.</div>
+  <div class="stack rv" style="--d:2;gap:0;margin-top:2vh" aria-label="The RL framing: state, action, environment, reward, policy">
+   <div class="rlrow"><b>State</b><span>the trace and its evidence</span></div>
+   <div class="rlrow"><b>Action</b><span>which step to blame</span></div>
+   <div class="rlrow"><b>Environment</b><span>our repair system, which rolls back to that step and replays</span></div>
+   <div class="rlrow"><b>Reward</b><span>whether the repair passes its acceptance check, so no gold labels are needed</span></div>
+   <div class="rlrow"><b>Policy</b><span>linear, ranks the candidates, trained with REINFORCE</span></div>
+  </div>
+  <div class="rv" style="--d:3;margin-top:3vh;padding:16px 18px;border:1px solid #5a3a3a;border-radius:12px;background:#1f1414">
+   <div class="ol red" style="font-size:9px">It made things worse</div>
+   <p style="margin-top:8px;font-size:14px;line-height:1.65;color:#e8d4d4">Passing your own acceptance check is easier than actually recovering, so the policy learned which steps get repairs accepted, not which steps were wrong. That’s reward hacking, so we froze the hand-set weights.</p>
+  </div>
+ </div>
+</div>
+{foot('script b2-2 and “what we tried first” · no numbers here; they sit in Ananya’s part')}''')
+
+    select = beat(2, 4, f'''
+{head('03 / What we finalised', 'Our fix changes<br>who decides.', lead='The evidence becomes an argument: one model call reads the whole trace, the blame matrix and each candidate’s broken rule, and names the step, the agent and the obligation it broke, even a step our checks never flagged. That diagnosis, with its evidence, is what recovery acts on.')}
+<div class="cands" id="cands" style="flex:1;margin-top:3vh;min-height:360px">
+ <svg class="wires" id="wires" viewBox="0 0 1000 400" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%">
+  <path d="M250 40 C 450 40, 560 120, 640 120"/><path class="pick" d="M250 130 C 450 130, 560 130, 640 130"/><path d="M250 220 C 450 220, 560 140, 640 140"/><path d="M250 310 C 450 310, 560 150, 640 150"/><path class="out" d="M420 380 C 540 380, 600 200, 640 165"/>
+ </svg>
+ <div class="cand" style="left:0;top:0"><b>CANDIDATE · STEP 6 · PLANNER</b>Intent: routed the cancellation to the product specialist</div>
+ <div class="cand pick" style="left:0;top:23%"><b>CANDIDATE · STEP 21 · PLANNER</b>Tool: order status read as “pending”, tool said “delivered”</div>
+ <div class="cand" style="left:0;top:46%"><b>CANDIDATE · STEP 24 · ORDER AGENT</b>Grounding: order id not present in any earlier message</div>
+ <div class="cand" style="left:0;top:69%"><b>CANDIDATE · STEP 31 · ORDER AGENT</b>Intent: claimed the write without calling the tool</div>
+ <div class="cand outside" style="left:28%;bottom:0;border-color:#4a3f78;width:min(260px,24vw)"><b style="color:var(--violet)">OUTSIDE THE POOL · ANY STEP</b>The judge may also choose a step with no violation at all</div>
+ <div class="selcard" id="selcard">
+  <div class="ol mint">LLM judge · one call</div><strong>“Step 21, planner.”</strong>
+  <p>Reads the whole trace, the blame matrix and the candidates. Returns the step, the agent and the obligation it broke, so the diagnosis carries its evidence into repair.</p>
+  <div class="inputs" aria-label="Inputs to the judge"><span>trace</span><span>blame matrix</span><span>candidates + broken rules</span><span>frozen θ</span></div>
+  <div class="nogold">GOLD LABELS NEVER ENTER THIS CALL · scored afterwards</div>
+ </div>
+</div>
+{foot('script b2-3 · scene: the wires draw toward the judge as it arrives')}''', scene='select', length=2)
+
+    rq1 = rq1_beat(2, 5, '→ hand-off: Prince')
+    return architecture + check + gather + select + rq1
 
 
 # ------------------------------------------------------------------------------ 04 repair and orchestrator
@@ -575,6 +621,10 @@ JS = r'''
    const draw=ease(clamp((p-.66)/.2,0,1));
    net.querySelectorAll('path.wire').forEach(w=>{w.style.strokeDashoffset=String((1-draw).toFixed(3));});
    net.classList.toggle('show-signal',p>=.9);
+  },
+  architecture(el,p){
+   const stage=p<.18?0:p<.4?1:p<.58?2:p<.78?3:4;
+   el.querySelector('#arch').dataset.stage=stage;
   },
   lenses(el,p){
    const track=el.querySelector('#lens-track'),lenses=[...track.querySelectorAll('.lens')],w=track.clientWidth;

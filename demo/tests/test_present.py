@@ -1,4 +1,4 @@
-"""The presentation route: one page, eighteen beats, evidence that matches the research story."""
+"""The presentation route: one page, the beats in speaker order, evidence that matches the research story."""
 import re
 import threading
 import unittest
@@ -11,16 +11,16 @@ from demo.visualizer import make_server
 
 
 class PresentPageTests(unittest.TestCase):
-    def test_eighteen_beats_in_six_chapters(self):
-        self.assertEqual(sum(BEATS_PER_CHAPTER), 18)
+    def test_beats_in_six_chapters_in_running_order(self):
         self.assertEqual(len(BEATS_PER_CHAPTER), len(CHAPTERS))
+        self.assertEqual(PAGE.count('<section class="beat'), sum(BEATS_PER_CHAPTER))
         ids = re.findall(r'<section class="beat(?: scene)?" id="(b\d-\d)"', PAGE)
         expected = [f'b{c}-{i}' for c, n in enumerate(BEATS_PER_CHAPTER) for i in range(1, n + 1)]
         self.assertEqual(ids, expected, 'Beats must appear in running order')
 
     def test_scenes_are_pinned_and_have_handlers(self):
         scenes = re.findall(r'data-scene="(\w+)"', PAGE)
-        self.assertEqual(scenes, ['activation', 'gap', 'network', 'lenses', 'select', 'verifier', 'dots'])
+        self.assertEqual(scenes, ['activation', 'gap', 'network', 'architecture', 'lenses', 'select', 'verifier', 'dots'])
         for scene in scenes:
             self.assertIn(f' {scene}(el,p)', PAGE, f'scene {scene} needs a scroll handler')
 
