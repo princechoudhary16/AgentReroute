@@ -19,6 +19,17 @@ BEATS_PER_CHAPTER = (3, 3, 4, 2, 4, 2)
 # symptom shows; a tracer then walks back through the same steps to the cause at step 21.
 FLOWER_STEPS, CAUSE_STEP = 33, 21
 
+# One illustrative trace for the attribution chapter: a cancellation sent to the wrong specialist.
+# VIEWS are the three reviewers (key, name, question); FLAGS are what each one flags (view, step, agent, rule).
+EXAMPLE_STEPS = 16
+VIEWS = (('a', 'Intent & plan', 'Did this step serve the request, within policy?'),
+         ('b', 'Tool execution', 'Was the call well formed, did it succeed, was it read right?'),
+         ('c', 'Handoffs & grounding', 'Were the facts passed between agents actually observed?'))
+FLAGS = (('a', 6, 'Planner', 'sent the cancellation to the catalog agent'),
+         ('a', 7, 'Planner', 'kept the catalog agent on an order task'),
+         ('b', 9, 'Catalog agent', 'called a catalog tool, which cannot cancel'),
+         ('c', 12, 'Planner', 'told the customer it was done; no cancellation was observed'))
+
 
 # ------------------------------------------------------------------------------ building blocks
 def beat(chapter, index, body, *, scene=None, length=3):
@@ -252,25 +263,25 @@ def rq1_beat(chapter, index, hint):
 def chapter_attribution():
     architecture = architecture_beat(2, 1)
 
-    mini = ''.join(f'<div class="step" data-i="{i}">{i}</div>' for i in range(1, 29))
+    chips = ''.join(f'<span data-step="{i}">{i}</span>' for i in range(1, EXAMPLE_STEPS + 1))
+
+    def lane(key):
+        return ''.join(f'<span class="vmark" data-step="{step}" style="left:{(step - .5) / EXAMPLE_STEPS * 100:.3f}%"><i></i>{step}</span>'
+                       for view, step, _, _ in FLAGS if view == key)
+    rows = ''.join(f'<div class="vrow" data-v="{key}"><div class="vlab"><b><i></i>{escape(name)}</b><small>{escape(question)}</small></div>'
+                   f'<div class="vtrack"><span class="lane"></span>{lane(key)}</div></div>' for key, name, question in VIEWS)
     check = beat(2, 2, f'''
 <div class="grid2" style="align-items:end">
- {head('01 / Check', 'One recorded trace.<br>Three reviewers.')}
- <p class="lead rv" style="--d:2">AgentRx asks one judge to look for every kind of error at once. We split that question among three reviewers, each looking for one kind of mistake. Each check sees only the steps so far, never what came after.</p>
+ {head('01 / Check', 'One trace.<br>Three views, side by side.')}
+ <p class="lead rv" style="--d:2">AgentRx asks one judge to look for every kind of error at once. We split that question among three reviewers, each looking for one kind of mistake. They read the same steps together, and each check sees only the steps so far, never what came after.</p>
 </div>
-<div class="lens-track" id="lens-track">
- <div class="lens a" data-k="0"><div class="ol">Intent &amp; plan</div><strong>Did this step serve the request, within policy?</strong></div>
- <div class="lens b" data-k="1"><div class="ol">Tool execution</div><strong>Was the call well formed, did it succeed, was it read right?</strong></div>
- <div class="lens c" data-k="2"><div class="ol">Handoffs &amp; grounding</div><strong>Were the facts passed between agents actually observed?</strong></div>
+<div class="views rv" id="views" style="--d:3;--edge:0;--n:{EXAMPLE_STEPS}" aria-label="An example trace of {EXAMPLE_STEPS} steps read by three views at once. One cursor moves across all three; each view flags the steps that break its rules.">
+ <div class="vrow vhead"><div class="vlab"><span class="ol">Example trace · {EXAMPLE_STEPS} steps</span></div><div class="vtrack chips">{chips}</div></div>
+ {rows}
+ <div class="voverlay" aria-hidden="true"><div class="vfuture"></div><div class="vcursor"><span>all three views checked up to step <em id="vstep">1</em></span></div></div>
 </div>
-<div class="trace-mini" id="trace-mini" aria-label="A 28-step trace; steps light up as the lenses pass">{mini}<div class="edge" id="edge" style="left:0"><span>PREFIX EDGE · nothing right of this line is visible to a check</span></div></div>
-<div class="vios" id="vios">
- <div class="vio" data-step="5" style="color:var(--mint)"><i style="background:var(--mint)"></i>step 5 · intent</div>
- <div class="vio" data-step="10" style="color:var(--amber)"><i style="background:var(--amber)"></i>step 10 · handoff</div>
- <div class="vio" data-step="16" style="color:var(--cyan)"><i style="background:var(--cyan)"></i>step 16 · tool</div>
- <div class="vio" data-step="24" style="color:var(--amber)"><i style="background:var(--amber)"></i>step 24 · grounding</div>
-</div>
-{foot('script b2-1 · scene: three reviewers sweep the pinned trace, prefix only')}''', scene='lenses', length=3)
+<p class="vnote rv" style="--d:4">Not one after another: the three views check each step together, and none can see past the line.</p>
+{foot('script b2-1 · scene: one cursor moves across the trace; all three views read the same prefix')}''', scene='lenses', length=2)
 
     gather = beat(2, 3, f'''
 <div class="grid2">
@@ -583,14 +594,12 @@ JS = r'''
    el.querySelector('#arch').dataset.stage=stage;
   },
   lenses(el,p){
-   const track=el.querySelector('#lens-track'),lenses=[...track.querySelectorAll('.lens')],w=track.clientWidth;
-   const mini=el.querySelector('#trace-mini'),steps=[...mini.querySelectorAll('.step')];
-   let lead=0;
-   lenses.forEach((l,k)=>{const t=ease(clamp((p-k*.11)/.72,0,1));const x=lerp(-l.offsetWidth,w-l.offsetWidth,t);l.style.transform=`translateX(${Math.round(x)}px)`;lead=Math.max(lead,x+l.offsetWidth);});
-   const edge=clamp(lead,0,mini.clientWidth),edgeEl=el.querySelector('#edge');
-   edgeEl.style.left=edge+'px';edgeEl.classList.toggle('flip',edge>mini.clientWidth-460);
-   steps.forEach(s=>s.classList.toggle('lit',s.offsetLeft+s.offsetWidth<=edge+1));
-   el.querySelectorAll('.vio').forEach(v=>{const s=steps[Number(v.dataset.step)-1];v.style.left=(s.offsetLeft+s.offsetWidth/2-v.offsetWidth/2)+'px';v.classList.toggle('show',s.offsetLeft+s.offsetWidth<=edge+1);});
+   /* one cursor, whole steps at a time, across all three views together (0 → .9) */
+   const views=el.querySelector('#views'),n=__STEPS__,seen=1+Math.round(clamp(p/.9,0,1)*(n-1));
+   views.style.setProperty('--edge',(seen/n).toFixed(4));
+   el.querySelector('#vstep').textContent=String(seen);
+   views.querySelectorAll('.chips span').forEach(s=>s.classList.toggle('seen',Number(s.dataset.step)<=seen));
+   views.querySelectorAll('.vmark').forEach(m=>m.classList.toggle('show',Number(m.dataset.step)<=seen));
   },
   select(el,p){
    const draw=ease(clamp(p/.7,0,1));
@@ -717,7 +726,7 @@ JS = r'''
 def render():
     body = chapter_intro() + chapter_existing() + chapter_attribution() + chapter_repair() + chapter_benchmark() + chapter_closing()
     script = JS.replace('__CHAPTERS__', json.dumps([{k: ch[k] for k in ('title', 'speaker', 'seconds')} for ch in CHAPTERS])) \
-               .replace('__BEATS__', json.dumps(list(BEATS_PER_CHAPTER))).replace('__CAUSE__', str(CAUSE_STEP))
+               .replace('__BEATS__', json.dumps(list(BEATS_PER_CHAPTER))).replace('__CAUSE__', str(CAUSE_STEP)).replace('__STEPS__', str(EXAMPLE_STEPS))
     return f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AgentReroute — Presentation</title>

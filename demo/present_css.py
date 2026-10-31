@@ -72,9 +72,6 @@ h1,h2,h3,p{margin:0}svg{display:block}
 .title-art{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .title-art path{stroke-dasharray:3000;stroke-dashoffset:3000;transition:stroke-dashoffset 2.6s cubic-bezier(.3,.5,.2,1) .2s}
 .in .title-art path{stroke-dashoffset:0}
-.step{width:56px;height:74px;border:1px solid var(--border);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;flex:none;opacity:.3;transition:opacity .35s,border-color .35s,background .35s,box-shadow .35s}
-.step b{font:400 11px var(--mono);color:var(--dim)}.step i{width:18px;height:4px;border-radius:2px;background:var(--border)}
-.step.lit{opacity:1}
 /* the intro flower: a 33-step trace as petals around a hub. --S is the flower's diameter */
 .ring-wrap{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(24px,4vw,70px);align-items:center;margin-top:2vh;flex:1;min-height:0}
 .flower{--S:min(54vh,520px);position:relative;width:var(--S);height:var(--S);margin:auto}
@@ -156,6 +153,28 @@ h1,h2,h3,p{margin:0}svg{display:block}
 @keyframes dash{to{stroke-dashoffset:-140}}
 @keyframes travel{0%{offset-distance:0}100%{offset-distance:100%}}
 
+/* 03 · one trace, three views read side by side; a single cursor sweeps all three at once */
+.views{--lab:clamp(210px,17vw,260px);position:relative;margin-top:6vh}
+.vrow{display:grid;grid-template-columns:var(--lab) minmax(0,1fr);gap:24px;align-items:center;min-height:clamp(56px,8.5vh,76px);border-top:1px solid var(--line)}
+.vrow.vhead{border-top:0;min-height:46px}
+.vlab b{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600}
+.vlab b i{width:8px;height:8px;border-radius:50%;flex:none}
+.vlab small{display:block;font-size:11px;line-height:1.45;color:var(--muted);margin:4px 0 0 18px}
+.vrow[data-v="a"]{--c:var(--mint)}.vrow[data-v="b"]{--c:var(--cyan)}.vrow[data-v="c"]{--c:var(--amber)}
+.vlab b i{background:var(--c)}
+.vtrack{position:relative;align-self:stretch}
+.vtrack .lane{position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line)}
+.chips{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:5px;align-items:center}
+.chips span{height:28px;display:grid;place-items:center;border:1px solid var(--border);border-radius:6px;font:10px var(--mono);color:var(--dim);transition:border-color .2s,background .2s,color .2s}
+.chips span.seen{border-color:#2f4f58;background:#101f24;color:#c9d4d6}
+.vmark{position:absolute;top:50%;display:flex;flex-direction:column;align-items:center;gap:5px;font:10px var(--mono);color:var(--c);opacity:0;transform:translate(-50%,-6px) scale(.4);transition:opacity .3s,transform .3s}
+.vmark i{width:12px;height:12px;border-radius:50%;background:var(--c);box-shadow:0 0 14px var(--c)}
+.vmark.show{opacity:1;transform:translate(-50%,-6px)}
+.voverlay{position:absolute;top:0;bottom:0;left:calc(var(--lab) + 24px);right:0;pointer-events:none}
+.vfuture{position:absolute;top:0;bottom:0;right:0;left:calc(var(--edge) * 100%);background:#090e11c7;transition:left .18s ease-out}
+.vcursor{position:absolute;top:-10px;bottom:-6px;left:calc(var(--edge) * 100%);width:1px;background:var(--cyan);box-shadow:0 0 12px #7fdbed;transition:left .18s ease-out}
+.vcursor span{position:absolute;bottom:100%;left:0;transform:translateX(calc(var(--edge) * -100%));transition:transform .18s ease-out;margin-bottom:6px;white-space:nowrap;font:10px var(--mono);letter-spacing:1px;color:var(--cyan)}
+.vnote{margin-top:3vh;font-size:13px;line-height:1.6;color:var(--muted);max-width:760px}
 /* 03 · the architecture diagram builds in stages 0 … 4 */
 .arch{margin-top:3vh;flex:1;display:flex;flex-direction:column;gap:18px;min-height:0}
 .arch-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:30px;align-items:center;padding-top:22px}
@@ -201,19 +220,6 @@ h1,h2,h3,p{margin:0}svg{display:block}
 .rlrow{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;padding:9px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.5}
 .rlrow b{font:400 11px var(--mono);letter-spacing:1px;color:var(--cyan);text-transform:uppercase;padding-top:2px}
 .rlrow span{color:var(--muted)}
-.lens-track{position:relative;height:200px;margin:3vh 0 0}
-.lens-track .lens{position:absolute;top:0;width:min(300px,28vw);box-shadow:0 14px 40px #00000088;will-change:transform}
-.lens-track .lens.b{top:36px}.lens-track .lens.c{top:72px}
-.trace-mini{display:flex;gap:6px;position:relative}
-.trace-mini .step{flex:1 1 0;min-width:0;width:auto;height:58px;border-radius:6px;font:10px var(--mono);color:var(--dim);align-items:flex-end;padding-bottom:6px;opacity:.22;gap:0}
-.trace-mini .step.lit{opacity:1;border-color:#2f4f58;background:#101f24;color:#c9d4d6}
-.edge{position:absolute;top:-14px;bottom:-14px;width:1px;background:var(--cyan);opacity:.8;transition:left .1s linear}
-.edge span{position:absolute;left:10px;top:-2px;font:10px var(--mono);letter-spacing:1px;color:var(--cyan);white-space:nowrap}
-.edge.flip span{left:auto;right:10px}
-.vios{position:relative;height:60px;margin-top:14px}
-.vio{position:absolute;top:0;display:flex;flex-direction:column;align-items:center;gap:6px;font:10px var(--mono);letter-spacing:.5px;white-space:nowrap;opacity:0;transform:translateY(-10px);transition:opacity .4s,transform .4s}
-.vio i{width:10px;height:10px;border-radius:50%}
-.vio.show{opacity:1;transform:none}
 table.blame{border-collapse:collapse;width:100%;font:13px var(--mono)}
 .blame th,.blame td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);font-weight:400}
 .blame th{color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase}
@@ -314,12 +320,11 @@ table.blame{border-collapse:collapse;width:100%;font:13px var(--mono)}
  .chart{padding:14px 18px}.brow{margin-top:10px}.track{height:14px}
  .ans{padding:10px 0}.ans h3{font-size:clamp(15px,1.3vw,20px)}
  .runs{grid-template-columns:repeat(5,16px);gap:5px;margin-top:10px}.runs i{width:16px;height:16px}
+ .vrow{min-height:58px}
  .rung{padding:6px 12px;font-size:12px}.opt{padding:8px 14px;font-size:12px}
- .lens-track{height:170px}.trace-mini .step{height:46px}
  .field{grid-template-columns:repeat(40,10px)}.field i{width:10px;height:10px}
  .q{padding:12px 0}.q span{font-size:clamp(13px,1.1vw,16px)}
  .insight{padding:12px 0}.flow .box{padding:10px 16px}.flow .judge{padding:14px}
- .step{height:62px}
 }
 /* motion off */
 .rm .rv,.rm .bar,.rm .crow .cl,.rm .crow .cf,.rm .title-art path{transition:none!important;transform:none!important;opacity:1!important;stroke-dashoffset:0!important}
