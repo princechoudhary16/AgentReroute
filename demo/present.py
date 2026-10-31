@@ -15,23 +15,9 @@ from .studio_theme import MARK
 
 BEATS_PER_CHAPTER = (3, 3, 4, 2, 4, 2)
 
-# The intro ring: the planner in the centre, the customer and the three specialists around it
-# (ids, label, role, x%, y%). HOPS is case II, Wrong specialist, as the activation order T+0 … T+6.
-RING_NODES = (('planner', 'Planner', 'routes and hands off', 50, 50),
-              ('customer', 'Customer', 'asks, confirms, hears back', 50, 11),
-              ('orders', 'Orders agent', 'can cancel orders', 89, 50),
-              ('catalog', 'Catalog agent', 'knows products', 50, 89),
-              ('returns', 'Returns agent', 'handles returns', 11, 50))
-RING_XY = {nid: (x, y) for nid, _, _, x, y in RING_NODES}
-RING_NAME = {nid: name for nid, name, _, _, _ in RING_NODES}
-HOPS = (('customer', 'asks to cancel pending order W1000001'),
-        ('planner', 'finds the account, reads the request back'),
-        ('customer', 'confirms'),
-        ('planner', 'hands the cancellation to the catalog agent'),
-        ('catalog', '“I cannot handle this request”'),
-        ('planner', 'relays the failure'),
-        ('customer', 'hears it failed; the order is still active'))
-SYMPTOM_HOP, CAUSE_HOP = 6, 3
+# The intro flower: a trace of 33 steps as petals around a hub. Activation runs 1 → 33, where the
+# symptom shows; a tracer then walks back through the same steps to the cause at step 21.
+FLOWER_STEPS, CAUSE_STEP = 33, 21
 
 
 # ------------------------------------------------------------------------------ building blocks
@@ -73,27 +59,25 @@ def chapter_intro():
 <div class="row rv" style="--d:3;margin-top:auto;position:relative"><span style="font-size:22px;font-weight:600;letter-spacing:-.02em">AgentReroute</span><span class="src" style="letter-spacing:1px;font-size:12px">William · Badr · Nischit · Prince · Ananya</span></div>
 {foot('home › hero copy and route art', '→ or Space · next beat')}''')
 
-    nodes = ''.join(f'<div class="rnode" data-node="{nid}" style="left:{x}%;top:{y}%"><span class="t"></span><b>{name}</b><small>{role}</small></div>'
-                    for nid, name, role, x, y in RING_NODES)
-    edges = ''.join(f'<line data-hop="{k}" x1="{RING_XY[a][0]}" y1="{RING_XY[a][1]}" x2="{RING_XY[b][0]}" y2="{RING_XY[b][1]}"/>'
-                    for k, (a, b) in enumerate(zip([h[0] for h in HOPS], [h[0] for h in HOPS[1:]]), 1))
-    acts = ''.join(f'<div class="act" data-hop="{k}"><b>T+{k}</b><i>{RING_NAME[nid]}</i><span>{escape(what)}</span></div>'
-                   for k, (nid, what) in enumerate(HOPS))
+    petals = ''.join(f'<div class="petal" style="--a:{360 * i / FLOWER_STEPS:.2f}deg"><span>{i + 1}</span></div>'
+                     for i in range(FLOWER_STEPS))
     wrong_turn = beat(0, 2, f'''
 <div class="grid2" style="align-items:end;gap:clamp(20px,3vw,50px)">
  {head('The problem', '<span class="hl" id="hl"><span class="a">The failure you see<br>is not the mistake that was made.</span><span class="b">Find the routing decision,<br>not the symptom.</span></span>')}
  <p class="lead rv" style="--d:2">A planner can route a cancellation to the product specialist. The order stays active, and fixing the specialist changes nothing. You have to find the routing decision, several steps earlier.</p>
 </div>
 <div class="ring-wrap">
- <div class="ring" id="ring" aria-label="The retail system as a ring: a planner in the centre, the customer and three specialists around it. Activations light in order; the symptom appears at the customer, the cause is the planner's handoff.">
-  <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="orbit" cx="50" cy="50" r="39"/>{edges}</svg>
-  {nodes}
-  <div class="rtag sym" id="rtag-sym">THE SYMPTOM · the order is still active</div>
-  <div class="rtag cause" id="rtag-cause">THE CAUSE · handed to the wrong specialist</div>
+ <div class="flower" aria-label="A trace of {FLOWER_STEPS} steps arranged as petals. Each step activates in turn; the failure shows at step {FLOWER_STEPS}; tracing back through the same steps stops at step {CAUSE_STEP}, the cause.">
+  {petals}
+  <div class="hub" id="hub" data-state="run"><span class="ol">step</span><b>1</b><span>propagating</span></div>
  </div>
- <div class="acts" id="acts" aria-label="Activation order, T+0 to T+6">{acts}</div>
+ <div class="fkeys">
+  <div class="fkey on" data-k="run"><i></i><div><b>Each step hands its output to the next</b><small>An agent acts on what it was given. A wrong value travels forward with everything else.</small></div></div>
+  <div class="fkey" data-k="sym"><i></i><div><b>Step {FLOWER_STEPS} · the symptom</b><small>The customer hears it failed. The order is still active. This is where the failure shows.</small></div></div>
+  <div class="fkey" data-k="cause"><i></i><div><b>Step {CAUSE_STEP} · the cause</b><small>The planner handed the cancellation to the wrong specialist, twelve steps earlier.</small></div></div>
+ </div>
 </div>
-{foot('scene · activations run T+0 → T+6 to the symptom, then trace back to the cause', '→ next beat')}''', scene='activation', length=3)
+{foot('scene · each step lights in turn to the symptom, then the trace runs back to the cause', '→ next beat')}''', scene='activation', length=3)
 
     questions = beat(0, 3, f'''
 {head('Why this is an ethics problem', 'An automated repair can cancel an order.<br>Agents report success without checking.', width='min(1200px,80vw)')}
@@ -553,27 +537,23 @@ JS = r'''
  /* ---- scroll-driven scenes: each receives progress p in [0,1] through its own section ---- */
  const scenes={
   activation(el,p){
-   /* 0 → .55: activations T+0 … T+6 light in order, the last one is the symptom.
-      .62 → 1: a tracer walks back T+6 → T+3 and stops on the cause. */
-   const acts=[...el.querySelectorAll('.act')],n=acts.length,last=n-1,cause=__CAUSE__;
-   const nodes=[...el.querySelectorAll('.rnode')],edges=[...el.querySelectorAll('.ring line')];
-   const forward=p<.62, k=Math.min(last,Math.floor(clamp(p/.55,0,1)*n));
-   const back=last-Math.round(ease(clamp((p-.62)/.34,0,1))*(last-cause));
-   const cursor=forward?k:back, symptom=p>=.55, found=p>=.96;
-   acts.forEach((a,i)=>{
-    a.classList.toggle('lit',i<=k);a.classList.toggle('visited',!forward&&i>back);
-    a.classList.toggle('now',i===cursor);a.classList.toggle('sym',i===last&&symptom&&forward);a.classList.toggle('cause',i===cause&&found);
+   /* 0 → .55: each petal glows in turn (cyan), the last one turns red: the symptom.
+      .62 → .94: a cyan tracer walks back through the same petals; at .95 the cause turns green. */
+   const petals=[...el.querySelectorAll('.petal')],n=petals.length,sym=n-1,cause=__CAUSE__-1;
+   const forward=p<.62, k=Math.min(sym,Math.floor(clamp(p/.55,0,1)*n));
+   const back=sym-Math.round(ease(clamp((p-.62)/.32,0,1))*(sym-cause));
+   const symptom=p>=.55, found=p>=.95, cursor=forward?k:back;
+   petals.forEach((pt,i)=>{
+    pt.classList.toggle('lit',i<=k);
+    pt.classList.toggle('visited',!forward&&i>back&&i<sym);
+    pt.classList.toggle('sym',symptom&&i===sym);
+    pt.classList.toggle('cause',found&&i===cause);
+    pt.classList.toggle('now',i===cursor&&!(symptom&&i===sym)&&!(found&&i===cause));
    });
-   const at=i=>acts[i].querySelector('i').textContent;
-   nodes.forEach(nd=>{const name=nd.querySelector('b').textContent;
-    nd.classList.toggle('now',name===at(cursor));
-    nd.classList.toggle('sym',symptom&&forward&&name===at(last));
-    nd.classList.toggle('cause',found&&name===at(cause));
-    nd.querySelector('.t').textContent=name===at(cursor)?`T+${cursor}`:'';});
-   edges.forEach(e=>{const h=Number(e.dataset.hop);
-    e.classList.toggle('lit',h<=k&&(forward||h<=back));e.classList.toggle('now',h===cursor&&cursor>0);e.classList.toggle('cause',found&&h===cause+1);});   /* the cause is the handoff it made */
-   el.querySelector('#rtag-sym').classList.toggle('show',symptom&&forward);
-   el.querySelector('#rtag-cause').classList.toggle('show',found);
+   const state=found?'cause':!forward?'back':symptom?'sym':'run', hub=el.querySelector('#hub');
+   hub.dataset.state=state;hub.querySelector('b').textContent=String(cursor+1);
+   hub.lastElementChild.textContent={run:'propagating',sym:'the symptom',back:'tracing back',cause:'the cause'}[state];
+   el.querySelectorAll('.fkey').forEach(r=>r.classList.toggle('on',r.dataset.k===(state==='back'?'run':state)));
    el.querySelector('#hl').classList.toggle('resolved',p>=.8);
   },
   gap(el,p){
@@ -737,7 +717,7 @@ JS = r'''
 def render():
     body = chapter_intro() + chapter_existing() + chapter_attribution() + chapter_repair() + chapter_benchmark() + chapter_closing()
     script = JS.replace('__CHAPTERS__', json.dumps([{k: ch[k] for k in ('title', 'speaker', 'seconds')} for ch in CHAPTERS])) \
-               .replace('__BEATS__', json.dumps(list(BEATS_PER_CHAPTER))).replace('__CAUSE__', str(CAUSE_HOP))
+               .replace('__BEATS__', json.dumps(list(BEATS_PER_CHAPTER))).replace('__CAUSE__', str(CAUSE_STEP))
     return f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AgentReroute — Presentation</title>
