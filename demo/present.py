@@ -29,6 +29,7 @@ FLAGS = (('a', 6, 'Planner', 'sent the cancellation to the catalog agent'),
          ('a', 7, 'Planner', 'kept the catalog agent on an order task'),
          ('b', 9, 'Catalog agent', 'called a catalog tool, which cannot cancel'),
          ('c', 12, 'Planner', 'told the customer it was done; no cancellation was observed'))
+JUDGE_PICK = (6, 'Planner', 'route each request to the agent that owns it')
 
 
 # ------------------------------------------------------------------------------ building blocks
@@ -312,25 +313,32 @@ def chapter_attribution():
 </div>
 {foot('script b2-2 and “what we tried first” · no numbers here; they sit in Ananya’s part')}''')
 
+    agents = list(dict.fromkeys(agent for _, _, agent, _ in FLAGS))
+    counts = {(agent, key): sum(1 for v, _, a, _ in FLAGS if a == agent and v == key) for agent in agents for key, _, _ in VIEWS}
+    head_cells = ''.join(f'<th data-v="{key}"><i></i>{escape(name.split(" &")[0])}</th>' for key, name, _ in VIEWS)
+    body_rows = ''.join(f'<tr><th>{escape(agent)}</th>' + ''.join(f'<td data-v="{key}" class="{"hit" if counts[agent, key] else ""}">{counts[agent, key]}</td>' for key, _, _ in VIEWS) + '</tr>'
+                        for agent in agents)
+    flagged = {step: view for view, step, _, _ in FLAGS}
+    trace = ''.join(f'<span data-v="{flagged[i]}"></span>' if i in flagged else '<span></span>' for i in range(1, EXAMPLE_STEPS + 1))
+    cands = ''.join(f'<li data-v="{view}"><i></i><b>step {step}</b><span>{escape(agent)} · {escape(rule)}</span></li>' for view, step, agent, rule in FLAGS)
+    pick_step, pick_agent, pick_rule = JUDGE_PICK
     select = beat(2, 4, f'''
 {head('03 / What we finalised', 'Our fix changes<br>who decides.', lead='The evidence becomes an argument: one model call reads the whole trace, the blame matrix and each candidate’s broken rule, and names the step, the agent and the obligation it broke, even a step our checks never flagged. That diagnosis, with its evidence, is what recovery acts on.')}
-<div class="cands" id="cands" style="flex:1;margin-top:3vh;min-height:360px">
- <svg class="wires" id="wires" viewBox="0 0 1000 400" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%">
-  <path d="M250 40 C 450 40, 560 120, 640 120"/><path class="pick" d="M250 130 C 450 130, 560 130, 640 130"/><path d="M250 220 C 450 220, 560 140, 640 140"/><path d="M250 310 C 450 310, 560 150, 640 150"/><path class="out" d="M420 380 C 540 380, 600 200, 640 165"/>
- </svg>
- <div class="cand" style="left:0;top:0"><b>CANDIDATE · STEP 6 · PLANNER</b>Intent: routed the cancellation to the product specialist</div>
- <div class="cand pick" style="left:0;top:23%"><b>CANDIDATE · STEP 21 · PLANNER</b>Tool: order status read as “pending”, tool said “delivered”</div>
- <div class="cand" style="left:0;top:46%"><b>CANDIDATE · STEP 24 · ORDER AGENT</b>Grounding: order id not present in any earlier message</div>
- <div class="cand" style="left:0;top:69%"><b>CANDIDATE · STEP 31 · ORDER AGENT</b>Intent: claimed the write without calling the tool</div>
- <div class="cand outside" style="left:28%;bottom:0;border-color:#4a3f78;width:min(260px,24vw)"><b style="color:var(--violet)">OUTSIDE THE POOL · ANY STEP</b>The judge may also choose a step with no violation at all</div>
- <div class="selcard" id="selcard">
-  <div class="ol mint">LLM judge · one call</div><strong>“Step 21, planner.”</strong>
-  <p>Reads the whole trace, the blame matrix and the candidates. Returns the step, the agent and the obligation it broke, so the diagnosis carries its evidence into repair.</p>
-  <div class="inputs" aria-label="Inputs to the judge"><span>trace</span><span>blame matrix</span><span>candidates + broken rules</span><span>frozen θ</span></div>
-  <div class="nogold">GOLD LABELS NEVER ENTER THIS CALL · scored afterwards</div>
+<div class="jf" id="jf" aria-label="Three inputs, all built from the three views over the same example trace, go into one LLM call, which returns a diagnosis">
+ <div class="jcol ins">
+  <div class="jcard" data-from="0"><div class="ol">1 · The whole trace · {EXAMPLE_STEPS} steps, flagged or not</div><div class="jtrace" style="--n:{EXAMPLE_STEPS}">{trace}</div></div>
+  <div class="jcard" data-from="1"><div class="ol">2 · Blame matrix · violations per agent, per view</div><table class="jm"><thead><tr><th></th>{head_cells}</tr></thead><tbody>{body_rows}</tbody></table></div>
+  <div class="jcard" data-from="2"><div class="ol">3 · Candidate steps · each with the view and rule that flagged it</div><ul class="jc">{cands}</ul></div>
+ </div>
+ <div class="jcol" data-from="3">
+  <div class="jjudge"><div class="ol mint">LLM judge · one call</div><strong>Reads all three<br>as one argument.</strong><p>Frozen weights order the candidates; the model makes the decision.</p><div class="nogold">Gold labels never enter this call</div></div>
+ </div>
+ <div class="jcol" data-from="4">
+  <div class="jout"><div class="ol mint">Diagnosis</div><strong>Step {pick_step} · {escape(pick_agent)}</strong><p>Broke: {escape(pick_rule)}.</p><small>It may also name a step no view flagged.</small></div>
+  <div class="jnext">→ handed to recovery, with its evidence</div>
  </div>
 </div>
-{foot('script b2-3 · scene: the wires draw toward the judge as it arrives', '→ hand-off: Prince')}''', scene='select', length=2)
+{foot('script b2-3 · scene: the three inputs arrive, join, the judge reads them, the diagnosis comes out', '→ hand-off: Prince')}''', scene='select', length=2)
 
     return architecture + check + gather + select
 
@@ -602,11 +610,10 @@ JS = r'''
    views.querySelectorAll('.vmark').forEach(m=>m.classList.toggle('show',Number(m.dataset.step)<=seen));
   },
   select(el,p){
-   const draw=ease(clamp(p/.7,0,1));
-   el.querySelectorAll('.wires path').forEach(path=>{path.style.strokeDashoffset=String(Math.round(1200*(1-draw)));});
-   const card=el.querySelector('#selcard'),t=ease(clamp((p-.1)/.5,0,1));
-   card.style.transform=`translateX(${Math.round(60*(1-t))}%)`;card.style.opacity=String(t);
-   el.querySelector('#cands').classList.toggle('chosen',p>=.78);
+   /* the trace, then the blame matrix, then the candidates; they join (.5) into the judge; the diagnosis comes out (.72) */
+   const jf=el.querySelector('#jf'),stage=p<.14?0:p<.3?1:p<.5?2:p<.72?3:4;
+   jf.querySelectorAll('[data-from]').forEach(n=>n.classList.toggle('on',Number(n.dataset.from)<=stage));
+   jf.classList.toggle('joined',stage>=3);
   },
   dots(el,p){
    const field=el.querySelector('#field'),dots=field.children,n=dots.length;

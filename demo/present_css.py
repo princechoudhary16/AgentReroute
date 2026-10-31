@@ -175,6 +175,42 @@ h1,h2,h3,p{margin:0}svg{display:block}
 .vcursor{position:absolute;top:-10px;bottom:-6px;left:calc(var(--edge) * 100%);width:1px;background:var(--cyan);box-shadow:0 0 12px #7fdbed;transition:left .18s ease-out}
 .vcursor span{position:absolute;bottom:100%;left:0;transform:translateX(calc(var(--edge) * -100%));transition:transform .18s ease-out;margin-bottom:6px;white-space:nowrap;font:10px var(--mono);letter-spacing:1px;color:var(--cyan)}
 .vnote{margin-top:3vh;font-size:13px;line-height:1.6;color:var(--muted);max-width:760px}
+/* 03 · the judge: three inputs built from the three views → one call → one diagnosis, on one axis */
+.jf{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.9fr) minmax(0,1fr);gap:64px;align-items:center;margin-top:3vh;flex:1;min-height:0}
+.jcol{position:relative;display:flex;flex-direction:column;gap:10px}
+.jcol.ins:after{content:'';position:absolute;right:-22px;top:10%;bottom:10%;width:12px;border:1px solid #4e6068;border-left:0;border-radius:0 10px 10px 0;opacity:0;transition:opacity .4s}
+.jf.joined .jcol.ins:after{opacity:1}
+.jcol+.jcol:before{content:'';position:absolute;left:-42px;top:50%;width:34px;height:1px;background:#4e6068}
+.jcol+.jcol:after{content:'';position:absolute;left:-12px;top:calc(50% - 3px);width:6px;height:6px;border-top:1px solid #4e6068;border-right:1px solid #4e6068;transform:rotate(45deg)}
+.jf [data-from]{opacity:0;transform:translateY(8px);transition:opacity .4s,transform .4s}
+.jf [data-from].on{opacity:1;transform:none}
+.jcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:12px 14px}
+.jcard .ol{font-size:9px;letter-spacing:1.2px;margin-bottom:9px}
+.jf [data-v="a"]{--c:var(--mint)}.jf [data-v="b"]{--c:var(--cyan)}.jf [data-v="c"]{--c:var(--amber)}
+.jtrace{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:3px}
+.jtrace span{height:14px;border-radius:3px;border:1px solid var(--border);background:#0c1317}
+.jtrace span[data-v]{border-color:var(--c);background:color-mix(in srgb,var(--c) 22%,transparent)}
+.jm{width:100%;border-collapse:collapse;font:12px var(--mono)}
+.jm th,.jm td{padding:5px 8px;text-align:left;font-weight:400;border-top:1px solid var(--line)}
+.jm thead th{border-top:0;font-size:10px;letter-spacing:.5px;color:var(--muted)}
+.jm thead th i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--c);margin-right:6px;vertical-align:middle}
+.jm tbody th{font:13px var(--sans);color:var(--text)}
+.jm td{color:var(--dim)}.jm td.hit{color:var(--c);font-weight:600}
+.jc{list-style:none;margin:0;padding:0}
+.jc li{display:grid;grid-template-columns:8px 56px minmax(0,1fr);gap:10px;align-items:baseline;padding:5px 0;border-top:1px solid var(--line);font-size:12px;line-height:1.4}
+.jc li:first-child{border-top:0}
+.jc li i{width:8px;height:8px;border-radius:50%;background:var(--c);align-self:center}
+.jc li b{font:400 11px var(--mono);color:var(--c)}
+.jc li span{color:var(--muted)}
+.jjudge{border:1px solid var(--mint);border-radius:16px;background:#13201a;padding:22px;box-shadow:0 0 50px #bcf78322}
+.jjudge strong{display:block;font-size:clamp(18px,1.5vw,24px);font-weight:600;line-height:1.25;margin:10px 0 8px}
+.jjudge p{font-size:12px;line-height:1.6;color:var(--muted)}
+.jjudge .nogold{margin-top:14px;padding-top:10px;border-top:1px solid #1f3327;font:10px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.jout{border:1px solid var(--mint);border-radius:14px;background:var(--surface);padding:18px 20px}
+.jout strong{display:block;font-size:clamp(18px,1.5vw,24px);font-weight:600;margin:8px 0 6px}
+.jout p{font-size:13px;line-height:1.55;color:var(--text)}
+.jout small{display:block;margin-top:10px;font-size:11px;line-height:1.5;color:var(--violet)}
+.jnext{position:absolute;left:4px;top:calc(100% + 10px);white-space:nowrap;font:10px var(--mono);letter-spacing:1px;color:var(--dim)}
 /* 03 · the architecture diagram builds in stages 0 … 4 */
 .arch{margin-top:3vh;flex:1;display:flex;flex-direction:column;gap:18px;min-height:0}
 .arch-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:30px;align-items:center;padding-top:22px}
@@ -224,20 +260,6 @@ table.blame{border-collapse:collapse;width:100%;font:13px var(--mono)}
 .blame th,.blame td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);font-weight:400}
 .blame th{color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase}
 .blame .hot{color:var(--amber)}.blame .max{color:var(--red);font-weight:600}
-.cands{position:relative;min-height:300px}
-.cand{position:absolute;width:min(230px,22vw);border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:12px 14px;font-size:12px;line-height:1.5;color:#c9d4d6;transition:opacity .4s,border-color .4s}
-.cand b{display:block;font:400 10px var(--mono);letter-spacing:1px;color:var(--dim);margin-bottom:4px}
-.cands.chosen .cand:not(.pick){opacity:.35}
-.cands.chosen .cand.pick{border-color:var(--mint)}.cands.chosen .cand.pick b{color:var(--mint)}
-.wires path{fill:none;stroke:#2b3a42;stroke-width:1.5;stroke-dasharray:1200;stroke-dashoffset:1200}
-.wires path.pick{stroke:var(--mint);stroke-width:2}
-.wires path.out{stroke:var(--violet);stroke-dasharray:4 6}
-.selcard{position:absolute;right:0;top:0;width:min(440px,34vw);border:1px solid var(--mint);border-radius:16px;background:#13201a;padding:26px;box-shadow:0 0 60px #bcf78322;will-change:transform,opacity}
-.selcard strong{display:block;font-size:clamp(20px,1.7vw,26px);font-weight:600;letter-spacing:-.02em;margin:10px 0 8px}
-.selcard p{font-size:13px;line-height:1.6;color:var(--muted)}
-.selcard .inputs{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-.selcard .inputs span{border:1px solid #3a5a3a;border-radius:20px;padding:5px 10px;font:10px var(--mono);color:var(--mint)}
-.selcard .nogold{margin-top:16px;padding-top:12px;border-top:1px solid #1f3327;font:11px var(--mono);color:var(--muted);letter-spacing:.5px}
 .chart{padding:22px 24px}
 .chart h3{font-size:17px;font-weight:600;margin:4px 0 0}
 .brow{margin-top:16px}
