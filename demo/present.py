@@ -14,7 +14,7 @@ from .present_data import (CHAPTERS, CONTROLS, CORPUS, DISTANCE_DISCOUNT, HARM_P
 from .story_data import DOMAINS, FINAL_ROWS, HEADLINE, SELECTOR_ROWS, paired, summarize
 from .studio_theme import MARK
 
-BEATS_PER_CHAPTER = (3, 3, 5, 3, 3, 2)
+BEATS_PER_CHAPTER = (3, 3, 5, 2, 3, 2)
 
 # The intro ring: the planner in the centre, the customer and the three specialists around it
 # (ids, label, role, x%, y%). HOPS is case II, Wrong specialist, as the activation order T+0 … T+6.
@@ -364,7 +364,7 @@ def chapter_repair():
  <div>
   {head('AgentReroute-Repair', 'A typed plan,<br>not free-text advice.', lead=f'{STRATEGIES} strategies arranged as escalation ladders, one ladder per failure type. Each rung has a deterministic acceptance check. We replace a wrong value instead of critiquing it: models fix errors far more reliably when handed the correct value.', width='100%')}
   <div class="stack rv" style="--d:3;gap:8px;margin-top:3vh" aria-label="One escalation ladder, for a lost-context failure">
-   <div class="ol" style="font-size:9px">Ladder · context_propagation</div>
+   <div class="ol" style="font-size:9px">Example ladder · lost context</div>
    <div class="rung on"><b>1</b>Inject the verified tool record at the faulty step</div><div class="rung"><b>2</b>Patch the handoff with the missing order id</div><div class="rung"><b>3</b>Re-query the tool and reground the agent</div><div class="rung"><b>4</b>Gate the next call by policy</div><div class="rung"><b>5</b>Ask the user</div><div class="rung esc"><b>6</b>Escalate to a human</div>
   </div>
  </div>
@@ -381,35 +381,12 @@ def chapter_repair():
    <div><div class="ol" style="font-size:9px;color:var(--text);margin-bottom:5px">Budgets</div>Tokens, time and attempts are capped. Never the same strategy twice at one step.</div>
    <div><div class="ol" style="font-size:9px;color:var(--text);margin-bottom:5px">Otherwise</div>EV ≤ 0: abstain, or escalate. No action is a valid action.</div>
   </div>
+  <div class="safeguard rv" style="--d:5"><b>If the verifier rejects the replay, or can’t run at all, nothing is declared fixed.</b> Belief in that diagnosis drops, and the next rung is tried.</div>
  </div>
 </div>
-{foot('/system › the EV decision example (same scripted values) · repair_strategies/strategies · policy.py EVConfig')}''')
+{foot('/system › the EV decision example (same scripted values) · repair_strategies/strategies · policy.py EVConfig', '→ hand-off: Ananya')}''')
 
-    verifier = beat(3, 3, f'''
-<div class="grid2">
- <div>
-  {head('The key safeguard', 'A verifier that<br>cannot see the repair.', tone='cyan', lead='It gets the task, the policy and the replayed transcript. Never the repair, its rationale or the strategy. A repair cannot talk it into a success. If the verifier is unavailable, the orchestrator fails closed: success is never declared without it.', width='100%')}
-  <div class="grid3 rv" style="--d:3;margin-top:4vh">
-   <div class="lim"><b style="color:var(--mint)">SEES</b>task · policy · transcript</div>
-   <div class="lim"><b style="color:var(--red)">NEVER SEES</b>repair · rationale · strategy · reward</div>
-   <div class="lim"><b style="color:var(--amber)">ON OUTAGE</b>FAIL, closed</div>
-  </div>
-  <div class="stamp" id="stamp" style="margin-top:5vh"><b>PASS</b><span>the transcript contains the requested write and a non-error tool response</span></div>
- </div>
- <div class="vview" id="vview" aria-label="What the verifier reads: task, policy and transcript; the repair and its rationale stay out of its window">
-  <div class="vdocs" id="vdocs">
-   <div class="doc pending"><b>TASK</b>Cancel order #W1000001 for the authenticated user.</div>
-   <div class="doc pending"><b>POLICY</b>Use identifiers present in the transcript. Cancellations require the order id and user confirmation.</div>
-   <div class="doc pending"><b>TRANSCRIPT · replayed from step 6</b>user → planner: cancel my order<br>planner → tool get_order(#W1000001): {{"status": "delivered"}}<br>planner → order_agent: cancel #W1000001<br>order_agent → tool cancel_order(#W1000001)<br>tool → order_agent: {{"status": "cancelled"}}<br>order_agent → user: Your order is cancelled.</div>
-   <div class="doc hid" data-stop><b>REPAIR · strategy 1 · inject verified record</b>Rollback to step 6, inject order_id = #W1000001 from get_order</div>
-   <div class="doc hid"><b>RATIONALE</b>Candidate belief 0.62, prior 0.70, distance 3, EV 0.563</div>
-   <div class="doc hid"><b>REWARD · hidden ground truth</b>ledger: order #W1000001 cancelled = true</div>
-  </div>
-  <div class="vwin" id="vwin"><span>VERIFIER VIEWPORT · fresh context</span></div>
- </div>
-</div>
-{foot('/system › milestone V copy · scene: the viewport scrolls the transcript and stops before the repair', '→ hand-off: Ananya')}''', scene='verifier', length=3)
-    return live + repair + verifier
+    return live + repair
 
 
 # ------------------------------------------------------------------------------ 05 benchmark and results
@@ -642,15 +619,6 @@ JS = r'''
    const card=el.querySelector('#selcard'),t=ease(clamp((p-.1)/.5,0,1));
    card.style.transform=`translateX(${Math.round(60*(1-t))}%)`;card.style.opacity=String(t);
    el.querySelector('#cands').classList.toggle('chosen',p>=.78);
-  },
-  verifier(el,p){
-   const view=el.querySelector('#vview'),docs=el.querySelector('#vdocs'),win=el.querySelector('#vwin');
-   const stop=docs.querySelector('[data-stop]'),maxY=Math.max(0,stop.offsetTop-win.offsetHeight-6);
-   const y=lerp(0,maxY,ease(p));
-   win.style.transform=`translateY(${Math.round(y)}px)`;
-   const top=y, bottom=y+win.offsetHeight;
-   docs.querySelectorAll('.doc:not(.hid)').forEach(d=>{const c=d.offsetTop+d.offsetHeight/2;d.classList.toggle('pending',c>bottom);});
-   el.querySelector('#stamp').classList.toggle('show',p>=.92);
   },
   dots(el,p){
    const field=el.querySelector('#field'),dots=field.children,n=dots.length;

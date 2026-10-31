@@ -261,19 +261,8 @@ table.blame{border-collapse:collapse;width:100%;font:13px var(--mono)}
 .opt strong{display:block;font-weight:600;margin-bottom:4px}.opt span{font:12px var(--mono);color:var(--muted)}
 .opt.sel{border-color:var(--mint);background:#13201a}.opt.sel em{display:block;margin-top:5px;color:var(--mint);font-size:12px}
 .opt.no{opacity:.5}
-.vdocs{position:absolute;left:0;top:0;right:0;display:flex;flex-direction:column;gap:12px}
-.doc{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:14px 18px;font:12px/1.7 var(--mono);color:#c9d4d6;transition:filter .4s,opacity .4s}
-.doc b{display:block;font-weight:400;font-size:9px;letter-spacing:1px;color:var(--dim);margin-bottom:6px}
-.doc.hid{color:#3a4a52;border-color:var(--line);background:#0c1317;filter:blur(1.5px)}
-.doc.hid b{color:#3a4a52}
-.doc.pending{opacity:.45}
-.vview{position:relative;height:min(560px,62vh);overflow:hidden}
-.vwin{position:absolute;left:-12px;right:-12px;top:-12px;height:min(230px,30vh);border:2px solid var(--cyan);border-radius:14px;box-shadow:0 0 0 2000px #090e1166,0 0 40px #7fdbed55;will-change:transform;pointer-events:none}
-.vwin span{position:absolute;left:14px;bottom:-24px;font:10px var(--mono);letter-spacing:1px;color:var(--cyan)}
-.stamp{display:inline-flex;align-items:center;gap:12px;opacity:0;transform:scale(1.2);transition:opacity .3s,transform .3s}
-.stamp.show{opacity:1;transform:none}
-.stamp b{border:1px solid var(--mint);color:var(--mint);border-radius:6px;padding:8px 14px;font:14px var(--mono);letter-spacing:2px}
-.stamp span{font-size:12px;color:var(--muted)}
+.safeguard{margin-top:3vh;padding:14px 16px;border-left:2px solid var(--cyan);font-size:13px;line-height:1.6;color:var(--muted)}
+.safeguard b{color:var(--text);font-weight:600}
 
 /* 05 */
 .field{display:grid;grid-template-columns:repeat(40,12px);gap:4px;align-content:start}
@@ -325,7 +314,6 @@ table.blame{border-collapse:collapse;width:100%;font:13px var(--mono)}
  .ans{padding:10px 0}.ans h3{font-size:clamp(15px,1.3vw,20px)}
  .runs{grid-template-columns:repeat(5,16px);gap:5px;margin-top:10px}.runs i{width:16px;height:16px}
  .rung{padding:6px 12px;font-size:12px}.opt{padding:8px 14px;font-size:12px}
- .doc{padding:10px 14px;font-size:11px;line-height:1.6}.vview{height:min(440px,56vh)}
  .lens-track{height:170px}.trace-mini .step{height:46px}
  .field{grid-template-columns:repeat(40,10px)}.field i{width:10px;height:10px}
  .q{padding:12px 0}.q span{font-size:clamp(13px,1.1vw,16px)}
