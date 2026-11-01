@@ -20,9 +20,20 @@ class PresentPageTests(unittest.TestCase):
 
     def test_scenes_are_pinned_and_have_handlers(self):
         scenes = re.findall(r'data-scene="(\w+)"', PAGE)
-        self.assertEqual(scenes, ['activation', 'gap', 'network', 'architecture', 'lenses', 'select', 'dots'])
+        self.assertEqual(scenes, ['activation', 'network', 'architecture', 'lenses', 'select', 'dots'])
         for scene in scenes:
             self.assertIn(f' {scene}(el,p)', PAGE, f'scene {scene} needs a scroll handler')
+
+    def test_silent_failures_and_fault_perspectives_are_separate_beats(self):
+        silent = PAGE.split('id="b1-2"', 1)[1].split('</section>', 1)[0]
+        perspectives = PAGE.split('id="b1-3"', 1)[1].split('</section>', 1)[0]
+        self.assertIn('Silent failures', silent)
+        self.assertNotIn('Three kinds of failure', silent)
+        self.assertIn('Three kinds of failure', perspectives)
+        for label in ('Intent', 'Tool execution', 'Communication'):
+            self.assertIn(label, perspectives)
+        self.assertNotIn('Two lines of work exist', PAGE)
+        self.assertNotIn('id="gapviz"', PAGE)
 
     def test_attribution_numbers_come_from_the_committed_evidence(self):
         for domain in DOMAINS:

@@ -1,7 +1,7 @@
-"""The presentation route: one scroll, six chapters, eighteen beats.
+"""The presentation route: one scroll, six chapters, nineteen beats.
 
 Same evidence as the home page (story_data validates the committed CSVs), ordered the way the talk is
-given. Seven beats are scroll-driven scenes: a pinned stage whose state follows how far into the
+given. Six beats are scroll-driven scenes: a pinned stage whose state follows how far into the
 section the viewer has scrolled. Everything that carries a number stays still.
 """
 import json
@@ -13,7 +13,7 @@ from .present_data import (CHAPTERS, CONTROLS, CORPUS, DISTANCE_DISCOUNT, HARM_P
 from .story_data import DOMAINS, FINAL_ROWS, HEADLINE, SELECTOR_ROWS, paired, summarize
 from .studio_theme import MARK
 
-BEATS_PER_CHAPTER = (3, 3, 4, 2, 4, 2)
+BEATS_PER_CHAPTER = (3, 4, 4, 2, 4, 2)
 
 # The intro flower: a trace of 33 steps as petals around a hub. Activation runs 1 → 33, where the
 # symptom shows; a tracer then walks back through the same steps to the cause at step 21.
@@ -132,33 +132,38 @@ def chapter_existing():
 </div>
 {foot('home › the method › AgentRx card · reproduced figures from results/final-evidence.csv')}''')
 
-    gap = beat(1, 2, f'''
-<div class="grid2">
- <div>
-  {head('Two insights behind AgentReroute', 'Failures are silent,<br>and they come in three kinds.')}
-  <div class="stack" style="margin-top:3vh;gap:0">
-   <div class="insight rv" style="--d:2"><b>01</b><div><strong>Silent failures</strong><p>A retail agent fails to place an order because the previous step never supplied the order id. The visible failure is downstream of the cause.</p></div></div>
-   <div class="insight rv" style="--d:3"><b>02</b><div><strong>Three kinds of failure</strong><p>Every agent failure lands in one of three bins. Each bin gets its own reviewer later.</p></div></div>
-  </div>
-  <div class="grid3 rv" style="--d:4;gap:10px;margin-top:10px">
-   <div class="lens a"><div class="ol">Intent</div><strong>Did this step serve the goal?</strong><small>Plan and policy</small></div>
-   <div class="lens b"><div class="ol">Tool execution</div><strong>Did the call behave?</strong><small>Well formed, succeeded, read right</small></div>
-   <div class="lens c"><div class="ol">Communication</div><strong>Were the facts handed over?</strong><small>Handoffs and grounding</small></div>
-  </div>
- </div>
- <div>
-  <div class="ol rv">The gap</div>
-  <div class="h3 rv" style="--d:1;font-size:clamp(22px,2vw,30px);margin-top:14px">Two lines of work exist,<br>and they do not meet.</div>
-  <div class="gapviz" id="gapviz" aria-label="Attribution research stops at the diagnosis; recovery research assumes the fault is known; AgentReroute sits in the gap">
-   <div class="line l"></div><div class="lab" style="left:0;top:80px;color:var(--violet)">ATTRIBUTION WORK · AGENTRX</div><div class="lab" style="left:0;top:136px">stops at the diagnosis</div>
-   <div class="line r"></div><div class="lab" style="right:0;top:80px;color:var(--cyan);text-align:right">RECOVERY WORK</div><div class="lab" style="right:0;top:136px;text-align:right">assumes the fault is known</div>
-   <div class="mark"><strong>AgentReroute</strong><p>an uncertain diagnosis, connected to a repair that is verified, budgeted and checked for harm</p></div>
-  </div>
- </div>
-</div>
-{foot('home › the method › lens cards and approach note · scene: the two lines slide in and stop short')}''', scene='gap', length=2)
+    silent = beat(1, 2, f'''
+{head('Two insights behind AgentReroute · 01', 'Silent failures.', lead='The visible failure can be downstream of the decision that caused it.')}
+<figure class="silent-network rv" style="--d:3" aria-labelledby="silent-network-title">
+ <figcaption id="silent-network-title"><span class="ol">ILLUSTRATIVE MULTI-AGENT TRACE</span><span class="silent-legend"><i></i> Incomplete context</span></figcaption>
+ <div class="silent-network-scroll"><div class="silent-canvas" role="img" aria-label="The planner omits the order ID. It hands the task to the order agent, which cannot complete it, causing an order failure. Product and returns agents are not involved.">
+  <svg class="silent-wires" viewBox="0 0 1000 480" preserveAspectRatio="none" aria-hidden="true">
+   <path class="wire" d="M220 240 C310 240 335 86 430 86"/>
+   <path class="wire" d="M220 240 C310 240 335 240 430 240"/>
+   <path class="wire" d="M220 240 C310 240 335 394 430 394"/>
+   <path class="wire" d="M660 240 C705 240 720 240 760 240"/>
+   <path class="fault-signal" d="M220 240 C310 240 335 240 430 240 M660 240 C705 240 720 240 760 240"/>
+  </svg>
+  <div class="silent-node planner"><span class="ol mint">Planner / hidden cause</span><strong>planner</strong><small>Order ID omitted</small></div>
+  <div class="silent-node product"><span class="ol">Product catalog</span><strong>product_agent</strong><small>Not involved</small></div>
+  <div class="silent-node order"><span class="ol cyan">Order operations / handoff</span><strong>order_agent</strong><small>Receives no order ID</small></div>
+  <div class="silent-node returns"><span class="ol">Returns</span><strong>returns_agent</strong><small>Not involved</small></div>
+  <div class="silent-node failure"><span class="ol red">Visible symptom</span><strong>Order fails</strong><small>The failure appears later.</small></div>
+ </div></div>
+ <div class="silent-insight"><span aria-hidden="true">↖</span> Follow the failure back to the decision that started it.</div>
+</figure>
+{foot('the visible failure may be downstream of its cause')}''')
 
-    network = beat(1, 3, f'''
+    fault_kinds = beat(1, 3, f'''
+{head('Two insights behind AgentReroute · 02', 'Three kinds of failure.', lead='We examine different kinds of mistakes through three perspectives.')}
+<div class="grid3 fault-lenses rv" style="--d:3">
+ <div class="lens a"><div class="ol">01 / Intent</div><strong>Did this step serve the goal?</strong><small>Plan and policy</small></div>
+ <div class="lens b"><div class="ol">02 / Tool execution</div><strong>Did the call behave?</strong><small>Well formed, succeeded, read right</small></div>
+ <div class="lens c"><div class="ol">03 / Communication</div><strong>Were the facts handed over?</strong><small>Handoffs and grounding</small></div>
+</div>
+{foot('three perspectives on possible failure')}''')
+
+    network = beat(1, 4, f'''
 <div style="max-width:40%;position:relative;z-index:2">
  {head('Our sandbox', 'Four agents.<br>One connected system.', lead='A planner and three specialists for orders, products and returns, each with real tools. We inject faults into this workflow and watch the diagnosis and the recovery happen step by step.', width='100%')}
  <div class="row rv" style="--d:3;margin-top:4vh;gap:30px">
@@ -183,7 +188,7 @@ def chapter_existing():
  </div>
 </div>
 {foot('/system › the agent network · scene: the planner slides in from the right, then the specialists, then the wires, then the signal', '→ hand-off: Nischit')}''', scene='network', length=3)
-    return agentrx + gap + network
+    return agentrx + silent + fault_kinds + network
 
 
 # ------------------------------------------------------------------------------ 03 fault attribution
@@ -569,12 +574,6 @@ JS = r'''
    hub.lastElementChild.textContent={run:'propagating',sym:'the symptom',back:'tracing back',cause:'the cause'}[state];
    el.querySelectorAll('.fkey').forEach(r=>r.classList.toggle('on',r.dataset.k===(state==='back'?'run':state)));
    el.querySelector('#hl').classList.toggle('resolved',p>=.8);
-  },
-  gap(el,p){
-   const t=ease(clamp(p/.65,0,1));
-   el.querySelector('.line.l').style.transform=`translateX(${-110*(1-t)}%)`;
-   el.querySelector('.line.r').style.transform=`translateX(${110*(1-t)}%)`;
-   el.querySelector('#gapviz').classList.toggle('closed',p>=.72);
   },
   network(el,p){
    /* the drawing is 900×844, fitted to the stage. The planner slides in from the right edge (0 → .28),

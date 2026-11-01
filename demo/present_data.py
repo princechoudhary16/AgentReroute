@@ -13,7 +13,7 @@ committed CSVs against the pinned revision. What lives here is everything the CS
 CHAPTERS = (
     {'id': 'intro', 'title': 'Introduction', 'speaker': 'William', 'seconds': 71,
      'handoff': 'Badr will start with what already exists.'},
-    {'id': 'existing', 'title': 'Existing work and the gap', 'speaker': 'Badr', 'seconds': 82,
+    {'id': 'existing', 'title': 'Existing work and two insights', 'speaker': 'Badr', 'seconds': 82,
      'handoff': 'Nischit will explain how we attribute a failure.'},
     {'id': 'attribution', 'title': 'Fault attribution', 'speaker': 'Nischit', 'seconds': 106,
      'handoff': 'Prince will show what we do with it.'},
