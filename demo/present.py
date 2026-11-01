@@ -68,7 +68,7 @@ def chapter_intro():
  <h1 class="h1 rv" style="--d:1">A wrong turn.<br><em>A trail of evidence.</em></h1>
  <p class="lead rv" style="--d:2;max-width:760px;font-size:clamp(17px,1.5vw,24px)">When a team of AI agents fails, which decision caused it? And who should be held to account?</p>
 </div>
-<div class="row rv" style="--d:3;margin-top:auto;position:relative"><span style="font-size:22px;font-weight:600;letter-spacing:-.02em">AgentReroute</span><span class="src" style="letter-spacing:1px;font-size:12px">William · Badr · Nischit · Prince · Ananya</span></div>
+<div class="row rv" style="--d:3;margin-top:auto;position:relative"><span style="font-size:22px;font-weight:600;letter-spacing:-.02em">AgentReroute</span><span class="src" style="letter-spacing:1px;font-size:12px">Yuan Lun · Badr · Nischit · Prince · Ananya</span></div>
 {foot('home › hero copy and route art', '→ or Space · next beat')}''')
 
     petals = ''.join(f'<div class="petal" style="--a:{360 * i / FLOWER_STEPS:.2f}deg"><span>{i + 1}</span></div>'
@@ -354,7 +354,7 @@ def chapter_repair():
     ms = ''.join(f'<div class="ms"><i></i>{"I II III IV V VI".split()[i]} · {m}</div>' for i, m in enumerate(milestones))
     live = beat(3, 1, f'''
 <div class="live">
- <div class="frame"><iframe title="Live retail system, Case II: a misrouted specialist handoff" data-widget="system" data-src="/widgets/system?scenario=misroute_specialist"></iframe></div>
+ <div class="frame"><iframe title="Live retail system, Case II: a misrouted specialist handoff" data-widget="system" data-src="/widgets/system?scenario=misroute_specialist&autozoom=1"></iframe></div>
  <div class="side">
   <div class="ol mint">Live system · Case II · Wrong specialist</div>
   <div class="h3">A diagnosis is a hypothesis.<br>Recovery has to act on it carefully.</div>
@@ -494,7 +494,7 @@ def chapter_benchmark():
   <p class="rv" style="--d:3;font-size:12px;line-height:1.6;color:var(--muted);margin-top:14px"><strong data-guide="system-title" style="display:block;color:var(--text);font-size:13px;margin-bottom:4px">Follow the request through the agents.</strong><span data-guide="system-body">It checks every step, finds nothing, and does nothing. Scripted, no model call.</span></p>
  </div>
 </div>
-{foot('final report, Table 2 harm and cost rows · /widgets/system with Case IV preselected', '→ hand-off: William')}''')
+{foot('final report, Table 2 harm and cost rows · /widgets/system with Case IV preselected', '→ hand-off: Yuan Lun')}''')
     return rq1 + corpus + overclaim + harm
 
 
@@ -537,7 +537,7 @@ def chrome():
     return f'''<div class="chrome">
 <div class="progress" id="progress" aria-hidden="true"></div>
 <nav class="rail" aria-label="Chapters">{dots}<span class="brand" aria-hidden="true">{MARK}</span></nav>
-<header class="topbar"><span class="ol" id="chapter-label">Ch 01 · Introduction</span><span class="topbar-right"><span class="ol mint"><span id="speaker">William</span> · <span id="timer">1:15</span> · <span id="beat-count">beat 1 / 3</span></span><a class="exit ol" href="/">Esc · exit</a></span></header>
+<header class="topbar"><span class="ol" id="chapter-label">Ch 01 · Introduction</span><span class="topbar-right"><span class="ol mint"><span id="speaker">Yuan Lun</span> · <span id="timer">1:15</span> · <span id="beat-count">beat 1 / 3</span></span><a class="exit ol" href="/">Esc · exit</a></span></header>
 <div class="handoff" id="handoff" role="status" aria-live="polite"><div><span class="from" id="handoff-from"></span><strong class="to" id="handoff-to"></strong></div><span class="budget" id="handoff-budget"></span></div>
 </div>'''
 

@@ -365,6 +365,47 @@ $('zoom-out').onclick = () => zoomAt(S.scale / 1.15, ...center());
 $('zoom-label').onclick = () => zoomAt(1, ...center());
 $('zoom-fit').onclick = fitView;
 
+/* ---------------- follow the trace (?autozoom=1) ----------------
+   Zoom in on a specialist while it works, keep the planner in view for handoffs and replies,
+   and zoom back out whenever the conversation returns to the user or the planner. */
+const AUTOZOOM = new URLSearchParams(location.search).get('autozoom') === '1';
+const HUB = new Set(['user', 'planner']);
+function boxOf(ids) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const id of ids) {
+    const el = document.getElementById(id); if (!el) continue;
+    x0 = Math.min(x0, el.offsetLeft); y0 = Math.min(y0, el.offsetTop);
+    x1 = Math.max(x1, el.offsetLeft + el.offsetWidth); y1 = Math.max(y1, el.offsetTop + el.offsetHeight);
+  }
+  return x0 === Infinity ? null : {x0, y0, x1, y1};
+}
+function focusBox(f) {
+  if (!f.edge || f.kind === 'debug' || f.kind === 'verify') return null;
+  const [a, b] = f.edge, isTool = b.startsWith('tool:');
+  const agent = isTool ? (HUB.has(a) ? null : a) : (!HUB.has(b) ? b : (!HUB.has(a) ? a : null));
+  if (!agent) return null;
+  const ids = [`node-${agent}`];
+  document.querySelectorAll(`.tool-miniblock[data-agent="${agent}"]`).forEach((el) => ids.push(el.id));
+  if (!isTool) ids.push('node-planner');
+  return boxOf(ids);
+}
+function autoFollow(f) {
+  if (!AUTOZOOM || drag) return;
+  const still = window.STUDIO_REDUCED_MOTION || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ease = still ? '' : 'transform .6s ease, background-size .6s ease, background-position .6s ease';
+  world.style.transition = canvas.style.transition = ease;
+  const box = focusBox(f);
+  if (!box) fitView();
+  else {
+    const r = canvas.getBoundingClientRect(), pad = 30;
+    const s = Math.min(1.65, Math.max(0.2, Math.min(r.width / (box.x1 - box.x0 + 2 * pad), r.height / (box.y1 - box.y0 + 2 * pad))));
+    S.scale = s; S.pan.x = r.width / 2 - (box.x0 + box.x1) / 2 * s; S.pan.y = r.height / 2 - (box.y0 + box.y1) / 2 * s;
+    applyView();
+  }
+  clearTimeout(autoFollow.timer);
+  autoFollow.timer = setTimeout(() => { world.style.transition = canvas.style.transition = ''; }, 650);
+}
+
 /* ---------------- token animation ---------------- */
 const token = $('flow-token');
 let anim = null;
@@ -436,7 +477,7 @@ function paint(f) {
       b.querySelector('.tool-popper').textContent = f.tool.popper_text;
     }
   }
-  paintProgress(f); paintStep(f); paintTraceCursor();
+  paintProgress(f); paintStep(f); paintTraceCursor(); autoFollow(f);
 }
 function paintProgress(f) {
   $('bar-fill').style.width = f.debug_pct + '%';

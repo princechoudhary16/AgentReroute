@@ -11,7 +11,7 @@ committed CSVs against the pinned revision. What lives here is everything the CS
 
 # Time budgets are the run of show in script v3 (150 words a minute).
 CHAPTERS = (
-    {'id': 'intro', 'title': 'Introduction', 'speaker': 'William', 'seconds': 71,
+    {'id': 'intro', 'title': 'Introduction', 'speaker': 'Yuan Lun', 'seconds': 71,
      'handoff': 'Badr will start with what already exists.'},
     {'id': 'existing', 'title': 'Existing work and two insights', 'speaker': 'Badr', 'seconds': 82,
      'handoff': 'Nischit will explain how we attribute a failure.'},
@@ -20,8 +20,8 @@ CHAPTERS = (
     {'id': 'repair', 'title': 'Repair and orchestrator', 'speaker': 'Prince', 'seconds': 189,
      'handoff': 'Ananya will show what this did across a hundred failures.'},
     {'id': 'benchmark', 'title': 'Benchmark and results', 'speaker': 'Ananya', 'seconds': 83,
-     'handoff': 'William will close.'},
-    {'id': 'closing', 'title': 'Closing', 'speaker': 'William', 'seconds': 54, 'handoff': ''},
+     'handoff': 'Yuan Lun will close.'},
+    {'id': 'closing', 'title': 'Closing', 'speaker': 'Yuan Lun', 'seconds': 54, 'handoff': ''},
 )
 
 # Final report, Table 2. 100 failed test episodes; 25 healthy controls. Cost is tokens relative to the
